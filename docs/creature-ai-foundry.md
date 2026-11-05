@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.33.0
+# Foundry Creature AI — version 0.33.1
+
+Version **0.33.1** adds `macros/enable-selected-full-auto.json` (importable) and `.js` (Script command). Select NPC tokens as the active GM and run the macro to enable AI, automatic acting at turn start and automatic turn advancement. It resumes automatic starts after Stop/reset, preserves existing targeting/resources/preferences, and starts on subsequent turn-start events. Unsupported, linked or player-character tokens are reported and skipped. Neutral NPCs need saved manual targets. Reload with **Ctrl+F5** before using the new macro.
 
 Version **0.33.0** adds the supplied [Dero Magister](dero-magister.md) with a first condition-caster combat kit: Laughing Fit, Stupefy, Blindness, Void Warp, Cytillesh Stare and Sustain. [Shared condition enforcement](condition-handling.md) applies No Actions/No Reactions restrictions to AI and supported manual PC actions. Supported manual spell saves use the same source-tracked effect resolver. The wand toolbar button opens **Ongoing spells / Sustain** for players. Other Dero spells and medicine remain manual; Confused and Blinded NPC turns require GM adjudication. Reload all clients with **Ctrl+F5** and confirm **Running code 0.33.0**.
 

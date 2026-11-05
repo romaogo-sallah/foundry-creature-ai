@@ -2155,7 +2155,7 @@ test('init installs the native reaction query and API exposes reaction controls'
   f.hooks.get('init')();
   assert.equal(typeof CONFIG.queries[`${MODULE_ID}.reactionPrompt`], 'function');
   assert.equal(typeof game.modules.get(MODULE_ID).api.reactions.openControls, 'function');
-  assert.equal(game.modules.get(MODULE_ID).api.version,'0.33.0');
+  assert.equal(game.modules.get(MODULE_ID).api.version,'0.33.1');
   assert.equal(typeof game.modules.get(MODULE_ID).api.resetActors,'function');
 });
 
@@ -2397,6 +2397,15 @@ test('Stop all suppresses automatic starts until a manual run resumes them', asy
   assert.equal(f.calls.some(c => c[0] === 'move'), false);
   await f.main.runTurn(f.wolf, { oneAction: true });
   assert.equal(f.calls.some(c => c[0] === 'move'), true);
+});
+
+test('bulk full-auto enabling resumes automatic starts after Stop without immediately running the selected creature',async()=>{
+  const f=await controlsFixture('save',{autoRun:true,autoAdvance:true});
+  await f.main.openControls(f.wolf);f.main.stop();
+  const report=await f.main.enableFullAuto([f.wolf]);assert.equal(report.enabled.length,1);
+  assert.equal(f.calls.some(c=>c[0]==='move'),false);
+  await f.main.runTurn(f.wolf,{automatic:true,oneAction:true});
+  assert.equal(f.calls.some(c=>c[0]==='move'),true);
 });
 
 test('an automatic next-round start waits for the same wolf runner to finish', async () => {

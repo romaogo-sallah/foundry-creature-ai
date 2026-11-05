@@ -22,7 +22,7 @@ await game.actors.get('ACTOR_ID').prototypeToken.update({
 
 Old AI actions, movement/focus/target memory, stealth checks, spent reactions and retreat state are cleared. Combatant defeated markers are updated from the restored actor; affected pack morale records are cleared. Other observers lose only their knowledge about reset actors. Zone indicators are recalculated at the tokens' existing positions, so concealment from a zone can immediately return.
 
-AI is paused after a reset. Use **Run turn**, or re-save automatic controls, when ready to resume. Combat round, initiative and tracker position are not restarted. The reset refuses to run while an AI action, managed movement or reaction prompt is resolving. Stop AI, finish the current prompt/action, then retry.
+AI is paused after a reset. Use **Run turn**, re-save automatic controls, or run **Enable full auto for selected NPCs** when ready to resume. The full-auto macro is available as `macros/enable-selected-full-auto.js` and importable `macros/enable-selected-full-auto.json` from version 0.33.1. It enables AI, acting at turn start and automatic passing without immediately executing a turn. Combat round, initiative and tracker position are not restarted. The reset refuses to run while an AI action, managed movement or reaction prompt is resolving. Stop AI, finish the current prompt/action, then retry.
 
 Linked tokens are skipped: their actor is already the sidebar actor, so there is no independent earlier state to recover. Tokens whose sidebar actors were deleted are also skipped. Each skipped or failed token is reported. The script never automatically selects or resets the rest of the scene.
 

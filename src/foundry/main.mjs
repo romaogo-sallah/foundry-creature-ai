@@ -34,6 +34,7 @@ import {installFlightFalls} from './flight-falling.mjs';
 import {actionRestriction,reactionRestriction,installActionRestrictions,installRestrictionMovement} from './action-restrictions.mjs';
 import {openOngoingSpells,installOngoingSpells,advanceOngoingSpells,ongoingCasts,sustainCast,endSustainedCast,resetOngoingSpells} from './ongoing-spells.mjs';
 import {installManualConditionSpells} from './manual-condition-spells.mjs';
+import {enableSelectedFullAuto} from './bulk-controls.mjs';
 
 let profile;
 const aiPresentation=new AIPresentation();
@@ -313,6 +314,12 @@ export async function runTurn(token = selected(), options = {}) {
   try { return await pending; }
   finally { if (activeRuns.get(token.id) === pending) activeRuns.delete(token.id); }
 }
+export async function enableFullAuto(tokens=canvas.tokens.controlled){
+  if(resettingActors||activeRuns.size)throw new Error('Wait for the current AI action or actor reset before changing automation');
+  const report=await enableSelectedFullAuto({tokens,reactions});
+  if(report.enabled.length)automaticStartsPaused=false;
+  return report;
+}
 export function stop(token) {
   if (token) runners.get(token.id)?.cancel();
   else {
@@ -432,7 +439,7 @@ Hooks.once('ready', async () => {
   installOngoingSpells({reactions,onError:showError});
   installManualConditionSpells({reactions});
   installPoisonHooks({reactions,onError:showError,onPause:stop});
-  game.modules.get(MODULE_ID).api = { version: RUNTIME_VERSION, planning:{status:()=>planningWorker.status()}, open: openControls, preview, explainLast, runTurn, stop, resetActors, correctLedger, tacticalMap, reactions, manualMovement,
+  game.modules.get(MODULE_ID).api = { version: RUNTIME_VERSION, planning:{status:()=>planningWorker.status()}, open: openControls, preview, explainLast, runTurn, stop, resetActors, enableFullAuto, correctLedger, tacticalMap, reactions, manualMovement,
     zones: { open: openZones, configure: configureZone, between: environmentBetween, refresh:refreshTerrain,
       view: () => ({ observerId: environmentAwareness.observer?.id ?? null, defenses: [...environmentAwareness.entries].map(([tokenId, entry]) => ({ tokenId, ...entry.environment, detection: entry.detection })) }) },
     terrain:{onHazardMove,applySetup:applySceneSetup},supportedProfiles, registerCreatureProfile };

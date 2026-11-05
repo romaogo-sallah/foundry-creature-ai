@@ -12,6 +12,10 @@ await writeFile(new URL('macros/reset-selected-actors.json', output), JSON.strin
   name: 'Reset selected actors to prototype', type: 'script', scope: 'global',
   img: 'icons/svg/regen.svg', command: resetCommand,
 }, null, 2));
+const fullAutoCommand=await readFile(new URL('module/macros/enable-selected-full-auto.js',root),'utf8');
+await writeFile(new URL('macros/enable-selected-full-auto.json',output),JSON.stringify({
+  name:'Enable full auto for selected NPCs',type:'script',scope:'global',img:'icons/svg/clockwork.svg',command:fullAutoCommand,
+},null,2));
 await cp(new URL('src', root), new URL('src', output), { recursive: true });
 await cp(new URL('profiles', root), new URL('profiles', output), { recursive: true });
 await cp(new URL('docs/creature-ai-foundry.md', root), new URL('README.md', output));

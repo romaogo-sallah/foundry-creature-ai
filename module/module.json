@@ -2,7 +2,7 @@
   "id": "foundry-creature-ai",
   "title": "Foundry Creature AI",
   "description": "PF2e creature automation with shared tactical plans and behavior components, taught creature kits, a basic NPC fallback, native rules and reaction prompts.",
-  "version": "0.33.0",
+  "version": "0.33.1",
   "compatibility": { "minimum": "14.361", "verified": "14.369", "maximum": "14" },
   "relationships": { "systems": [{ "id": "pf2e", "type": "system", "compatibility": { "minimum": "8.6.1", "maximum": "8.6.1" } }],
     "requires": [{ "id": "lib-wrapper", "type": "module", "reason": "Apply contextual cover and stealth visibility through native Foundry/PF2e methods" }] },
