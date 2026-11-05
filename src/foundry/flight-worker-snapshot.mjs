@@ -47,23 +47,26 @@ export function flightWorkerSnapshot(adapter,state){
       }
     }
   }
-  const preferredElevation=state.flight.hunt?.preferredElevation??state.flight.preferredElevation??origin.elevation;
+  const air=state.flight.airCombat;
+  const preferredElevation=air?(air.mode==='setup'?air.setupElevation:origin.elevation):state.flight.hunt?.preferredElevation??state.flight.preferredElevation??origin.elevation;
   const height=Math.min(preferredElevation,origin.elevation+Math.floor(state.flight.speed/10)*5);
-  const goals=[{...origin,elevation:height},...state.enemies.map(enemy=>{
+  const goals=air?(air.mode==='disengage'?air.coverGoals:air.mode==='setup'?[{...origin,elevation:height},air.targetPosition]:[air.targetPosition]):[{...origin,elevation:height},...state.enemies.map(enemy=>{
     const p=perceivedFlightTarget(adapter,enemy).document;
     return {...adapter.cell(p),elevation:preferredElevation};
   })];
+  if(air&&state.flight.safety?.safe===false&&air.mode!=='disengage')
+    goals.push({...origin,elevation:Math.min(bounds.top,origin.elevation+Math.floor(state.flight.speed/10)*5)});
   // A low ceiling prevents the usual vertical retreat. Preserve lateral
   // escape goals so the bounded worker shortlist does not offer only overhead
   // squares that remain inside the conservative melee danger margin.
-  if(state.flight.safety?.safe===false)for(const threat of flightThreats(adapter,state,e=>perceivedFlightTarget(adapter,e)).slice(0,2)){
+  if(!air&&state.flight.safety?.safe===false)for(const threat of flightThreats(adapter,state,e=>perceivedFlightTarget(adapter,e)).slice(0,2)){
     if(threat.safeElevation<=(state.flight.preferredElevation??bounds.top))continue;
     const cell=adapter.cell(threat.target.document),radius=Math.ceil((threat.reach+25)/5)+1;
     for(const [dx,dy]of [[1,0],[-1,0],[0,1],[0,-1]])goals.push({x:cell.x+dx*radius,y:cell.y+dy*radius,elevation:state.flight.preferredElevation??bounds.top});
   }
   const attackTargets=state.enemies.map(enemy=>{const t=perceivedFlightTarget(adapter,enemy);return {x:t.document.x/size,y:t.document.y/size,
     elevation:t.document.elevation,width:t.w/size,height:t.h/size,depth:tokenHeight(t)};});
-  return {origin,footprint,budget:state.flight.speed,preferredElevation,occupied,walls,surfaces,goals,
+  return {origin,footprint,budget:state.flight.speed,preferredElevation,airCombat:Boolean(air),occupied,walls,surfaces,goals,
     attackTargets:state.flight.ranged?[]:attackTargets,attackReach:adapter.planningReach(),
     limits:{left:Math.ceil(rect.x/size),right:Math.floor((rect.x+rect.width-adapter.token.w)/size),
       top:Math.ceil(rect.y/size),bottom:Math.floor((rect.y+rect.height-adapter.token.h)/size),low:bounds.bottom,high:bounds.top}};

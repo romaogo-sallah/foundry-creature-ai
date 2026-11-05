@@ -1,4 +1,4 @@
-# Eagle and shared flight — 0.28.3
+# Eagle and shared flight — 0.32.0
 
 The supplied Monster Core Eagle has Beak, agile Talon, fly Speed 60 feet, land Speed 10 feet and two-action Eagle Dive. The adapter binds prepared native attacks and recognizes the compendium provenance. It does not execute text from imported descriptions.
 
@@ -6,7 +6,7 @@ The initial inspected Eagle battle ran the basic NPC fallback under **0.26.3**. 
 
 ## Shared flight
 
-Actors with a prepared fly Speed receive the reusable flight system and default Flight behavior component. Ground movement options are removed while Fly is available. Grounded flyers take off; airborne flyers approach and attack without returning to ground-level movement. Routes include altitude in their state and visitation keys and use native walls, floor surfaces, movement measurement and budget constraints. Since 0.31.0, flight crosses open scene levels and updates the token’s level along the path. Level boundaries alone are neither ceilings nor floors; the bounded planning window expands with altitude.
+Actors with a prepared fly Speed receive the reusable flight system and default Flight behavior component. Ground movement options are removed while Fly is available. Grounded flyers normally take off; a deliberate aerial disengagement can instead land in protection and use shared Hide. Routes include altitude in their state and visitation keys and use native walls, floor surfaces, movement measurement and budget constraints. Since 0.31.0, flight crosses open scene levels and updates the token’s level along the path. Level boundaries alone are neither ceilings nor floors; the bounded planning window expands with altitude.
 
 The native flight cost wrapper applies to Fly movement, including manual native Fly rulers. Moving upward adds the difficult-terrain increment of five feet per square; this preserves alternating diagonal costs and does not stack difficulty twice. Moving straight down costs half. Diagonal descent has its ordinary cost. Previously discounted descent is not discounted again. Environmental terrain still comes through the native cost callback.
 
@@ -23,6 +23,8 @@ Dive requires two available actions, a straight flight of no more than twice cur
 Approach scoring considers attacks or a Dive using the remaining actions. After attacking, ascending can prepare another pass. The one-time ability showcase preference can make the first Dive more attractive. The AI does not learn target defenses or secret roll outcomes from this evaluation.
 
 ## Finish outside melee reach
+
+The following overhead hunting policy applies to ground prey. [Airborne opponents](aerial-combat.md) use separate engagement and disengagement plans, so two mobile threats do not continually raise each other's cruise height. A faster Eagle can make a bounded altitude preparation, but a ready complete Dive opens an attack immediately. Current native melee exposure still matters after an aerial attack; withdrawal may climb or separate laterally without requiring a return above every flying opponent.
 
 The shared **Aerial hunt** plan has gain-height, stalk, strike and recover phases. Opening movement builds a safe altitude before closing. A later attack pass needs enough actions for either Dive → Fly, or Fly → Strike → Fly, and a verified escape after the planned inbound path. Escape costs retain native terrain, diagonal history and the doubled cost of ascent. Forecasts for the next turn use a fresh movement history. The planner checks native walls, surfaces, level bounds, known occupied volumes and ordinary melee exposure before offering the pass. Known reaction exposure reduces its value; actual reactions still resolve normally and can interrupt it.
 

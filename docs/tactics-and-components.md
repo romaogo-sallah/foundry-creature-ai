@@ -28,13 +28,15 @@ flowchart TD
 | Swarming | Known allies can surround an isolated opponent | Coordinate a surround |
 | Supporting | An implemented enabling action can benefit allies | Enable those recipients |
 | Aerial hunt | A prepared melee Strike and usable flight | Build altitude, stage a complete attack-and-escape pass, then recover |
+| Aerial engagement | A known airborne opponent | Prepare a bounded speed advantage or close native 3D attack reach; use ranged attacks when available |
+| Aerial disengagement | A faster, high opponent cannot be reached efficiently and protection is available | Descend to protection, land, Hide and hold until the opponent can be answered |
 | Lay low | All known enemies remain above available attack reach, with no supported ranged response | Take protection, Hide and Sneak defensively, then hold |
 
 Selection uses the actor's own health/resources, known enemy positions, observed weapon roles, visible allied combatants and opportunities supplied by its bindings. It does not use actual enemy AC/saves or secret Stealth results. Counts are a local estimate, not a simulation of the encounter's true strength.
 
 Each selected plan has an explicit goal object, suitability score, reason and active component set. Engagement goals can retain a target when it remains known and comparably accessible. Losing that target causes retargeting. A small continuity preference reduces switching between nearly equal plans; critical danger removes it. A configured preference helps only when the plan is applicable. Goals are re-evaluated after actions and interruptions rather than committed as an uninterruptible sequence.
 
-Flight-capable actors also receive Aerial hunt in their default plan list. Its phase and preferred elevation appear in the goal and explanation. Shared melee attack gating still requires an affordable escape even if an explicitly configured plan favors aggression. Creature-specific activities, such as Eagle Dive, supply their own native activity cost and endpoints to the shared flight route planner.
+Flight-capable actors receive Aerial hunt, Aerial engagement and Aerial disengagement in their default plan list. Ground hunting keeps its measured attack-and-escape gate. Airborne opponents activate a separate policy: their current altitude is not treated as an immovable ground threat with an ever-rising overhead clearance. A faster Eagle's setup height is fixed when acted on, its target persists while known, and its three-action setup allowance is not renewed by a climbing target or a constrained move. A ready affordable Dive takes precedence over further preparation. Descending toward cover uses normal Fly costs; landing permits shared Hide instead of forcing immediate takeoff. Creature-specific activities still supply native costs and geometry.
 
 Lay low uses observed or remembered elevations rather than live unseen coordinates. It has no arbitrary hiding timeout while the opponent remains unanswerable. Defensive Sneak is valued for increasing the estimated Undetected chance, including a move between equally protected squares; repeated Sneaks that no longer improve that advantage are suppressed. Ordinary Hide/Sneak legality, half Speed and separate secret resolution still apply. Mindless defaults retain their existing engagement plans.
 

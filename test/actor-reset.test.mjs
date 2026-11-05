@@ -9,7 +9,7 @@ function fixture() {
     ledger: { done: true, actionsRemaining: 0 }, scoutGear: { loaded: false }, scoutMotion: { entries: [1] },
     casterTargets: { combatId: 'combat', entries: { other: { role: 'melee' } } },
     pyroActions: { turn:'old',hideAttempted:true,holdTurns:2 },
-    manticoreHunts:{combatId:'combat',hits:{other:3}},quillShown:{combatId:'combat'},
+    manticoreHunts:{combatId:'combat',hits:{other:3}},quillShown:{combatId:'combat'},aerialPlan:{combatId:'combat',setupActions:3,targetId:'other'},
     behaviorState: {planId:'avoiding'},behaviorActions:{turn:'old'},behaviors:{preferredPlan:'defensive'},
     retreated: { combatId: 'combat' }, escapeSources: { restraint: { dc: 20 } } };
   const prototype = { name: 'Scout prototype', system: { attributes: { hp: { value: 12, max: 16, temp: 0 } },
@@ -75,6 +75,7 @@ test('prototype reset recovers deleted ammunition, HP, spell slots and equipment
   assert.equal(f.flags.pyroActions, undefined);
   assert.equal(f.flags.manticoreHunts,undefined);
   assert.equal(f.flags.quillShown,undefined);
+  assert.equal(f.flags.aerialPlan,undefined);
   assert.equal(f.flags.behaviorState,undefined);assert.equal(f.flags.behaviorActions,undefined);
   assert.deepEqual(f.flags.behaviors,{preferredPlan:'defensive'});
   assert.equal(f.flags.retreated, undefined); assert.deepEqual(f.flags.escapeSources, { restraint: { dc: 20 } });

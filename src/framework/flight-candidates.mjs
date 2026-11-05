@@ -1,9 +1,11 @@
 import {preparedStrikeCandidates} from './strike-capability.mjs';
 import {PRIORITY} from '../dawnsbury/chooser.mjs';
 import {aerialAttackCandidates} from './spike-volley.mjs';
+import {aerialEngagementCandidates} from './aerial-engagement.mjs';
 export function flightCandidates(state){
   const flight=state.flight;
   if(!flight?.canFly||state.actionsRemaining<1)return [];
+  if(flight.airCombat)return aerialEngagementCandidates(state);
   if(flight.hunt)return huntingFlightCandidates(state);
   const candidates=[];
   const escapeAvailable=flight.safety?.safe===false&&(flight.moves??[]).some(move=>move.airborne&&move.safety?.safe);

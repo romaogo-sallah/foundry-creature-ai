@@ -1,6 +1,6 @@
-# Foundry Creature AI — version 0.31.1
+# Foundry Creature AI — version 0.32.0
 
-Patch **0.31.1** fixes early-turn escape scoring for threatened melee flyers. A known Reactive Strike can no longer make every otherwise useful escape climb lose to Hover, followed by End Turn. Reactions still resolve before movement. Full-turn tests explicitly cover attacks against airborne targets for Eagle and both Manticore variants. Reload all clients with **Ctrl+F5** and confirm **Running code 0.31.1**.
+Version **0.32.0** separates [air-to-air tactics](aerial-combat.md) from hunting ground prey. Faster Eagles can prepare a fixed, speed-aware altitude advantage for at most three Fly actions, then engage with a complete Dive and withdrawal. Slower melee flyers can descend to cover, land and Hide when a high opponent cannot be reached efficiently. Quill Manticores can answer with ranged attacks instead of chasing altitude. Physical surfaces, native movement costs, observer-relative stealth and awaited reactions remain authoritative. Reload all clients with **Ctrl+F5** and confirm **Running code 0.32.0**.
 
 Version **0.31.0** adds the [Manticore (Quill Tail)](manticore-quill.md): native ranged Spike, one-action split/pinning Spike Volley, persistent 12-spike resources, 24-hour recovery and safe aerial firing. Pins integrate with NPC Escape DC 23; the GM can correct supply in Alt+W. Worker proposals retain sideways escapes under low ceilings. Reload all clients with **Ctrl+F5** and confirm **Running code 0.31.0**.
 

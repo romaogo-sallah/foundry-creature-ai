@@ -1,6 +1,6 @@
 const namespace = 'foundry-creature-ai';
 const transientFlags = [
-  'ledger', 'scoutGear', 'ogreGear', 'ogreAttacks', 'scoutActions', 'scoutShown', 'pyroShown', 'pyroActions','flight','eagleShown','manticoreHunts','quillShown',
+  'ledger', 'scoutGear', 'ogreGear', 'ogreAttacks', 'scoutActions', 'scoutShown', 'pyroShown', 'pyroActions','flight','eagleShown','aerialPlan','manticoreHunts','quillShown',
   'scoutThreats', 'casterTargets', 'behaviorState', 'behaviorActions', 'scoutFocus', 'scoutMotion', 'targetMemory', 'stealth',
   'stealthBelief', 'perception', 'playState', 'retreated', 'scampering', 'sneakNextMove',
 ];
@@ -84,8 +84,7 @@ async function forgetResetActors(ids) {
       const entries = saved.entries.filter(entry => !ids.has(entry[idKey]));
       if (entries.length !== saved.entries.length) await document.setFlag(namespace, key, { ...saved, entries });
     }
-    const focus = document.getFlag(namespace, 'scoutFocus');
-    if (ids.has(focus?.targetId)) await document.unsetFlag(namespace, 'scoutFocus');
+    for(const key of ['scoutFocus','aerialPlan'])if(ids.has(document.getFlag(namespace,key)?.targetId))await document.unsetFlag(namespace,key);
     const casterTargets = document.getFlag(namespace, 'casterTargets');
     if (casterTargets?.entries && Object.keys(casterTargets.entries).some(id => ids.has(id))) {
       const entries = Object.fromEntries(Object.entries(casterTargets.entries).filter(([id]) => !ids.has(id)));

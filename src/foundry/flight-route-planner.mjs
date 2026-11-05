@@ -15,8 +15,9 @@ export function flightRoutePlanner(adapter,state){
   const origin={...adapter.originCell(),elevation:adapter.token.document.elevation},rect=canvas.dimensions.sceneRect;
   const threats=flightThreats(adapter,state,enemy=>perceivedFlightTarget(adapter,enemy));
   const headroom=Math.floor((ceilingAbove(adapter.token)-tokenHeight(adapter.token))/step)*step;
-  const preferredElevation=Math.max(bounds.bottom,Math.min(bounds.top,headroom,Math.max(bounds.bottom+step,...threats.map(t=>t.safeElevation))));
-  const highPossible=threats.every(t=>t.safeElevation<=Math.min(bounds.top,headroom));
+  const groundThreats=threats.filter(t=>!t.mobileAirborne);
+  const preferredElevation=Math.max(bounds.bottom,Math.min(bounds.top,headroom,Math.max(bounds.bottom+step,...groundThreats.map(t=>t.safeElevation))));
+  const highPossible=groundThreats.every(t=>t.safeElevation<=Math.min(bounds.top,headroom));
   const others=canvas.tokens.placeables.filter(t=>t!==adapter.token&&occupiesMovementSpace(t)&&!t.document.hidden&&
     detectionFor(adapter.token,t).state==='observed'&&clearSightPath(adapter.token,t));
   const safety=point=>flightSafety(adapter,flightPoint(adapter,point),threats);
@@ -49,14 +50,20 @@ export function flightRoutePlanner(adapter,state){
     const before=measure(inbound,options),here=safety(point),atCruise=point.elevation>=preferredElevation;
     if(here.safe&&atCruise){const result={path:[point],destination:point,cost:0,safety:here};escapeCache.set(key,result);return result;}
     const high={...point,elevation:Math.max(point.elevation,preferredElevation)},paths=[[point,high]];
+    if(state.flight.airCombat)for(const threat of threats){
+      const end={...point,elevation:Math.max(point.elevation,threat.safeElevation)};
+      paths.push([point,end]);
+    }
     // If a ceiling prevents the preferred height, fall back to a substantial
     // lateral separation. Do not call one square beyond current reach a safe
     // staging position that a ground enemy can erase with a single Stride.
-    if(!highPossible)for(const threat of threats){
+    if(!highPossible||state.flight.airCombat)for(const threat of threats){
       const cell=adapter.cell(threat.target.document),radius=Math.ceil((threat.reach+25)/step)+1;
       for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]){
-        const end={x:cell.x+dx*radius,y:cell.y+dy*radius,elevation:high.elevation};
-        paths.push([point,end]);
+        for(const elevation of state.flight.airCombat?[point.elevation,point.elevation+step*2,high.elevation]:[high.elevation]){
+          const end={x:cell.x+dx*radius,y:cell.y+dy*radius,elevation};
+          paths.push([point,end]);
+        }
       }
     }
     let best=null;

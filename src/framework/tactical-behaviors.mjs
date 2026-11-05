@@ -4,7 +4,7 @@ import { seekCandidates } from './perception.mjs';
 import { preparedStrikeCandidates } from './strike-capability.mjs';
 
 const movement = candidate => candidate.assessment?.movement;
-const attack = candidate => ['strike','castSpell','trip','knockdown','sweepingHook'].includes(candidate.kind);
+const attack = candidate => ['strike','eagleDive','spikeVolley','castSpell','trip','knockdown','sweepingHook'].includes(candidate.kind);
 export const tacticalBehaviors = new BehaviorSystem();
 for (const [id,label,actionKinds,core] of [
   ['recovery','Recovery',['endTurn','stand','escape'],true],['perception','Perception',['seek'],true],
@@ -19,7 +19,7 @@ for (const [id,label,actionKinds,core] of [
     ...state.actionsRemaining>0&&!state.self.unable&&!state.retreatComplete&&(state.self.prone||state.escapes?.length)?recoveryCandidates(state,{canStrike:state.enemies.some(enemy=>enemy.inReach||Object.values(enemy.strikes??{}).some(position=>position.usable))}):[]]}:{}),
   ...(id==='perception'?{candidates:seekCandidates}:{}),
   ...(id==='strikes'?{candidates:preparedStrikeCandidates}:{}),
-  ...(id==='stealth'?{candidates:(state,selection)=>['hiding','lay-low','defensive','avoiding','kiting'].includes(selection.planId)?
+  ...(id==='stealth'?{candidates:(state,selection)=>['hiding','lay-low','defensive','avoiding','kiting','aerial-disengage'].includes(selection.planId)?
     [...state.sharedBehaviors?.hideCandidates??[],...state.sharedBehaviors?.sneakCandidates??[]]:[]}: {})});
 
 tacticalBehaviors.registerComponent({id:'pressure',label:'Press the attack',kind:'policy',
@@ -60,6 +60,7 @@ tacticalBehaviors.registerComponent({id:'withdraw',label:'Avoid immediate danger
   }});
 
 function objective(id,context,state,previous){
+  if(['aerial-engage','aerial-disengage'].includes(id))return {kind:id,...state.flight.airCombat};
   if(id==='aerial-hunt')return {kind:'aerial-hunt',phase:state.flight.hunt.phase,label:state.flight.hunt.reason,preferredElevation:state.flight.hunt.preferredElevation};
   const choices=[...state.enemies].sort((a,b)=>(a.distance-(a.alliesInReach??0)*2)-(b.distance-(b.alliesInReach??0)*2)||a.id.localeCompare(b.id));
   const prior=state.enemies.find(enemy=>enemy.id===previous?.goal?.targetId);
@@ -97,6 +98,11 @@ plan('supporting','Supporting',['assist','protection'],c=>c.supportRecipients>0?
 tacticalBehaviors.registerPlan({id:'aerial-hunt',label:'Aerial hunt',requires:['flight'],components:['distance','protection'],
   score:(_context,state)=>state.flight?.hunt?{value:12,reason:state.flight.hunt.reason}:null,
   objective:(context,state,previous)=>objective('aerial-hunt',context,state,previous)});
+for(const [id,mode,label]of [['aerial-engage',null,'Aerial engagement'],['aerial-disengage','disengage','Aerial disengagement']])
+  tacticalBehaviors.registerPlan({id,label,requires:['flight'],components:mode?['distance','protection']:['pressure','distance'],
+    score:(_context,state)=>state.flight?.airCombat&&(mode?state.flight.airCombat.mode===mode:state.flight.airCombat.mode!=='disengage')?
+      {value:12,reason:state.flight.airCombat.reason}:null,
+    objective:(context,state,previous)=>objective(id,context,state,previous)});
 
 export const defaultBehaviorConfiguration = profileId => ({
   components:['recovery','perception','movement','strikes','control','stealth','equipment',

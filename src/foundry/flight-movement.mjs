@@ -75,12 +75,13 @@ export async function flightMoves(adapter,state,planner,{signal}={}){
     if(['x','y','elevation'].some(k=>node.path[0][k]!==state.flight.origin[k]||node.path.at(-1)[k]!==node[k]))continue;
     if(!planner.routeClear(node.path))continue;
     const cost=flightCost(adapter,node.path,context);if(!Number.isFinite(cost)||cost<=0||cost>state.flight.speed+1e-8)continue;
-    const point=flightPoint(adapter,node);if(!isAirborne(adapter.token,point))continue;
+    const point=flightPoint(adapter,node),airborne=isAirborne(adapter.token,point);
+    if(!airborne&&state.flight.airCombat?.mode!=='disengage')continue;
     const targets=flightMoveTargets(adapter,state,node),risk=Math.max(0,...node.path.slice(0,-1).map(riskAt));
     const attackHere=Object.values(targets).some(t=>Object.values(t.strikes??{}).some(s=>s.usable));
     nodes.push({...node,cost,kind:'fly',targets,nearestEnemy:Math.min(...Object.values(targets).map(t=>t.distance/5)),
       safety:flightSafety(adapter,point,threats),attackEscape:attackHere&&state.actionsRemaining>=3?planner.escape(node,node.path):null,
-      provokes:risk>0,reactionRisk:risk?state.self.averageDamage:0,destinationThreatened:riskAt(node)>0,airborne:true});
+      provokes:risk>0,reactionRisk:risk?state.self.averageDamage:0,destinationThreatened:riskAt(node)>0,airborne});
   }
   if(!nodes.length)return fallback('Native checks rejected the worker routes');
   state.flight.planning={backend:'worker',proposed:response.result.nodes.length,accepted:nodes.length,
@@ -121,10 +122,16 @@ export function nativeFlightMoves(adapter,state,planner){
   const cruising=hunt||state.flight.ranged?{preferredElevation:hunt?.preferredElevation??planner.preferredElevation}:null;
   const height=cruising?Math.min(cruising.preferredElevation,start.elevation+Math.floor(state.flight.speed/10)*5):null;
   const huntGoals=cruising?[{...start,elevation:height},...state.enemies.map(enemy=>({...adapter.cell(perceivedFlightTarget(adapter,enemy).document),elevation:cruising.preferredElevation}))]:null;
-  const goals=huntGoals??(state.actionsRemaining===1||state.attacksMade>0?escapeGoals:attackGoals);
+  const air=state.flight.airCombat;
+  const goals=air?flightWorkerSnapshot(adapter,state).goals:huntGoals??(state.actionsRemaining===1||state.attacksMade>0?escapeGoals:attackGoals);
   const nodes=reachableFlightCells(start,flySpeed(adapter.actor),{canEnter,canStop,canTraverse,goals,maxNodes:450,
     pathCost:path=>flightCost(adapter,path,context),edgeRisk:from=>adapter.movementThreats(from,flightPoint(adapter,from)).length})
     .filter(node=>node.cost>0);
+  if(air)for(const goal of goals){
+    const path=[start,goal],cost=flightCost(adapter,path,context);
+    if(cost>0&&cost<=state.flight.speed&&planner.routeClear(path)&&!nodes.some(n=>n.x===goal.x&&n.y===goal.y&&n.elevation===goal.elevation))
+      nodes.push({...goal,path,cost,risk:adapter.movementThreats(start,flightPoint(adapter,start)).length});
+  }
   if(cruising&&height>start.elevation){
     const point={...start,elevation:height},path=[start,point],cost=flightCost(adapter,path,context);
     if(planner.routeClear(path)&&cost<=state.flight.speed&&!nodes.some(n=>n.x===point.x&&n.y===point.y&&n.elevation===height))

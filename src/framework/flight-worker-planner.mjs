@@ -72,15 +72,31 @@ export function planFlightRoutes(model){
   };
   const actualGoals=goals.filter(p=>p.x!==origin.x||p.y!==origin.y||p.elevation!==origin.elevation);
   const nodes=reachableFlightCells(origin,budget,{canEnter,canStop,canTraverse,goals:actualGoals,maxNodes:450,pathCost:numericFlightCost}).filter(n=>n.cost>0);
+  // A near attack goal can consume the entire bounded search before a longer
+  // climb/descent is expanded. Preserve direct progress toward each air plan
+  // goal; native validation still checks the complete swept route afterwards.
+  const direct=[];
+  if(model.airCombat)for(const goal of actualGoals){
+    const n=Math.ceil(Math.max(Math.abs(goal.x-origin.x),Math.abs(goal.y-origin.y),Math.abs(goal.elevation-origin.elevation)/5));
+    let best=null;
+    for(let i=1;i<=n;i++){
+      const p={x:Math.round(origin.x+(goal.x-origin.x)*i/n),y:Math.round(origin.y+(goal.y-origin.y)*i/n),elevation:Math.round((origin.elevation+(goal.elevation-origin.elevation)*i/n)/5)*5};
+      const path=[origin,p],cost=numericFlightCost(path);
+      if(cost>budget)break;
+      if(cost>0&&canStop(p)&&canTraverse(origin,p))best={...p,path,cost,risk:0};
+    }
+    if(best){direct.push(best);nodes.push(best);}
+  }
   const distance=(p,g)=>Math.max(Math.abs(p.x-g.x),Math.abs(p.y-g.y),Math.abs(p.elevation-g.elevation)/5);
   const preferred=model.preferredElevation??origin.elevation;
-  const score=p=>Math.min(preferred,p.elevation)/5*2-(actualGoals.length?Math.min(...actualGoals.map(g=>distance(p,g))):0)*0.2-p.cost/100;
+  const score=p=>(model.airCombat?0:Math.min(preferred,p.elevation)/5*2)-(actualGoals.length?Math.min(...actualGoals.map(g=>distance(p,g))):0)*(model.airCombat?1:0.2)-p.cost/100;
   const chosen=new Map(),key=p=>`${p.x},${p.y},${p.elevation}`;
   const add=p=>{if(p)chosen.set(key(p),p);};
   // Preserve altitude, per-goal routes and directional diversity before filling
   // the bounded shortlist. Exact costs and attacks are evaluated by Foundry.
   nodes.sort((a,b)=>score(b)-score(a)||a.cost-b.cost);
   nodes.slice(0,6).forEach(add);
+  direct.forEach(add);
   // Flying melee kits without a Dive need low approach positions too. A
   // high-altitude-only shortlist otherwise makes Fly -> Strike -> Fly vanish.
   const meleeDistance=(p,t)=>{
@@ -93,7 +109,7 @@ export function planFlightRoutes(model){
     return (Math.floor(one*1.75+(two-one)*1.5+three-two)-Number(model.attackReach===10&&two>1))*5;
   };
   for(const target of (model.attackTargets??[]).slice(0,6))nodes.filter(p=>meleeDistance(p,target)<=(model.attackReach??5))
-    .sort((a,b)=>b.elevation-a.elevation||a.cost-b.cost).slice(0,2).forEach(add);
+    .sort((a,b)=>model.airCombat?a.cost-b.cost:b.elevation-a.elevation||a.cost-b.cost).slice(0,2).forEach(add);
   for(const goal of actualGoals.slice(0,12))nodes.slice().sort((a,b)=>distance(a,goal)-distance(b,goal)||a.cost-b.cost).slice(0,2).forEach(add);
   const sectors=new Set();
   for(const p of nodes){const sector=`${Math.sign(p.x-origin.x)},${Math.sign(p.y-origin.y)},${Math.sign(p.elevation-origin.elevation)}`;

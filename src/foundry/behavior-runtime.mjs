@@ -16,7 +16,7 @@ const scoped=value=>value?.combatId===game.combat?.id&&value?.sceneId===canvas.s
 export function behaviorConfiguration(adapter) {
   const actor=adapter.actor.getFlag?.(ns,'behaviors'),token=adapter.token.document.getFlag(ns,'behaviors');
   const raw={...actor,...token,parameters:{...actor?.parameters,...token?.parameters}},defaults=defaultBehaviorConfiguration(adapter.profileId);
-  if(flySpeed(adapter.actor)){defaults.components.push('flight');defaults.plans.push('aerial-hunt');}
+  if(flySpeed(adapter.actor)){defaults.components.push('flight');defaults.plans.push('aerial-hunt','aerial-engage','aerial-disengage');}
   if(adapter.profileId==='eagle')defaults.components.push('diving');
   if(flySpeed(adapter.actor)&&raw.components&&!raw.components.includes('flight'))
     raw.components=[...raw.components,'flight',...(adapter.profileId==='eagle'&&!raw.components.includes('diving')?['diving']:[])];

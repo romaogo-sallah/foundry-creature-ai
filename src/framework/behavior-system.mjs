@@ -105,7 +105,7 @@ export class BehaviorSystem {
     });
     const flightSafe=gateActivityGoal(state,gateFlightHunt(state,adjusted));
     const maintenance=state.flight?.airborne&&!state.flight.flown&&flightSafe.some(c=>c.kind==='fly'&&c.legal);
-    const takeoff=state.flight?.canFly&&!state.flight.airborne&&flightSafe.some(c=>c.kind==='fly'&&c.legal);
+    const takeoff=state.flight?.canFly&&!state.flight.airborne&&state.flight.airCombat?.mode!=='disengage'&&flightSafe.some(c=>c.kind==='fly'&&c.legal);
     return {candidates:takeoff?flightSafe.filter(c=>c.kind==='fly'||['escape','stand'].includes(c.kind)):
       maintenance?flightSafe.filter(c=>['fly','eagleDive'].includes(c.kind)||c.actionCost<state.actionsRemaining):flightSafe,rejected,selection};
   }

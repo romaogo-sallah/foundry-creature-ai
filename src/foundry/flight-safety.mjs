@@ -1,5 +1,7 @@
 import {distanceToPosition,tokenHeight,rayAt} from './vertical-geometry.mjs';
 import {clearAttackPath} from './attack-path.mjs';
+import {isAirborne} from './flight-surfaces.mjs';
+import {flySpeed} from './flight-costs.mjs';
 
 // Ordinary melee reach matters even when a creature has no Reactive Strike,
 // or has already spent its reaction. Only the observer's known targets enter.
@@ -14,18 +16,18 @@ export function flightThreats(adapter,state,targetFor){
       ...(!melee.length?[actor.getReach({action:'attack'})??0]:[]));
     if(!reach)return [];
     const safeElevation=Math.ceil((target.document.elevation+tokenHeight(target)+reach)/step)*step+step;
-    return [{target,reach,safeElevation}];
+    return [{target,reach,safeElevation,mobileAirborne:flySpeed(actor)>0&&isAirborne(target)}];
   });
 }
 
 export function flightSafety(adapter,position,threats){
   let exposed=0,deficit=0;
-  for(const {target,reach,safeElevation} of threats){
+  for(const {target,reach,safeElevation,mobileAirborne} of threats){
     // A five-foot clearance above height + reach is a tactical margin, not an
     // extra reach bonus to native attack/reaction legality.
     const horizontal=distanceToPosition(adapter.token,target,{...position,elevation:target.document.elevation},reach);
     const distance=distanceToPosition(adapter.token,target,position,reach);
-    const overhead=horizontal<=reach&&position.elevation>=target.document.elevation&&position.elevation<safeElevation;
+    const overhead=!mobileAirborne&&horizontal<=reach&&position.elevation>=target.document.elevation&&position.elevation<safeElevation;
     if((distance<=reach||overhead)&&clearAttackPath(adapter.token,target,rayAt(adapter.token,position,'move'))){
       exposed++;deficit=Math.max(deficit,safeElevation-position.elevation);
     }

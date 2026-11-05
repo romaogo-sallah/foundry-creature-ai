@@ -31,8 +31,10 @@ export class PF2eEagleAdapter extends PF2eBasicNPCAdapter{
   async enrichFlight(state,planner,{signal}={}){
     if(!state.flight?.canFly)return;
     const endpoints=[],bounds=flightBounds(this.token),talon=this.parts().talon;
-    state.flight.preferredActivity='eagleDive';
-    state.activityGoal={kind:'eagleDive',label:'Begin the turn with Eagle Dive, then climb back to hunting altitude'};
+    if(!state.flight.airCombat){
+      state.flight.preferredActivity='eagleDive';
+      state.activityGoal={kind:'eagleDive',label:'Begin the turn with Eagle Dive, then climb back to hunting altitude'};
+    }
     const threats=flightThreats(this,state,enemy=>perceivedFlightTarget(this,enemy));
     for(const enemy of state.enemies){
       const target=perceivedFlightTarget(this,enemy),cell=this.cell(target.document);
@@ -75,6 +77,9 @@ export class PF2eEagleAdapter extends PF2eBasicNPCAdapter{
           {label:'Known reaction exposure on the escape',contribution:-(escapePlan.reactionRisk??0)}]};
     };
     state.flight.dives=state.actionsRemaining>=2?endpoints.map(end=>build(state.flight.origin,end,state.actionsRemaining)).filter(Boolean):[];
+    if(state.flight.airCombat&&state.actionsRemaining===3&&state.attacksMade===0&&
+      !preparedStrikeCandidates(state).length&&state.flight.dives.some(dive=>dive.assessment.value>0))
+      state.activityGoal={kind:'eagleDive',label:'Use a complete descending aerial attack and withdrawal'};
     state.flight.diveSetupValue=Math.max(0,...endpoints.map(end=>build(state.flight.origin,end,3,{fresh:true})?.assessment.value??0))*0.45;
     const payload={origins:state.flight.moves.map(({x,y,elevation})=>({x,y,elevation})),endpoints,speed:flySpeed(this.actor),preferredElevation:planner.preferredElevation};
     const stamp=flightWorldStamp(this);
