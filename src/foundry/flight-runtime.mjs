@@ -1,0 +1,58 @@
+import {flySpeed} from './flight-costs.mjs';
+import {flightMoves} from './flight-movement.mjs';
+import {isAirborne} from './flight-surfaces.mjs';
+import {executeFlight} from './flight-execution.mjs';
+import {resolveFlightFall,flightLost} from './flight-falling.mjs';
+import {flightCandidates,gateFlightHunt} from '../framework/flight-candidates.mjs';
+import {flightRoutePlanner} from './flight-route-planner.mjs';
+import {gateActivityGoal} from '../framework/activity-plan.mjs';
+import {chooseTacticalAction} from '../framework/tactical-behaviors.mjs';
+const attached=new WeakSet(),ns='foundry-creature-ai';
+export function attachFlightSystem(adapter){
+  if(attached.has(adapter)||!flySpeed(adapter.actor))return adapter;
+  attached.add(adapter);
+  const snapshot=adapter.snapshot.bind(adapter),candidates=adapter.candidates.bind(adapter),execute=adapter.execute.bind(adapter),prepare=adapter.prepareTurn.bind(adapter);
+  adapter.snapshot=async(ledger,options)=>{
+    const state=await snapshot(ledger,options),saved=adapter.token.document.getFlag(ns,'flight');
+    const canFly=!flightLost(adapter.token)&&!adapter.actor.hasCondition('immobilized','grabbed','restrained');
+    state.flight={speed:flySpeed(adapter.actor),airborne:isAirborne(adapter.token),canFly,
+      flown:saved?.combatId===game.combat.id&&saved.round===game.combat.round,
+      origin:{...adapter.originCell(),elevation:adapter.token.document.elevation},moves:[]};
+    if(state.flight.airborne||canFly)state.moves=[];
+    const planner=canFly?flightRoutePlanner(adapter,state):null;
+    if(planner){
+      state.flight.safety=planner.safety(state.flight.origin);
+      if(state.enemies.length&&state.strikes?.some(strike=>!strike.ranged)){
+        const recovering=state.attacksMade>0,engaging=state.lastAction?.flightAttackPass===true;
+        const phase=recovering?'recover':!engaging&&(!state.flight.airborne||state.flight.origin.elevation<planner.preferredElevation)?'gain-height':'stalk';
+        state.flight.hunt={phase,engaging,preferredElevation:planner.preferredElevation,highPossible:planner.highPossible,
+          attackEscape:planner.escape(state.flight.origin,[state.flight.origin]),
+          reason:phase==='recover'?'Recover altitude after attacking':phase==='gain-height'?'Gain a safe hunting altitude before committing':'Approach at altitude and wait for an attack with an escape route'};
+      }
+    }
+    if(canFly&&options?.movement!==false)state.flight.moves=flightMoves(adapter,state,planner);
+    await adapter.enrichFlight?.(state,planner);
+    if(state.flight.hunt&&state.flight.hunt.phase==='stalk'&&state.flight.dives?.some(d=>d.features?.escapePlan&&
+      (state.actionsRemaining>d.actionCost||d.features.escapePlan.cost===0))){
+      state.flight.hunt.phase='strike';state.flight.hunt.reason='A descending attack and a safe escape fit the remaining actions';
+    }
+    state.diagnostics.flight={speed:state.flight.speed,airborne:state.flight.airborne,flown:state.flight.flown,reachable:state.flight.moves.length,hunt:state.flight.hunt};
+    if(state.flight.hunt)state.diagnostics.noActionReason=`${state.flight.hunt.reason}. Wait at a safe vantage rather than commit without an affordable escape.`;
+    if(state.flight.moves.length){state.diagnostics.movementBlocked=null;state.diagnostics.reachableDestinations=state.flight.moves.length;}
+    return state;
+  };
+  const offered=state=>gateActivityGoal(state,gateFlightHunt(state,[...candidates(state),...flightCandidates(state)]));
+  adapter.candidates=offered;
+  adapter.decide=state=>{
+    const result=chooseTacticalAction(offered(state),state,{actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened});
+    return {...result,diagnostics:{...state.diagnostics,...result.diagnostics,
+      ...(result.chosen?.kind==='endTurn'&&state.flight?.canFly&&state.flight.flown?{turnComplete:true}:{} )}};
+  };
+  adapter.execute=(choice,ledger,context)=>choice.kind==='fly'?executeFlight(adapter,choice,ledger,context):execute(choice,ledger,context);
+  adapter.prepareTurn=async(options={})=>{
+    if(!adapter.token.document.getFlag(ns,'flight'))await adapter.token.document.setFlag(ns,'flight',{combatId:game.combat.id,round:-1});
+    if(flightLost(adapter.token))await resolveFlightFall(adapter.token,{reactions:adapter.reactions,applyDamage:adapter.config.applyDamage});
+    return prepare(options);
+  };
+  return adapter;
+}

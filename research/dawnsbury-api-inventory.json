@@ -1,0 +1,899 @@
+{
+  "assembly": {
+    "path": "G:\\SteamLibrary\\steamapps\\common\\Dawnsbury Days\\Data\\Dawnsbury Days.dll",
+    "version": "4.44.0.0",
+    "sha256": "61d48e6c059777a74b17e0fe4d9bc6600d57fbf6a09fe78e47cfdb7272304b23"
+  },
+  "scope": "Public metadata and XML member identifiers only. No method bodies, private fields, default weights, or per-enemy decision routines extracted.",
+  "types": [
+    {
+      "name": "Dawnsbury.Core.Intelligence.AI",
+      "fields": [],
+      "methods": [
+        {
+          "name": "get_Tactic",
+          "parameters": []
+        },
+        {
+          "name": "set_Tactic",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_AlwaysIfSmartAndTakingCareOfSelf",
+          "parameters": []
+        },
+        {
+          "name": "get_IsDemonHorizonwalker",
+          "parameters": []
+        },
+        {
+          "name": "set_IsDemonHorizonwalker",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_ActionBeingConsideredRequiresMovement",
+          "parameters": []
+        },
+        {
+          "name": "set_ActionBeingConsideredRequiresMovement",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_CreatureOriginalTile",
+          "parameters": []
+        },
+        {
+          "name": "set_CreatureOriginalTile",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_IsDarkPoet",
+          "parameters": []
+        },
+        {
+          "name": "set_IsDarkPoet",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_OverrideDecision",
+          "parameters": []
+        },
+        {
+          "name": "set_OverrideDecision",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_Self",
+          "parameters": []
+        },
+        {
+          "name": ".ctor",
+          "parameters": [
+            "self"
+          ]
+        },
+        {
+          "name": "Decide",
+          "parameters": [
+            "request"
+          ]
+        },
+        {
+          "name": "CalculateTileGoodness",
+          "parameters": []
+        },
+        {
+          "name": "TakeAction",
+          "parameters": [
+            "action",
+            "selectedActionCost"
+          ]
+        },
+        {
+          "name": "DealDamageWithAttack",
+          "parameters": [
+            "attack",
+            "attackBonus",
+            "defenseBonus",
+            "target",
+            "expectedDamageOnHit"
+          ]
+        },
+        {
+          "name": "DealDamageWithBasicSave",
+          "parameters": [
+            "spell",
+            "savingThrow",
+            "defenseBonus",
+            "target",
+            "expectedDamageOnHit"
+          ]
+        },
+        {
+          "name": "DealDamage",
+          "parameters": [
+            "target",
+            "expectedDamage",
+            "power"
+          ]
+        },
+        {
+          "name": "Heal",
+          "parameters": [
+            "target",
+            "healAmount"
+          ]
+        },
+        {
+          "name": "GainBonusToAC",
+          "parameters": [
+            "bonus"
+          ]
+        },
+        {
+          "name": "Sicken",
+          "parameters": [
+            "target"
+          ]
+        },
+        {
+          "name": "StupefyAndSlow",
+          "parameters": [
+            "target"
+          ]
+        },
+        {
+          "name": "Stupefy",
+          "parameters": [
+            "target",
+            "value"
+          ]
+        },
+        {
+          "name": "ColorSpray",
+          "parameters": [
+            "target"
+          ]
+        },
+        {
+          "name": "DetermineAreaValue",
+          "parameters": [
+            "areaTarget",
+            "self",
+            "targetedTiles"
+          ]
+        },
+        {
+          "name": "AdditionalGoodnessAdjustment",
+          "parameters": [
+            "user",
+            "combatAction",
+            "defender",
+            "primaryGoodness"
+          ]
+        },
+        {
+          "name": "LoseWeapon",
+          "parameters": []
+        },
+        {
+          "name": "HideSelf",
+          "parameters": []
+        },
+        {
+          "name": "Fear",
+          "parameters": [
+            "target"
+          ]
+        },
+        {
+          "name": "IsTargetNotWorthwhileToFrightened",
+          "parameters": [
+            "target"
+          ]
+        },
+        {
+          "name": "Confuse",
+          "parameters": [
+            "target"
+          ]
+        },
+        {
+          "name": "ModifyGoodness",
+          "parameters": [
+            "target",
+            "attacker",
+            "defender",
+            "howMuchDamageEquivalent"
+          ]
+        },
+        {
+          "name": "CreateModifiedGoodness",
+          "parameters": [
+            "howMuchDamageEquivalent"
+          ]
+        },
+        {
+          "name": "MakeInvisible",
+          "parameters": [
+            "target"
+          ]
+        },
+        {
+          "name": "DesignateAsHuntPrey",
+          "parameters": [
+            "target"
+          ]
+        },
+        {
+          "name": "SummonCreatureAtTile",
+          "parameters": [
+            "targetTile"
+          ]
+        },
+        {
+          "name": "ShouldSustain",
+          "parameters": [
+            "sustainedSpell"
+          ]
+        },
+        {
+          "name": "EscapeFrom",
+          "parameters": [
+            "grappleSource"
+          ]
+        },
+        {
+          "name": "Enfeeble",
+          "parameters": [
+            "target"
+          ]
+        },
+        {
+          "name": "BlessBane",
+          "parameters": []
+        },
+        {
+          "name": "KnockProne",
+          "parameters": [
+            "defender"
+          ]
+        },
+        {
+          "name": "ApplyAdditionalDrained",
+          "parameters": [
+            "defender",
+            "drainedValue"
+          ]
+        },
+        {
+          "name": "ApplyFlatDrained",
+          "parameters": [
+            "defender",
+            "drainedValue"
+          ]
+        },
+        {
+          "name": "Stun",
+          "parameters": [
+            "defender",
+            "stunNumber"
+          ]
+        },
+        {
+          "name": "ShouldTakeAttackOfOpportunityAgainst",
+          "parameters": [
+            "target"
+          ]
+        },
+        {
+          "name": "Slow",
+          "parameters": [
+            "defender",
+            "actionsTaken"
+          ]
+        },
+        {
+          "name": "Restrain",
+          "parameters": [
+            "defender"
+          ]
+        },
+        {
+          "name": "ZeroifyIfUndetected",
+          "parameters": [
+            "user",
+            "target"
+          ]
+        },
+        {
+          "name": "Dazzle",
+          "parameters": [
+            "defender"
+          ]
+        },
+        {
+          "name": "Blind",
+          "parameters": [
+            "defender"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dawnsbury.Core.Intelligence.AIConstants",
+      "fields": [
+        {
+          "name": "NEVER",
+          "constant": -2147483648
+        },
+        {
+          "name": "BASICALLY_NEVER",
+          "constant": -1147483648
+        },
+        {
+          "name": "EXTREMELY_PREFERRED",
+          "constant": 20000
+        },
+        {
+          "name": "VERY_PREFERRED",
+          "constant": 10000
+        },
+        {
+          "name": "ALWAYS",
+          "constant": 1.0737418E+09
+        },
+        {
+          "name": "IMPROVE_LAYER_THRESHOLD",
+          "constant": 5000
+        },
+        {
+          "name": "SPECIAL_DO_THIS_IF_NOTHING_ELSE",
+          "constant": -1337
+        }
+      ],
+      "methods": []
+    },
+    {
+      "name": "Dawnsbury.Core.Intelligence.AIUsefulness",
+      "fields": [],
+      "methods": [
+        {
+          "name": "get_MainActionUsefulness",
+          "parameters": []
+        },
+        {
+          "name": "set_MainActionUsefulness",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_RequiresMovement",
+          "parameters": []
+        },
+        {
+          "name": "set_RequiresMovement",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_IsShift",
+          "parameters": []
+        },
+        {
+          "name": "set_IsShift",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_CompareUsefulnessComparer",
+          "parameters": []
+        },
+        {
+          "name": "get_YouStillHaveGoodAttacksLeft",
+          "parameters": []
+        },
+        {
+          "name": "set_YouStillHaveGoodAttacksLeft",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_DistanceFromYou",
+          "parameters": []
+        },
+        {
+          "name": "set_DistanceFromYou",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_DistanceFromClosestEnemy",
+          "parameters": []
+        },
+        {
+          "name": "set_DistanceFromClosestEnemy",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_ObjectiveAction",
+          "parameters": []
+        },
+        {
+          "name": "set_ObjectiveAction",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_ForWhom",
+          "parameters": []
+        },
+        {
+          "name": "set_ForWhom",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_Layer",
+          "parameters": []
+        },
+        {
+          "name": "ToString",
+          "parameters": []
+        },
+        {
+          "name": "op_Implicit",
+          "parameters": [
+            "number"
+          ]
+        },
+        {
+          "name": ".ctor",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "Dawnsbury.Core.Intelligence.AIUsefulnessComparer",
+      "fields": [
+        {
+          "name": "LAYER_ONE_FLOOR",
+          "constant": 1
+        },
+        {
+          "name": "LAYER_TWO_USEFULNESS_ZERO",
+          "constant": 2
+        },
+        {
+          "name": "LAYER_THREE_A_USEFULNESS_ZERO_AND_STEPS_IN_WRONG_DIRECTION",
+          "constant": 3
+        },
+        {
+          "name": "LAYER_THREE_B_USEFULNESS_ZERO_AND_REQUIRES_MOVEMENT",
+          "constant": 4
+        },
+        {
+          "name": "LAYER_FOUR_USEFUL",
+          "constant": 5
+        },
+        {
+          "name": "LAYER_FIVE_USEFUL_REQUIRES_NO_MOVEMENT_OR_YOU_HAVE_GOOD_ATTACKS_LEFT",
+          "constant": 6
+        }
+      ],
+      "methods": [
+        {
+          "name": "GetLayer",
+          "parameters": [
+            "aiUsefulness"
+          ]
+        },
+        {
+          "name": "Compare",
+          "parameters": [
+            "x",
+            "y"
+          ]
+        },
+        {
+          "name": ".ctor",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "Dawnsbury.Core.Intelligence.CommonAIStrategies",
+      "fields": [],
+      "methods": [
+        {
+          "name": "CreateAndApplyBuffingStrategy",
+          "parameters": [
+            "boss",
+            "description",
+            "spellsToCastInOrder"
+          ]
+        },
+        {
+          "name": "FindAction",
+          "parameters": [
+            "list",
+            "actionId"
+          ]
+        },
+        {
+          "name": "FindAction",
+          "parameters": [
+            "list",
+            "predicate"
+          ]
+        },
+        {
+          "name": "FindSpell",
+          "parameters": [
+            "list",
+            "spellId"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dawnsbury.Core.Intelligence.GraphState",
+      "fields": [
+        {
+          "name": "value__",
+          "constant": null
+        },
+        {
+          "name": "Standard",
+          "constant": 0
+        },
+        {
+          "name": "TriggersAoo",
+          "constant": 1
+        },
+        {
+          "name": "TriggersHazardous",
+          "constant": 2
+        },
+        {
+          "name": "TriggersHazardousAoo",
+          "constant": 3
+        },
+        {
+          "name": "TriggersTumble",
+          "constant": 4
+        },
+        {
+          "name": "TriggersTumbleAoo",
+          "constant": 5
+        },
+        {
+          "name": "TriggersTumbleHazardous",
+          "constant": 6
+        },
+        {
+          "name": "TriggersTumbleHazardousAoo",
+          "constant": 7
+        }
+      ],
+      "methods": []
+    },
+    {
+      "name": "Dawnsbury.Core.Intelligence.GraphStateExtensions",
+      "fields": [],
+      "methods": [
+        {
+          "name": "get_Count",
+          "parameters": []
+        },
+        {
+          "name": "get_GraphStates",
+          "parameters": []
+        },
+        {
+          "name": "IsProvokes",
+          "parameters": [
+            "state"
+          ]
+        },
+        {
+          "name": "IsTumbleThrough",
+          "parameters": [
+            "state"
+          ]
+        },
+        {
+          "name": "IsHazardous",
+          "parameters": [
+            "state"
+          ]
+        },
+        {
+          "name": "FromBooleans",
+          "parameters": [
+            "provokes",
+            "tumbles",
+            "hazardous"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dawnsbury.Core.Intelligence.Pathfinding",
+      "fields": [
+        {
+          "name": "SIMPLE_SQUARE_MOVEMENT",
+          "constant": 2
+        },
+        {
+          "name": "DIAGONAL_MOVEMENT_DIFFICULTY_BONUS",
+          "constant": 1
+        },
+        {
+          "name": "SQUEEZING_PENALTY_FOR_NEAREST_ENEMY",
+          "constant": 5000
+        }
+      ],
+      "methods": [
+        {
+          "name": "get_PathfindingSearchId",
+          "parameters": []
+        },
+        {
+          "name": "Floodfill",
+          "parameters": [
+            "who",
+            "map",
+            "description"
+          ]
+        },
+        {
+          "name": "GetPath",
+          "parameters": [
+            "who",
+            "target",
+            "map",
+            "description"
+          ]
+        },
+        {
+          "name": "RecalculateThreatening",
+          "parameters": [
+            "activeCreature"
+          ]
+        },
+        {
+          "name": "SimpleFloodfillFromEnemies",
+          "parameters": [
+            "battle",
+            "creature"
+          ]
+        },
+        {
+          "name": "SimpleFloodfillFrom",
+          "parameters": [
+            "battle",
+            "creature",
+            "startingTiles",
+            "navigateThroughDoors"
+          ]
+        },
+        {
+          "name": "SimpleFloodfill",
+          "parameters": [
+            "originTile",
+            "spreadFurtherFrom"
+          ]
+        },
+        {
+          "name": "ReconstructPathFromEarlierFloodfill",
+          "parameters": [
+            "start",
+            "target"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dawnsbury.Core.Intelligence.PathfindingDescription",
+      "fields": [],
+      "methods": [
+        {
+          "name": "get_Squares",
+          "parameters": []
+        },
+        {
+          "name": "set_Squares",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_Style",
+          "parameters": []
+        },
+        {
+          "name": "set_Style",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_AlternateTileOfOrigin",
+          "parameters": []
+        },
+        {
+          "name": "set_AlternateTileOfOrigin",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": ".ctor",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "Dawnsbury.Core.Intelligence.Tactic",
+      "fields": [
+        {
+          "name": "value__",
+          "constant": null
+        },
+        {
+          "name": "Standard",
+          "constant": 0
+        },
+        {
+          "name": "Mindless",
+          "constant": 1
+        },
+        {
+          "name": "DoNothing",
+          "constant": 2
+        },
+        {
+          "name": "PackAttack",
+          "constant": 3
+        },
+        {
+          "name": "PanickingChild",
+          "constant": 10000
+        }
+      ],
+      "methods": []
+    },
+    {
+      "name": "Dawnsbury.Core.Intelligence.TileVertex",
+      "fields": [],
+      "methods": [
+        {
+          "name": "get_Tile",
+          "parameters": []
+        },
+        {
+          "name": "get_MovingHereProvokesAttackOfOpportunity",
+          "parameters": []
+        },
+        {
+          "name": "get_MovingHereRequiresTumbleThrough",
+          "parameters": []
+        },
+        {
+          "name": "get_MovingHereTriggersHazardousTerrain",
+          "parameters": []
+        },
+        {
+          "name": "get_DifficultyToHere",
+          "parameters": []
+        },
+        {
+          "name": "set_DifficultyToHere",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_Parent",
+          "parameters": []
+        },
+        {
+          "name": "set_Parent",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_Closed",
+          "parameters": []
+        },
+        {
+          "name": "set_Closed",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_LastEncounteredDuringSearch",
+          "parameters": []
+        },
+        {
+          "name": "set_LastEncounteredDuringSearch",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": "get_DropdownVertices",
+          "parameters": []
+        },
+        {
+          "name": "set_DropdownVertices",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "name": ".ctor",
+          "parameters": [
+            "tile",
+            "movingHereProvokes",
+            "movingHereRequiresTumbleThrough",
+            "movingHereTriggersHazardousTerrain",
+            "difficultyToHere",
+            "parent"
+          ]
+        },
+        {
+          "name": "GetHashCode",
+          "parameters": []
+        },
+        {
+          "name": "Equals",
+          "parameters": [
+            "obj"
+          ]
+        }
+      ]
+    }
+  ],
+  "documentedMembers": [
+    "F:Dawnsbury.Core.Intelligence.AIConstants.SPECIAL_DO_THIS_IF_NOTHING_ELSE",
+    "F:Dawnsbury.Core.Intelligence.Tactic.Mindless",
+    "F:Dawnsbury.Core.Intelligence.Tactic.PackAttack",
+    "F:Dawnsbury.Core.Intelligence.Tactic.Standard",
+    "M:Dawnsbury.Core.Mechanics.Targeting.Target.Self(System.Func{Dawnsbury.Core.Creatures.Creature,Dawnsbury.Core.Intelligence.AI,System.Single})",
+    "M:Dawnsbury.Core.Mechanics.Targeting.Targets.CreatureTarget.WithInnerGoodness(System.Func{Dawnsbury.Core.Mechanics.Targeting.Target,Dawnsbury.Core.Creatures.Creature,Dawnsbury.Core.Creatures.Creature,System.Single})",
+    "M:Dawnsbury.Core.Possibilities.SpellVariant.WithGoodness(System.Func{Dawnsbury.Core.Intelligence.AI,System.Single,System.Single})",
+    "P:Dawnsbury.Core.Intelligence.AI.OverrideDecision",
+    "P:Dawnsbury.Core.Intelligence.PathfindingDescription.AlternateTileOfOrigin",
+    "P:Dawnsbury.Core.Intelligence.PathfindingDescription.Squares",
+    "P:Dawnsbury.Core.Intelligence.PathfindingDescription.Style",
+    "P:Dawnsbury.Core.Mechanics.QEffect.AdditionalGoodness",
+    "P:Dawnsbury.Core.Mechanics.Targeting.Targets.BurstAreaTarget.CenterPointGoodness",
+    "P:Dawnsbury.Core.Mechanics.Targeting.Targets.BurstAreaTarget.OverriddenDetermineCenterPointByEnemy",
+    "P:Dawnsbury.Core.Possibilities.SpellVariant.GoodnessModifier"
+  ]
+}

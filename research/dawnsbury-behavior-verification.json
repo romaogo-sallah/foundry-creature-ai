@@ -1,0 +1,19 @@
+{
+  "verifiedAt": "2026-11-03T14:10:39.769Z",
+  "assemblyVersion": "4.44.0.0",
+  "assemblySha256": "61d48e6c059777a74b17e0fe4d9bc6600d57fbf6a09fe78e47cfdb7272304b23",
+  "decompiler": "ilspycmd 11.2.0.10050",
+  "seed": "0x44da2026",
+  "sourceSha256": {
+    "comparer": "0c3c2396bba41e12e5f748af9a01c5dd6ab8cd07c7c1de4241d0e50555408c1d",
+    "attackMethod": "945a1bb0ef78113076c9b811ca6010a8a387932d2ac8e323f883b72b71050eb2",
+    "acMethod": "b9ddf2bff6614d94163ad192b6a9d50fe753c0b27a7646817b409d1c728b4659",
+    "distanceMethod": "42155211b711af567e5d6a903d58ede95638b87eb3e4d7661945bcf3a0b6f33c"
+  },
+  "inputSha256": "3ff68da82eec63397bc080b80b2d54cdb9cd1611d3473d4133ae225400b17281",
+  "rankingPairs": 8000,
+  "attackEvaluations": 2000,
+  "distanceEvaluations": 1000,
+  "mismatches": 0,
+  "scope": "Actual decompiled GetLayer/Compare and DealDamageWithAttack plus AC table and Tile.DistanceTo compiled with data stubs. DealDamage stub returns its input. Does not verify game runtime, target legality, action generation, pathfinding or Foundry execution."
+}

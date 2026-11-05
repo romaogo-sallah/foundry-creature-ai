@@ -1,0 +1,224 @@
+{
+  "inspectedOn": "2026-11-04",
+  "assembly": "G:/SteamLibrary/steamapps/common/Dawnsbury Days/Data/Dawnsbury Days.dll",
+  "assemblyVersion": "4.44.0.0",
+  "assemblySha256": "61d48e6c059777a74b17e0fe4d9bc6600d57fbf6a09fe78e47cfdb7272304b23",
+  "decompilerVersion": "11.2.0.10050",
+  "verificationKind": "Static source assertions and hashes; not runtime behavior or arithmetic parity",
+  "limitations": [
+    "No game assembly execution",
+    "No encounter or mod-hook verification",
+    "Negative findings apply only to the inspected base scoring path"
+  ],
+  "files": [
+    {
+      "type": "Dawnsbury.Core.Intelligence.AI",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.Intelligence.AI.decompiled.cs",
+      "sha256": "16821e6beaf303d062cbb4794f1a384701a0a15a576746111669e557b57dc689"
+    },
+    {
+      "type": "Dawnsbury.Core.Intelligence.AIUsefulnessComparer",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.Intelligence.AIUsefulnessComparer.decompiled.cs",
+      "sha256": "0c3c2396bba41e12e5f748af9a01c5dd6ab8cd07c7c1de4241d0e50555408c1d"
+    },
+    {
+      "type": "Dawnsbury.Core.Intelligence.CommonAIStrategies",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.Intelligence.CommonAIStrategies.decompiled.cs",
+      "sha256": "16c8c74cde0541227c92c9cd37237ae972d851148fb75c6b2cd180391ff987bb"
+    },
+    {
+      "type": "Dawnsbury.Core.CombatActions.CombatAction",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.CombatActions.CombatAction.decompiled.cs",
+      "sha256": "bf28c07cca611566967ea2f87e29791aafa90673c9723e8ec7074cf15ad59a7d"
+    },
+    {
+      "type": "Dawnsbury.Core.Creatures.Spellcasting",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.Creatures.Spellcasting.decompiled.cs",
+      "sha256": "905c5781645f1c544096535cf8ff112160b9db117e0dc2bcb624b01c3d13f19d"
+    },
+    {
+      "type": "Dawnsbury.Core.Creatures.SpellcastingSource",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.Creatures.SpellcastingSource.decompiled.cs",
+      "sha256": "6103df7468d115946b85b781cfa743908e5ea89dd1930cd2a4bac96cd8013b67"
+    },
+    {
+      "type": "Dawnsbury.Core.Mechanics.Targeting.Target",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.Mechanics.Targeting.Target.decompiled.cs",
+      "sha256": "d5aaf1f959632655efa595dedf1834916729b6d518e9fd9ca9ca456010c18230"
+    },
+    {
+      "type": "Dawnsbury.Core.Mechanics.Targeting.Targets.CreatureTarget",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.Mechanics.Targeting.Targets.CreatureTarget.decompiled.cs",
+      "sha256": "3feacc96e3f484024348534648d1078fe07aea14634edc313181bae1fd470dff"
+    },
+    {
+      "type": "Dawnsbury.Core.Mechanics.Targeting.Targets.BurstAreaTarget",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.Mechanics.Targeting.Targets.BurstAreaTarget.decompiled.cs",
+      "sha256": "a5d6fd4450d485bfc2cd29dab218646e3f64abc217b7e84bf41117338798e53b"
+    },
+    {
+      "type": "Dawnsbury.Core.Mechanics.Targeting.Targets.CloseAreaTarget",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.Mechanics.Targeting.Targets.CloseAreaTarget.decompiled.cs",
+      "sha256": "cc43d18a1a84fb4cc0c8ae3789a5af5d0b9aa7bda75b185c9d5da126b9253ae8"
+    },
+    {
+      "type": "Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.AllSpells",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.AllSpells.decompiled.cs",
+      "sha256": "493647f1757c2374d3997a01b1694c5975b6910d145e0f253fd54242b30439dc"
+    },
+    {
+      "type": "Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Spells",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Spells.decompiled.cs",
+      "sha256": "1a0c97383afec9597b252ae1c5d54804de7e7e331dfd9ae4cb0060fdb28fae3c"
+    },
+    {
+      "type": "Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Cantrips",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Cantrips.decompiled.cs",
+      "sha256": "a597ef9cdbd1af2f952f54e7d30476c6398d02fa78cabf3392199a852ba713bd"
+    },
+    {
+      "type": "Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Level1Spells",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Level1Spells.decompiled.cs",
+      "sha256": "ee6353f18e44fb547b82477171bdb89f353ae48b2aab440be137a3ba459f1596"
+    },
+    {
+      "type": "Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Level3Spells",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Level3Spells.decompiled.cs",
+      "sha256": "f9344d193bfc93e8e2e24bdb8a05615ea48fce36ae9b99cc9eb9bebdf28e634c"
+    },
+    {
+      "type": "Dawnsbury.Core.StatBlocks.Monsters.L2.KoboldDragonMage",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.StatBlocks.Monsters.L2.KoboldDragonMage.decompiled.cs",
+      "sha256": "9de6585241ac342e2c441c3b623cb2327e46fe0a2e1be29a71e51231e313c545"
+    },
+    {
+      "type": "Dawnsbury.Core.StatBlocks.Monsters.L2.OrcShaman",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.StatBlocks.Monsters.L2.OrcShaman.decompiled.cs",
+      "sha256": "37536305bbe645a4e45fe3ee6d8d54c6604f9e7918a3a259b25500d314a5ec23"
+    },
+    {
+      "type": "Dawnsbury.Core.StatBlocks.Monsters.L3.OrcNecromancer",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.StatBlocks.Monsters.L3.OrcNecromancer.decompiled.cs",
+      "sha256": "d9042b192a94329a5ec438c80b47460f2c116dda5feb4b35abb3854b56e53a80"
+    },
+    {
+      "type": "Dawnsbury.Core.StatBlocks.Monsters.L5.SkeletalMage",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.StatBlocks.Monsters.L5.SkeletalMage.decompiled.cs",
+      "sha256": "5d680b9323c91017011fbc4c28856af7f0d0b055a470792e87440a1a4e33f2ab"
+    },
+    {
+      "type": "Dawnsbury.Core.StatBlocks.Monsters.L8.GnollBlackSorcerer",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.StatBlocks.Monsters.L8.GnollBlackSorcerer.decompiled.cs",
+      "sha256": "2d1c39905d3de8f8ab28d4d883656a4d96eca7aa7a863fea2f594b4dee9d4e23"
+    },
+    {
+      "type": "Dawnsbury.Core.StatBlocks.Monsters.L10.GhostMage",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.StatBlocks.Monsters.L10.GhostMage.decompiled.cs",
+      "sha256": "094e317e410af965b08580ad665637187a01118bbab2847f15e9075d1f1f58f1"
+    },
+    {
+      "type": "Dawnsbury.Core.StatBlocks.Monsters.L15.DinosaurWizard",
+      "privatePath": ".scratch/dawnsbury-decompiled/Dawnsbury.Core.StatBlocks.Monsters.L15.DinosaurWizard.decompiled.cs",
+      "sha256": "87ae88acf170ca304147222c5b4872f6e7127502999c572c9cee10d0ad879e44"
+    }
+  ],
+  "checks": [
+    {
+      "type": "Dawnsbury.Core.Intelligence.AI",
+      "member": "CalculateTileGoodness",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.Intelligence.AIUsefulnessComparer",
+      "member": "GetLayer",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.Intelligence.AI",
+      "member": "DetermineAreaValue",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.Intelligence.AI",
+      "member": "TakeActionAgainstTarget",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.Intelligence.AI",
+      "member": "Stupefy",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.StatBlocks.Monsters.L8.GnollBlackSorcerer",
+      "member": "CreateGreenSorcerer",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.Intelligence.AI",
+      "member": "ModifyGoodness",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.Mechanics.Targeting.Targets.CloseAreaTarget",
+      "member": "compass",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.Mechanics.Targeting.Targets.BurstAreaTarget",
+      "member": "DeterminePossibleCenterPoints",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.Creatures.Spellcasting",
+      "member": "CreateSpellcastingMenu",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.Creatures.Spellcasting",
+      "member": "UseUpSpellcastingResources",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Level3Spells",
+      "member": "LoadModernSpell: Heroism",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Level3Spells",
+      "member": "LoadModernSpell: Haste",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Level1Spells",
+      "member": "LoadModernSpell: Grease has no local AI callback",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Cantrips",
+      "member": "LoadModernSpell: Tanglefoot has no local AI callback",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.Cantrips",
+      "member": "LoadModernSpell: ProduceFlame has no local AI callback",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook.AllSpells",
+      "member": "CreateModernSpell: mod-hook boundary",
+      "passed": true
+    },
+    {
+      "type": "Dawnsbury.Core.Intelligence.CommonAIStrategies",
+      "member": "CreateAndApplyBuffingStrategy",
+      "passed": true
+    }
+  ],
+  "illustration": {
+    "fireballBaseDamage": 21,
+    "allySignedBase": -21,
+    "preference": 150,
+    "beforeProbability": 129,
+    "meaning": "Ordering illustration, not an observed game outcome"
+  }
+}

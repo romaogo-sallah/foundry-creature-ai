@@ -1,0 +1,643 @@
+{
+  "name": "Ogre Boss",
+  "type": "npc",
+  "source": "Compendium.pf2e.pathfinder-monster-core.Actor.oopxVowT2jnUQJiS",
+  "system": {
+    "attributes": {
+      "hp": {
+        "value": 130,
+        "temp": 0,
+        "max": 130,
+        "details": ""
+      },
+      "ac": {
+        "value": 25,
+        "details": ""
+      },
+      "allSaves": {
+        "value": ""
+      },
+      "speed": {
+        "value": 25,
+        "otherSpeeds": [],
+        "details": ""
+      }
+    },
+    "initiative": {
+      "statistic": "perception"
+    },
+    "details": {
+      "level": {
+        "value": 7
+      },
+      "languages": {
+        "value": [
+          "common",
+          "jotun"
+        ],
+        "details": ""
+      },
+      "publication": {
+        "title": "Pathfinder Monster Core",
+        "authors": "",
+        "license": "ORC",
+        "remaster": true
+      }
+    },
+    "resources": {},
+    "_migration": {
+      "version": 0.959,
+      "previous": null
+    },
+    "abilities": {
+      "str": {
+        "mod": 7
+      },
+      "dex": {
+        "mod": 0
+      },
+      "con": {
+        "mod": 4
+      },
+      "int": {
+        "mod": 0
+      },
+      "wis": {
+        "mod": 1
+      },
+      "cha": {
+        "mod": 1
+      }
+    },
+    "perception": {
+      "details": "",
+      "mod": 12,
+      "senses": [
+        {
+          "type": "darkvision"
+        }
+      ],
+      "vision": true
+    },
+    "saves": {
+      "fortitude": {
+        "value": 17,
+        "saveDetail": ""
+      },
+      "reflex": {
+        "value": 12,
+        "saveDetail": ""
+      },
+      "will": {
+        "value": 15,
+        "saveDetail": ""
+      }
+    },
+    "skills": {
+      "athletics": {
+        "base": 16
+      },
+      "intimidation": {
+        "base": 16
+      },
+      "stealth": {
+        "base": 11
+      }
+    },
+    "traits": {
+      "value": [
+        "giant",
+        "humanoid"
+      ],
+      "rarity": "common",
+      "size": {
+        "value": "lg"
+      }
+    }
+  },
+  "footprint": {
+    "width": 2,
+    "height": 2
+  },
+  "items": [
+    {
+      "_id": "XIkVmeuS2gFeVNkU",
+      "name": "Javelin",
+      "type": "weapon",
+      "system": {
+        "description": {
+          "gm": "",
+          "value": "<p>This thin spear is well balanced for throwing but is not designed for melee use.</p>"
+        },
+        "rules": [],
+        "slug": "javelin",
+        "_migration": {
+          "version": 0.959,
+          "lastMigration": null,
+          "previous": null
+        },
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "thrown"
+          ],
+          "rarity": "common"
+        },
+        "publication": {
+          "title": "Pathfinder Player Core",
+          "authors": "",
+          "license": "ORC",
+          "remaster": true
+        },
+        "level": {
+          "value": 0
+        },
+        "quantity": 6,
+        "baseItem": "javelin",
+        "bulk": {
+          "value": 0.1
+        },
+        "hp": {
+          "value": 0,
+          "max": 0
+        },
+        "hardness": 0,
+        "price": {
+          "value": {
+            "sp": 1
+          }
+        },
+        "equipped": {
+          "carryType": "worn",
+          "invested": null,
+          "handsHeld": 0
+        },
+        "containerId": null,
+        "size": "lg",
+        "material": {
+          "type": null,
+          "grade": null
+        },
+        "identification": {
+          "status": "identified",
+          "unidentified": {
+            "name": "",
+            "img": "",
+            "data": {
+              "description": {
+                "value": ""
+              }
+            }
+          }
+        },
+        "usage": {
+          "value": "held-in-one-hand",
+          "canBeAmmo": false
+        },
+        "category": "simple",
+        "group": "dart",
+        "bonus": {
+          "value": 0
+        },
+        "damage": {
+          "dice": 1,
+          "die": "d6",
+          "damageType": "piercing",
+          "persistent": null
+        },
+        "splashDamage": {
+          "value": 0
+        },
+        "range": 30,
+        "expend": null,
+        "ammo": null,
+        "reload": {
+          "value": "-"
+        },
+        "grade": null,
+        "runes": {
+          "potency": 0,
+          "striking": 0,
+          "property": []
+        },
+        "specific": null,
+        "subitems": [],
+        "bonusDamage": {
+          "value": 0
+        }
+      },
+      "flags": {}
+    },
+    {
+      "_id": "yfLFfSeyPeThnDPE",
+      "name": "Ogre Hook",
+      "type": "weapon",
+      "system": {
+        "description": {
+          "gm": "",
+          "value": "<p>Ogres are known for using immense, curved picks called ogre hooks.</p>"
+        },
+        "rules": [],
+        "slug": "ogre-hook",
+        "_migration": {
+          "version": 0.959,
+          "lastMigration": null,
+          "previous": null
+        },
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "deadly-d10",
+            "trip"
+          ],
+          "rarity": "uncommon"
+        },
+        "publication": {
+          "title": "Pathfinder Monster Core",
+          "authors": "",
+          "license": "ORC",
+          "remaster": true
+        },
+        "level": {
+          "value": 0
+        },
+        "quantity": 1,
+        "baseItem": "ogre-hook",
+        "bulk": {
+          "value": 2
+        },
+        "hp": {
+          "value": 0,
+          "max": 0
+        },
+        "hardness": 0,
+        "price": {
+          "value": {
+            "gp": 1
+          }
+        },
+        "equipped": {
+          "carryType": "held",
+          "invested": null,
+          "handsHeld": 2
+        },
+        "containerId": null,
+        "size": "lg",
+        "material": {
+          "type": null,
+          "grade": null
+        },
+        "identification": {
+          "status": "identified",
+          "unidentified": {
+            "name": "",
+            "img": "",
+            "data": {
+              "description": {
+                "value": ""
+              }
+            }
+          }
+        },
+        "usage": {
+          "value": "held-in-two-hands"
+        },
+        "category": "martial",
+        "group": "pick",
+        "bonus": {
+          "value": 0
+        },
+        "damage": {
+          "dice": 1,
+          "die": "d10",
+          "damageType": "piercing",
+          "persistent": null
+        },
+        "splashDamage": {
+          "value": 0
+        },
+        "range": null,
+        "expend": null,
+        "ammo": null,
+        "reload": {
+          "value": null
+        },
+        "grade": null,
+        "runes": {
+          "potency": 1,
+          "striking": 0,
+          "property": []
+        },
+        "specific": null,
+        "subitems": [],
+        "bonusDamage": {
+          "value": 0
+        }
+      },
+      "flags": {}
+    },
+    {
+      "_id": "XZMvMwDa5X7MP0wR",
+      "name": "Breastplate",
+      "type": "armor",
+      "system": {
+        "description": {
+          "gm": "",
+          "value": "<p>Though referred to as a breastplate, this type of armor consists of several pieces of plate or @UUID[Compendium.pf2e.equipment-srd.Item.pRoikbRo5HFW6YUB]{Half Plate} armor that protect the torso, chest, neck, and sometimes the hips and lower legs. It strategically grants some of the protection of plate while allowing greater flexibility and speed.</p>"
+        },
+        "rules": [],
+        "slug": "breastplate",
+        "_migration": {
+          "version": 0.959,
+          "lastMigration": null,
+          "previous": null
+        },
+        "traits": {
+          "otherTags": [],
+          "value": [],
+          "rarity": "common"
+        },
+        "publication": {
+          "title": "Pathfinder Player Core",
+          "authors": "",
+          "license": "ORC",
+          "remaster": true
+        },
+        "level": {
+          "value": 0
+        },
+        "quantity": 1,
+        "baseItem": "breastplate",
+        "bulk": {
+          "value": 2
+        },
+        "hp": {
+          "value": 0,
+          "max": 0
+        },
+        "hardness": 0,
+        "price": {
+          "value": {
+            "gp": 8
+          }
+        },
+        "equipped": {
+          "carryType": "worn",
+          "invested": null,
+          "handsHeld": 0,
+          "inSlot": true
+        },
+        "containerId": null,
+        "size": "lg",
+        "material": {
+          "type": null,
+          "grade": null
+        },
+        "identification": {
+          "status": "identified",
+          "unidentified": {
+            "name": "",
+            "img": "",
+            "data": {
+              "description": {
+                "value": ""
+              }
+            }
+          }
+        },
+        "category": "medium",
+        "group": "plate",
+        "acBonus": 4,
+        "strength": 3,
+        "dexCap": 1,
+        "checkPenalty": -2,
+        "speedPenalty": -5,
+        "grade": null,
+        "runes": {
+          "potency": 0,
+          "resilient": 0,
+          "property": []
+        },
+        "subitems": []
+      },
+      "flags": {}
+    },
+    {
+      "_id": "K8rZwgv45XvIe8vL",
+      "name": "Ogre Hook",
+      "type": "melee",
+      "system": {
+        "attackEffects": {
+          "value": []
+        },
+        "bonus": {
+          "value": 19
+        },
+        "damageRolls": {
+          "0w1r6x22k8ll60c2mbi3": {
+            "damage": "1d10+11",
+            "damageType": "piercing",
+            "category": null
+          }
+        },
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "publication": {
+          "license": "ORC",
+          "remaster": true,
+          "title": "",
+          "authors": ""
+        },
+        "range": null,
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "deadly-d10",
+            "reach-10",
+            "trip"
+          ],
+          "otherTags": [],
+          "config": {}
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        },
+        "action": "strike",
+        "area": null,
+        "subjectToMAP": true
+      },
+      "flags": {
+        "pf2e": {
+          "linkedWeapon": "yfLFfSeyPeThnDPE"
+        }
+      }
+    },
+    {
+      "_id": "BXuDhj7X68wG6zma",
+      "name": "Javelin",
+      "type": "melee",
+      "system": {
+        "attackEffects": {
+          "value": []
+        },
+        "bonus": {
+          "value": 12
+        },
+        "damageRolls": {
+          "mlovays3iivzqilwlq4u": {
+            "damage": "1d6+11",
+            "damageType": "piercing",
+            "category": null
+          }
+        },
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "publication": {
+          "license": "ORC",
+          "remaster": true,
+          "title": "",
+          "authors": ""
+        },
+        "range": null,
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "thrown-30"
+          ],
+          "otherTags": [],
+          "config": {}
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        },
+        "action": "strike",
+        "area": null,
+        "subjectToMAP": true
+      },
+      "flags": {
+        "pf2e": {
+          "linkedWeapon": "XIkVmeuS2gFeVNkU"
+        }
+      }
+    },
+    {
+      "_id": "DqDajSBQROiv8iPO",
+      "name": "Reactive Strike",
+      "type": "action",
+      "system": {
+        "actionType": {
+          "value": "reaction"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "defensive",
+        "description": {
+          "value": "<p>@Localize[PF2E.NPC.Abilities.Glossary.ReactiveStrike]</p>",
+          "gm": ""
+        },
+        "publication": {
+          "license": "ORC",
+          "remaster": true,
+          "title": "Pathfinder Monster Core",
+          "authors": ""
+        },
+        "rules": [],
+        "slug": "reactive-strike",
+        "traits": {
+          "value": [],
+          "otherTags": []
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        }
+      },
+      "flags": {}
+    },
+    {
+      "_id": "KxNiF9bYl6kA6FRd",
+      "name": "Bellowing Command",
+      "type": "action",
+      "system": {
+        "actionType": {
+          "value": "action"
+        },
+        "actions": {
+          "value": 1
+        },
+        "category": "offensive",
+        "description": {
+          "value": "<p>The ogre boss issues a command to hasten their fellows. Each ogre ally who hears and understands this command becomes @UUID[Compendium.pf2e.conditionitems.Item.nlCjDvLMf2EkV2dl]{Quickened} until the end of that ally's next turn but can use the extra action only to Step or Stride.</p>",
+          "gm": ""
+        },
+        "publication": {
+          "license": "ORC",
+          "remaster": true,
+          "title": "",
+          "authors": ""
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "auditory",
+            "emotion",
+            "fear",
+            "linguistic",
+            "mental"
+          ],
+          "otherTags": []
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        }
+      },
+      "flags": {}
+    },
+    {
+      "_id": "cg8c4dIdBFiff9le",
+      "name": "Sweeping Hook",
+      "type": "action",
+      "system": {
+        "actionType": {
+          "value": "reaction"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "offensive",
+        "description": {
+          "value": "<p><strong>Trigger</strong> The ogre boss successfully @UUID[Compendium.pf2e.actionspf2e.Item.ge56Lu1xXVFYUnLP]{Trips} a creature using an ogre hook</p>\n<hr>\n<p><strong>Effect</strong> The ogre boss makes an ogre hook Strike against the creature they tripped.</p>",
+          "gm": ""
+        },
+        "publication": {
+          "license": "ORC",
+          "remaster": true,
+          "title": "",
+          "authors": ""
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [],
+          "otherTags": []
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        }
+      },
+      "flags": {}
+    }
+  ]
+}

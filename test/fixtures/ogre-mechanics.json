@@ -1,0 +1,570 @@
+{
+  "name": "Ogre",
+  "type": "npc",
+  "source": "Compendium.pf2e.pfs-season-1-bestiary.Actor.DsEg9sT7jCcsuEDI",
+  "system": {
+    "attributes": {
+      "hp": {
+        "value": 35,
+        "temp": 0,
+        "max": 35,
+        "details": ""
+      },
+      "ac": {
+        "value": 16,
+        "details": ""
+      },
+      "allSaves": {
+        "value": ""
+      },
+      "speed": {
+        "value": 25,
+        "otherSpeeds": [],
+        "details": ""
+      }
+    },
+    "initiative": {
+      "statistic": "perception"
+    },
+    "details": {
+      "level": {
+        "value": 2
+      },
+      "languages": {
+        "value": [
+          "jotun"
+        ],
+        "details": ""
+      },
+      "publication": {
+        "title": "Pathfinder Society Scenario #1-05: Trailblazers' Bounty",
+        "authors": "",
+        "license": "OGL",
+        "remaster": false
+      }
+    },
+    "resources": {},
+    "_migration": {
+      "version": 0.959,
+      "previous": null
+    },
+    "abilities": {
+      "str": {
+        "mod": 5
+      },
+      "dex": {
+        "mod": -1
+      },
+      "con": {
+        "mod": 4
+      },
+      "int": {
+        "mod": -2
+      },
+      "wis": {
+        "mod": 0
+      },
+      "cha": {
+        "mod": -2
+      }
+    },
+    "perception": {
+      "details": "",
+      "mod": 5,
+      "senses": [
+        {
+          "type": "darkvision"
+        }
+      ],
+      "vision": true
+    },
+    "saves": {
+      "fortitude": {
+        "value": 10,
+        "saveDetail": ""
+      },
+      "reflex": {
+        "value": 5,
+        "saveDetail": ""
+      },
+      "will": {
+        "value": 4,
+        "saveDetail": ""
+      }
+    },
+    "skills": {
+      "athletics": {
+        "base": 10
+      },
+      "intimidation": {
+        "base": 7
+      }
+    },
+    "traits": {
+      "value": [
+        "chaotic",
+        "evil",
+        "giant",
+        "humanoid"
+      ],
+      "rarity": "common",
+      "size": {
+        "value": "lg"
+      }
+    }
+  },
+  "footprint": {
+    "width": 2,
+    "height": 2
+  },
+  "items": [
+    {
+      "_id": "UYuNXo8H41cw12FJ",
+      "name": "Javelin",
+      "type": "weapon",
+      "system": {
+        "description": {
+          "gm": "",
+          "value": "<p>This thin spear is well balanced for throwing but is not designed for melee use.</p>"
+        },
+        "rules": [],
+        "slug": "javelin",
+        "_migration": {
+          "version": 0.959,
+          "lastMigration": null,
+          "previous": null
+        },
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "thrown"
+          ],
+          "rarity": "common"
+        },
+        "publication": {
+          "title": "Pathfinder Core Rulebook",
+          "authors": "",
+          "license": "OGL",
+          "remaster": false
+        },
+        "level": {
+          "value": 0
+        },
+        "quantity": 6,
+        "baseItem": "javelin",
+        "bulk": {
+          "value": 0.1
+        },
+        "hp": {
+          "value": 0,
+          "max": 0
+        },
+        "hardness": 0,
+        "price": {
+          "value": {
+            "sp": 1
+          }
+        },
+        "equipped": {
+          "carryType": "worn",
+          "invested": null,
+          "handsHeld": 0
+        },
+        "containerId": null,
+        "size": "lg",
+        "material": {
+          "type": null,
+          "grade": null
+        },
+        "identification": {
+          "status": "identified",
+          "unidentified": {
+            "name": "",
+            "img": "",
+            "data": {
+              "description": {
+                "value": ""
+              }
+            }
+          }
+        },
+        "usage": {
+          "value": "held-in-one-hand"
+        },
+        "category": "simple",
+        "group": "dart",
+        "bonus": {
+          "value": 0
+        },
+        "damage": {
+          "dice": 1,
+          "die": "d6",
+          "damageType": "piercing",
+          "persistent": null
+        },
+        "splashDamage": {
+          "value": 0
+        },
+        "range": 30,
+        "expend": null,
+        "ammo": null,
+        "reload": {
+          "value": "-"
+        },
+        "grade": null,
+        "runes": {
+          "potency": 0,
+          "striking": 0,
+          "property": []
+        },
+        "specific": null,
+        "subitems": [],
+        "bonusDamage": {
+          "value": 0
+        }
+      },
+      "flags": {}
+    },
+    {
+      "_id": "tZOEOMgRqqp8yV6v",
+      "name": "Ogre Hook",
+      "type": "weapon",
+      "system": {
+        "description": {
+          "gm": "",
+          "value": "<p>Ogres are known for using immense, curved picks called ogre hooks.</p>"
+        },
+        "rules": [],
+        "slug": "ogre-hook",
+        "_migration": {
+          "version": 0.959,
+          "lastMigration": null,
+          "previous": null
+        },
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "deadly-d10",
+            "trip"
+          ],
+          "rarity": "uncommon"
+        },
+        "publication": {
+          "title": "Pathfinder Bestiary",
+          "authors": "",
+          "license": "OGL",
+          "remaster": false
+        },
+        "level": {
+          "value": 0
+        },
+        "quantity": 1,
+        "baseItem": "ogre-hook",
+        "bulk": {
+          "value": 2
+        },
+        "hp": {
+          "value": 0,
+          "max": 0
+        },
+        "hardness": 0,
+        "price": {
+          "value": {
+            "gp": 1
+          }
+        },
+        "equipped": {
+          "carryType": "worn",
+          "invested": null,
+          "handsHeld": 0
+        },
+        "containerId": null,
+        "size": "lg",
+        "material": {
+          "type": null,
+          "grade": null
+        },
+        "identification": {
+          "status": "identified",
+          "unidentified": {
+            "name": "",
+            "img": "",
+            "data": {
+              "description": {
+                "value": ""
+              }
+            }
+          }
+        },
+        "usage": {
+          "value": "held-in-two-hands"
+        },
+        "category": "advanced",
+        "group": "pick",
+        "bonus": {
+          "value": 0
+        },
+        "damage": {
+          "dice": 1,
+          "die": "d10",
+          "damageType": "piercing",
+          "persistent": null
+        },
+        "splashDamage": {
+          "value": null
+        },
+        "range": null,
+        "expend": null,
+        "ammo": null,
+        "reload": {
+          "value": null
+        },
+        "grade": null,
+        "runes": {
+          "potency": 0,
+          "striking": 0,
+          "property": []
+        },
+        "specific": null,
+        "subitems": [],
+        "bonusDamage": {
+          "value": 0
+        }
+      },
+      "flags": {}
+    },
+    {
+      "_id": "SV2QanHh1574CANP",
+      "name": "Hide Armor",
+      "type": "armor",
+      "system": {
+        "description": {
+          "gm": "",
+          "value": "<p>A mix of furs, sturdy hide, and sometimes molded boiled leather, this armor provides protection due to its layers of leather, though its bulkiness slows the wearer down and decreases mobility.</p>"
+        },
+        "rules": [],
+        "slug": "hide-armor",
+        "_migration": {
+          "version": 0.959,
+          "lastMigration": null,
+          "previous": null
+        },
+        "traits": {
+          "otherTags": [],
+          "value": [],
+          "rarity": "common"
+        },
+        "publication": {
+          "title": "Pathfinder Core Rulebook",
+          "authors": "",
+          "license": "OGL",
+          "remaster": false
+        },
+        "level": {
+          "value": 0
+        },
+        "quantity": 1,
+        "baseItem": "hide-armor",
+        "bulk": {
+          "value": 2
+        },
+        "hp": {
+          "value": 0,
+          "max": 0
+        },
+        "hardness": 0,
+        "price": {
+          "value": {
+            "gp": 2
+          }
+        },
+        "equipped": {
+          "carryType": "worn",
+          "invested": null
+        },
+        "containerId": null,
+        "size": "lg",
+        "material": {
+          "type": null,
+          "grade": null
+        },
+        "identification": {
+          "status": "identified",
+          "unidentified": {
+            "name": "",
+            "img": "",
+            "data": {
+              "description": {
+                "value": ""
+              }
+            }
+          }
+        },
+        "category": "medium",
+        "group": "leather",
+        "acBonus": 3,
+        "strength": 2,
+        "dexCap": 2,
+        "checkPenalty": -2,
+        "speedPenalty": -5,
+        "grade": null,
+        "runes": {
+          "potency": 0,
+          "resilient": 0,
+          "property": []
+        },
+        "subitems": []
+      },
+      "flags": {}
+    },
+    {
+      "_id": "tPwrqa02BjnamNT9",
+      "name": "Battle Axe",
+      "type": "melee",
+      "system": {
+        "attackEffects": {
+          "value": []
+        },
+        "bonus": {
+          "value": 11
+        },
+        "damageRolls": {
+          "cdfor4p4vln9ifru": {
+            "damage": "1d8 + 5",
+            "damageType": "slashing",
+            "category": null
+          }
+        },
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "publication": {
+          "license": "OGL",
+          "remaster": false,
+          "title": "",
+          "authors": ""
+        },
+        "range": null,
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "reach-10",
+            "sweep"
+          ],
+          "otherTags": [],
+          "config": {}
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        },
+        "action": "strike",
+        "area": null,
+        "subjectToMAP": true
+      },
+      "flags": {}
+    },
+    {
+      "_id": "EP7BGX9RahSwYusH",
+      "name": "Javelin",
+      "type": "melee",
+      "system": {
+        "attackEffects": {
+          "value": []
+        },
+        "bonus": {
+          "value": 5
+        },
+        "damageRolls": {
+          "z64t7etapeb8qvsp": {
+            "damage": "1d6+5",
+            "damageType": "piercing",
+            "category": null
+          }
+        },
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "publication": {
+          "license": "OGL",
+          "remaster": false,
+          "title": "",
+          "authors": ""
+        },
+        "range": null,
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "thrown-30"
+          ],
+          "otherTags": [],
+          "config": {}
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        },
+        "action": "strike",
+        "area": null,
+        "subjectToMAP": true
+      },
+      "flags": {
+        "pf2e": {
+          "linkedWeapon": "UYuNXo8H41cw12FJ"
+        }
+      }
+    },
+    {
+      "_id": "aj7Sw2b6ui4LbY1h",
+      "name": "Refuse",
+      "type": "melee",
+      "system": {
+        "attackEffects": {
+          "value": []
+        },
+        "bonus": {
+          "value": 5
+        },
+        "damageRolls": {
+          "y1gfcco76jouwhpq57rs": {
+            "damage": "1d4+5",
+            "damageType": "bludgeoning",
+            "category": null
+          }
+        },
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "publication": {
+          "license": "OGL",
+          "remaster": false,
+          "title": "",
+          "authors": ""
+        },
+        "range": null,
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "thrown-20"
+          ],
+          "otherTags": [],
+          "config": {}
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        },
+        "action": "strike",
+        "area": null,
+        "subjectToMAP": true
+      },
+      "flags": {}
+    }
+  ]
+}

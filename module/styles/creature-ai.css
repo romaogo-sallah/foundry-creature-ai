@@ -1,0 +1,88 @@
+/* Only the Alt+W creature controls use this class. */
+.application.creature-ai-controls {
+  min-width: min(320px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 32px);
+}
+
+.application.creature-ai-controls .window-content,
+.application.creature-ai-controls .dialog-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.application.creature-ai-controls .dialog-form {
+  gap: 10px;
+}
+
+.application.creature-ai-controls .dialog-content {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding-right: 8px;
+  gap: 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.application.creature-ai-controls .dialog-content p {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.application.creature-ai-controls .form-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(100px, 40%);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.application.creature-ai-controls .form-group:has(> input[type="checkbox"]) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.application.creature-ai-controls .form-group label {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.application.creature-ai-controls .form-group input:not([type="checkbox"]),
+.application.creature-ai-controls .form-group select {
+  width: 100%;
+  min-width: 0;
+}
+
+.application.creature-ai-controls .form-group input[type="checkbox"] {
+  justify-self: end;
+}
+
+.application.creature-ai-controls .form-footer {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  flex: 0 0 auto;
+  gap: 6px;
+  margin: 0;
+  max-height: 40dvh;
+  overflow-y: auto;
+}
+
+.application.creature-ai-controls .form-footer > button {
+  width: auto;
+  min-width: 0;
+  height: auto;
+  min-height: 34px;
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

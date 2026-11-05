@@ -1,0 +1,59 @@
+{
+  "standard": {
+    "description": "Independent approximation of the documented Standard tactic; weights are proposed, not extracted.",
+    "weights": {
+      "expectedDamage": 1,
+      "effectiveHealing": 0.8,
+      "controlValue": 1,
+      "flankingValue": 2,
+      "approachValue": 1,
+      "allyReachValue": 0,
+      "friendlyFireDamage": -2,
+      "hazardDamage": -2,
+      "reactionRisk": -3,
+      "resourceCost": -1
+    },
+    "rules": []
+  },
+  "mindless": {
+    "extends": "standard",
+    "description": "Nearest-enemy Strike/approach policy; targetsNearestEnemy must be calculated by the adapter.",
+    "allowedKinds": ["strike", "stride", "stand", "escape", "endTurn"],
+    "utilityFilter": { "features.targetsNearestEnemy": 1 },
+    "weights": { "flankingValue": 0, "allyReachValue": 0 },
+    "rules": [
+      { "id": "stand-if-prone", "when": { "self.prone": true }, "select": { "kind": "stand" } },
+      { "id": "strike-nearest", "select": { "kind": "strike", "features.targetsNearestEnemy": 1 } },
+      { "id": "approach-nearest", "select": { "kind": "stride", "features.targetsNearestEnemy": 1 } },
+      { "id": "end-if-nearest-unavailable", "select": { "kind": "endTurn" } }
+    ]
+  },
+  "pack": {
+    "extends": "standard",
+    "description": "Adds a proposed preference for attacking enemies also within allies' reach.",
+    "weights": { "allyReachValue": 3 }
+  },
+  "wolf-example": {
+    "extends": "pack",
+    "description": "Illustrative creature customization, not an extracted Dawnsbury wolf definition.",
+    "rules": [
+      { "id": "use-legal-knockdown", "select": { "kind": "knockdown", "features.followUpAvailable": 1 } }
+    ]
+  },
+  "wolf": {
+    "policy": "dawnsbury-4.44-pack",
+    "description": "Recovered DD 4.44 ranking with Foundry wolf maneuvers: Step, Crawl, Escape, prone choices and remaster Knockdown estimates. New maneuver values are Foundry adaptations; shared ranking and the basic PackAttack evaluator retain their recovered behavior. See docs/dawnsbury-ai-behavior.md.",
+    "weights": {},
+    "rules": []
+  },
+  "dragon-example": {
+    "extends": "standard",
+    "description": "Illustrative creature customization, not an extracted Dawnsbury dragon definition.",
+    "rules": [
+      {
+        "id": "breath-on-group",
+        "select": { "kind": "breath", "features.enemyCount": { "gte": 2 }, "features.allyCount": 0 }
+      }
+    ]
+  }
+}
