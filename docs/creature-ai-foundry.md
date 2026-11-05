@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.28.3
+# Foundry Creature AI — version 0.29.0
+
+Version **0.29.0** uses a persistent background Web Worker for flight route proposals and Dive setup ranking. A small shortlist receives native geometry, cost, reach and reaction validation. Worker failures fall back to native search; **Flight planning engine** can also select that compatibility backend explicitly. Stop cancels pending work before reservation and changed battlefields invalidate results. Reload all clients and confirm **Running code 0.29.0**. See [background flight planning](flight-worker.md).
 
 Version **0.28.3** preserves useful complete activity goals. Eagles stage for a turn beginning with Eagle Dive, followed by a one-action escape climb; atomic movement/Beak estimates no longer displace that prepared activity. Shared Lay low responds to known enemies above available attack reach with protection, Hide and defensive Sneak when legal. On open ground, it holds without granting free stealth. Reload all clients and confirm **Running code 0.28.3**.
 

@@ -12,8 +12,9 @@ export function attachFlightSystem(adapter){
   if(attached.has(adapter)||!flySpeed(adapter.actor))return adapter;
   attached.add(adapter);
   const snapshot=adapter.snapshot.bind(adapter),candidates=adapter.candidates.bind(adapter),execute=adapter.execute.bind(adapter),prepare=adapter.prepareTurn.bind(adapter);
-  adapter.snapshot=async(ledger,options)=>{
-    const state=await snapshot(ledger,options),saved=adapter.token.document.getFlag(ns,'flight');
+  const flightSnapshot=async(ledger,options={})=>{
+    const initiallyFlying=!flightLost(adapter.token)&&!adapter.actor.hasCondition('immobilized','grabbed','restrained');
+    const state=await snapshot(ledger,initiallyFlying?{...options,movement:false}:options),saved=adapter.token.document.getFlag(ns,'flight');
     const canFly=!flightLost(adapter.token)&&!adapter.actor.hasCondition('immobilized','grabbed','restrained');
     state.flight={speed:flySpeed(adapter.actor),airborne:isAirborne(adapter.token),canFly,
       flown:saved?.combatId===game.combat.id&&saved.round===game.combat.round,
@@ -30,17 +31,23 @@ export function attachFlightSystem(adapter){
           reason:phase==='recover'?'Recover altitude after attacking':phase==='gain-height'?'Gain a safe hunting altitude before committing':'Approach at altitude and wait for an attack with an escape route'};
       }
     }
-    if(canFly&&options?.movement!==false)state.flight.moves=flightMoves(adapter,state,planner);
-    await adapter.enrichFlight?.(state,planner);
+    if(canFly&&options?.movement!==false){
+      const moves=await flightMoves(adapter,state,planner,options);
+      if(moves.stale){if((options.workerRetries??0)>=2)throw new Error('Battlefield changed repeatedly while planning; retry this turn');
+        return flightSnapshot(ledger,{...options,workerRetries:(options.workerRetries??0)+1});}
+      state.flight.moves=moves;
+    }
+    await adapter.enrichFlight?.(state,planner,options);
     if(state.flight.hunt&&state.flight.hunt.phase==='stalk'&&state.flight.dives?.some(d=>d.features?.escapePlan&&
       (state.actionsRemaining>d.actionCost||d.features.escapePlan.cost===0))){
       state.flight.hunt.phase='strike';state.flight.hunt.reason='A descending attack and a safe escape fit the remaining actions';
     }
-    state.diagnostics.flight={speed:state.flight.speed,airborne:state.flight.airborne,flown:state.flight.flown,reachable:state.flight.moves.length,hunt:state.flight.hunt};
+    state.diagnostics.flight={speed:state.flight.speed,airborne:state.flight.airborne,flown:state.flight.flown,reachable:state.flight.moves.length,hunt:state.flight.hunt,planning:state.flight.planning};
     if(state.flight.hunt)state.diagnostics.noActionReason=`${state.flight.hunt.reason}. Wait at a safe vantage rather than commit without an affordable escape.`;
     if(state.flight.moves.length){state.diagnostics.movementBlocked=null;state.diagnostics.reachableDestinations=state.flight.moves.length;}
     return state;
   };
+  adapter.snapshot=flightSnapshot;
   const offered=state=>gateActivityGoal(state,gateFlightHunt(state,[...candidates(state),...flightCandidates(state)]));
   adapter.candidates=offered;
   adapter.decide=state=>{

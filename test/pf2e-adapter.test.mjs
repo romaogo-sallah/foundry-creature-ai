@@ -2149,7 +2149,7 @@ test('init installs the native reaction query and API exposes reaction controls'
   f.hooks.get('init')();
   assert.equal(typeof CONFIG.queries[`${MODULE_ID}.reactionPrompt`], 'function');
   assert.equal(typeof game.modules.get(MODULE_ID).api.reactions.openControls, 'function');
-  assert.equal(game.modules.get(MODULE_ID).api.version,'0.28.3');
+  assert.equal(game.modules.get(MODULE_ID).api.version,'0.29.0');
   assert.equal(typeof game.modules.get(MODULE_ID).api.resetActors,'function');
 });
 

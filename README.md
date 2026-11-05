@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.29.0:** background Web Worker flight search and Dive setup ranking, with a bounded shortlist checked by native Foundry geometry and movement costs. Cancellation and stale-result guards protect action reservations; automatic and explicit native fallback remain available. Reload **all clients with Ctrl+F5** and confirm **Running code 0.29.0**. See [flight worker](docs/flight-worker.md) and [Git / rollback](docs/version-control.md).
+
 **Version 0.28.3:** Eagles prepare a complete **Eagle Dive (two actions) → Fly to safety (one action)** turn and preserve that useful activity goal instead of substituting a short Fly/Beak pass. Ground creatures with no answer to known enemies above melee reach use **Lay low**: take protection, Hide, Sneak to gain an estimated defensive Undetected advantage, then hold until circumstances change. Secret results remain separate from planning. Reload **all clients with Ctrl+F5** and confirm **Running code 0.28.3**. See [Eagle and shared flight](docs/eagle-flight.md) and [tactics](docs/tactics-and-components.md).
 
 **Version 0.28.0:** teaches the imported Eagle to take off, approach with its 60-foot Fly speed, attack in the air and use Eagle Dive. Shared flight provides bounded 3D routes, native wall/surface checks, upward difficult-terrain cost, half-cost straight descent and hover maintenance. Targets and Reactive Strikes use native 3D reach across elevations. Falls use native damage and an available Arrest a Fall reaction. Ground Steps/Strides are suppressed while flight is available.

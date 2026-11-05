@@ -10,6 +10,7 @@ import { configureEscapes } from './escape.mjs';
 import { ManualMovement } from './manual-movement.mjs';
 import { rememberTargets, movementKnowledge } from './target-memory.mjs';
 import { RUNTIME_VERSION } from './runtime-version.mjs';
+import {planningWorker} from './planning-worker.mjs';
 import { installGreaseLandingHooks } from './grease-landing.mjs';
 import { behaviorAPI, behaviorConfiguration, behaviorCatalog, configureBehaviors } from './behavior-runtime.mjs';
 import { configureZone, environmentBetween, openZones } from './environment-zones.mjs';
@@ -338,6 +339,9 @@ export async function tacticalMap(token=selected()){
 }
 
 Hooks.once('init', () => {
+  game.settings.register(MODULE_ID,'flightPlanningBackend',{name:'Flight planning engine',scope:'world',config:true,type:String,default:'worker',
+    choices:{worker:'Background Web Worker',native:'Native planner (compatibility fallback)'},
+    hint:'The worker proposes routes and Dive setups; Foundry validates native geometry and costs. Unsupported or failed workers fall back automatically.'});
   registerPresentationSettings();
   registerPerceptionSettings();
   reactions.install();
@@ -407,7 +411,7 @@ Hooks.on('preCreateChatMessage', message => {
 
 Hooks.once('ready', async () => {
   if (game.system.id !== 'pf2e' || Number(game.release.generation) !== 14) return;
-  game.modules.get(MODULE_ID).api = { version: RUNTIME_VERSION, open: openControls, preview, explainLast, runTurn, stop, resetActors, correctLedger, tacticalMap, reactions, manualMovement,
+  game.modules.get(MODULE_ID).api = { version: RUNTIME_VERSION, planning:{status:()=>planningWorker.status()}, open: openControls, preview, explainLast, runTurn, stop, resetActors, correctLedger, tacticalMap, reactions, manualMovement,
     zones: { open: openZones, configure: configureZone, between: environmentBetween, refresh:refreshTerrain,
       view: () => ({ observerId: environmentAwareness.observer?.id ?? null, defenses: [...environmentAwareness.entries].map(([tokenId, entry]) => ({ tokenId, ...entry.environment, detection: entry.detection })) }) },
     terrain:{onHazardMove,applySetup:applySceneSetup},supportedProfiles, registerCreatureProfile };
@@ -500,7 +504,7 @@ Hooks.on('pf2e.startTurn', (combatant) => {
     automatic: true, expectedTurn: `${game.combat.id}:${game.combat.round}:${combatant.id}`,
   }).catch(showError);
 });
-Hooks.on('canvasTearDown', () => { stop(); runners.clear(); environmentAwareness.clear(); });
+Hooks.on('canvasTearDown', () => { stop(); planningWorker.close('Scene changed'); runners.clear(); environmentAwareness.clear(); });
 Hooks.on('deleteCombat', combat => { stop(); expireCommands({ combat, removeAll: true }).catch(showError); void expireSpellZones({combat,removeAll:true}).catch(showError); void refreshEnvironmentView(); });
 Hooks.on('pf2e.endTurn', (combatant, combat) => { expireCommands({ combat, endedTokenId: combatant.tokenId,
   endedRound: combatant.flags?.pf2e?.roundOfLastTurnEnd ?? combat.round }).catch(showError); });

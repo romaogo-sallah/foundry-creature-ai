@@ -11,6 +11,9 @@ import {detectionFor} from './stealth-awareness.mjs';
 import {clearSightPath} from './attack-path.mjs';
 import {flightThreats,flightSafety} from './flight-safety.mjs';
 import {activityPlan} from '../framework/activity-plan.mjs';
+import {planningWorker} from './planning-worker.mjs';
+import {rankDiveSetups} from '../framework/flight-worker-planner.mjs';
+import {flightWorldStamp} from './flight-worker-snapshot.mjs';
 
 const ns='foundry-creature-ai',slug=item=>item.slug??item.name.toLowerCase().replaceAll(' ','-');
 export const EAGLE_SOURCE='Compendium.pf2e.pathfinder-monster-core.Actor.WBPEvEqIGvxeQKlp';
@@ -25,7 +28,7 @@ export class PF2eEagleAdapter extends PF2eBasicNPCAdapter{
       unsupported:parts.unsupported.filter(name=>name!==dive.name)};
   }
   candidates(state){return [...super.candidates(state),...(state.flight?.dives??[])];}
-  async enrichFlight(state,planner){
+  async enrichFlight(state,planner,{signal}={}){
     if(!state.flight?.canFly)return;
     const endpoints=[],bounds=flightBounds(this.token),talon=this.parts().talon;
     state.flight.preferredActivity='eagleDive';
@@ -73,8 +76,19 @@ export class PF2eEagleAdapter extends PF2eBasicNPCAdapter{
     };
     state.flight.dives=state.actionsRemaining>=2?endpoints.map(end=>build(state.flight.origin,end,state.actionsRemaining)).filter(Boolean):[];
     state.flight.diveSetupValue=Math.max(0,...endpoints.map(end=>build(state.flight.origin,end,3,{fresh:true})?.assessment.value??0))*0.45;
-    for(const move of state.flight.moves){
-      const dive=endpoints.map(end=>build({x:move.x,y:move.y,elevation:move.elevation},end,3,{fresh:true})).filter(Boolean);
+    const payload={origins:state.flight.moves.map(({x,y,elevation})=>({x,y,elevation})),endpoints,speed:flySpeed(this.actor),preferredElevation:planner.preferredElevation};
+    const stamp=flightWorldStamp(this);
+    const response=state.flight.planning?.backend==='worker'?await planningWorker.request('diveSetups',payload,{signal}):{};
+    if(response.cancelled||signal?.aborted)throw Object.assign(new Error('Flight planning cancelled'),{name:'AbortError'});
+    if(flightWorldStamp(this)!==stamp)throw new Error('Battlefield changed while planning a Dive; retry before acting');
+    const selected=response.result??rankDiveSetups(payload);
+    for(const [index,move] of state.flight.moves.entries()){
+      const shortlist=(selected[index]??[]).map(i=>endpoints[i]).filter(Boolean);
+      let dive=shortlist.map(end=>build({x:move.x,y:move.y,elevation:move.elevation},end,3,{fresh:true})).filter(Boolean);
+      // Preserve a route around unusual native geometry when the cheap
+      // shortlist was obstructed. This fallback is local to that destination.
+      if(!dive.length&&shortlist.length&&shortlist.length<endpoints.length)
+        dive=endpoints.map(end=>build({x:move.x,y:move.y,elevation:move.elevation},end,3,{fresh:true})).filter(Boolean);
       // Staging evaluates a future full turn: Dive (two actions), then the
       // measured escape (one Fly). It does not consume that escape action now.
       move.diveSetupValue=dive.length?Math.max(...dive.map(c=>c.assessment.value))*0.45:0;

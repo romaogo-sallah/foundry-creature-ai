@@ -148,10 +148,10 @@ export function attachBehaviorSystem(adapter) {
   const speed=adapter.groundSpeedFor.bind(adapter),movementOptions=adapter.movementOptions.bind(adapter),revalidate=adapter.revalidate.bind(adapter);
   adapter.groundSpeedFor=choice=>choice.sharedSneak?sneakSpeed(adapter):speed(choice);
   adapter.movementOptions=choice=>adapter.sharedSneaking?{...movementOptions(choice),[STEALTH_MOVEMENT]:true,showRuler:false}:movementOptions(choice);
-  adapter.revalidate=async(choice,ledger)=>{
+  adapter.revalidate=async(choice,ledger,options)=>{
     const configuration=behaviorConfiguration(adapter),component=[...tacticalBehaviors.components.values()].find(component=>component.actionKinds?.includes(choice.kind));
     if(component&&!component.core&&!configuration.components.includes(component.id))throw new Error(`Behavior component ${component.id} was detached before the action`);
-    return revalidate(choice.features?.sharedBehavior&&choice.kind==='sneak'?{...choice,kind:'stride'}:choice,ledger);
+    return revalidate(choice.features?.sharedBehavior&&choice.kind==='sneak'?{...choice,kind:'stride'}:choice,ledger,options);
   };
   const prepare=adapter.prepareTurn.bind(adapter);
   adapter.prepareTurn=async(options={})=>{

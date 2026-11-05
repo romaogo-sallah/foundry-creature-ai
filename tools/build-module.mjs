@@ -21,6 +21,7 @@ await cp(new URL('docs/ogre-boss-foundry.md', root), new URL('ogre-boss-foundry.
 await cp(new URL('docs/ogre-foundry.md', root), new URL('ogre-foundry.md', output));
 await cp(new URL('docs/creature-framework.md', root), new URL('creature-framework.md', output));
 await cp(new URL('docs/tactics-and-components.md', root), new URL('tactics-and-components.md', output));
+await cp(new URL('docs/flight-worker.md', root), new URL('flight-worker.md', output));
 await cp(new URL('docs/target-memory.md', root), new URL('target-memory.md', output));
 await cp(new URL('docs/npc-perception.md', root), new URL('npc-perception.md', output));
 await cp(new URL('docs/environment-zones.md', root), new URL('environment-zones.md', output));

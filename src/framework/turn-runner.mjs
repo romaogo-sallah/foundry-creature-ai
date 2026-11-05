@@ -110,7 +110,11 @@ export class TurnRunner {
           if (terminal) return terminal;
           throw error;
         }
-        const state = await this.adapter.snapshot(ledger);
+        let state;
+        const planningOptions={signal:this.abortController.signal};
+        try{state=await this.adapter.snapshot(ledger,planningOptions);}
+        catch(error){if(this.cancelled||this.abortController.signal.aborted||this.adapter.turnKey()!==turn)return ledger;throw error;}
+        if(this.cancelled||this.adapter.turnKey()!==turn)return ledger;
         const endedAfterRefresh = await this.completeIfIncapacitated(ledger, { oneAction }, turn);
         if (endedAfterRefresh) return endedAfterRefresh;
         const encounterEndAfterRefresh = await this.completeIfEncounterOver(ledger, turn);
@@ -126,8 +130,9 @@ export class TurnRunner {
           await this.adapter.report(decision, ledger);
           return await this.completeTurn(ledger, { oneAction }, turn);
         }
-        try { await this.adapter.revalidate(choice, ledger); }
+        try { await this.adapter.revalidate(choice, ledger,planningOptions); }
         catch (error) {
+          if(this.cancelled||this.abortController.signal.aborted||this.adapter.turnKey()!==turn)return ledger;
           const encounterEnd = await this.completeIfEncounterOver(ledger, turn);
           if (encounterEnd) return encounterEnd;
           const terminal = await this.completeIfIncapacitated(ledger, { oneAction }, turn);
@@ -149,8 +154,8 @@ export class TurnRunner {
           if(endedDuringPause)return endedDuringPause;
           // The pause is before reservation. Recheck the original choice against
           // live state without rerolling its tie or spending a stale action.
-          try{await this.adapter.revalidate(choice,ledger);}
-          catch(error){const terminal=await this.completeIfEncounterOver(ledger,turn)??await this.completeIfIncapacitated(ledger,{oneAction},turn);if(terminal)return terminal;throw error;}
+          try{await this.adapter.revalidate(choice,ledger,planningOptions);}
+          catch(error){if(this.cancelled||this.abortController.signal.aborted||this.adapter.turnKey()!==turn)return ledger;const terminal=await this.completeIfEncounterOver(ledger,turn)??await this.completeIfIncapacitated(ledger,{oneAction},turn);if(terminal)return terminal;throw error;}
           if(!canContinue())return ledger;
         }
         const encounterEndBeforeReservation=await this.completeIfEncounterOver(ledger,turn);

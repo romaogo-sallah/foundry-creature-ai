@@ -7,6 +7,8 @@ import {detectionFor} from './stealth-awareness.mjs';
 import {clearSightPath} from './attack-path.mjs';
 import {rememberedToken} from './target-memory.mjs';
 import {flightThreats,flightSafety} from './flight-safety.mjs';
+import {planningWorker} from './planning-worker.mjs';
+import {flightWorkerSnapshot,flightWorldStamp} from './flight-worker-snapshot.mjs';
 
 export const flightPoint=(adapter,cell)=>({...adapter.topLeft(cell),elevation:cell.elevation??adapter.token.document.elevation,
   level:adapter.token.document.level,action:'fly',snapped:true});
@@ -36,7 +38,43 @@ export function flightCollision(adapter,from,to){
   const [,blocked]=adapter.token.constrainMovementPath([from,to],{ignoreWalls:false,ignoreCost:true});
   return !blocked;
 }
-export function flightMoves(adapter,state,planner){
+export async function flightMoves(adapter,state,planner,{signal}={}){
+  if(!flySpeed(adapter.actor)||state.self.immobile||state.self.prone||state.actionsRemaining<1||!state.enemies.length)return [];
+  const fallback=reason=>{state.flight.planning={backend:'native',reason};return nativeFlightMoves(adapter,state,planner);};
+  if(game.settings?.get('foundry-creature-ai','flightPlanningBackend')==='native')return fallback('Native planning selected');
+  if(!planningWorker.available())return fallback('Web Workers are unavailable');
+  const stamp=flightWorldStamp(adapter),sceneId=canvas.scene.id,started=performance.now();
+  const response=await planningWorker.request('routes',flightWorkerSnapshot(adapter,state),{signal});
+  if(response.cancelled||signal?.aborted||!canvas.ready||canvas.scene.id!==sceneId)throw Object.assign(new Error('Flight planning cancelled'),{name:'AbortError'});
+  if(flightWorldStamp(adapter)!==stamp)return {stale:true};
+  if(response.error)return fallback(response.error);
+  if(!Array.isArray(response.result?.nodes)||response.result.nodes.length>24)return fallback('Invalid worker proposals');
+  const context=adapter.movementContext(),threats=flightThreats(adapter,state,e=>perceivedFlightTarget(adapter,e)),riskCache=new Map();
+  const riskAt=point=>{
+    const key=`${point.x},${point.y},${point.elevation}`;
+    if(!riskCache.has(key))riskCache.set(key,adapter.movementThreats(point,flightPoint(adapter,point)).length);
+    return riskCache.get(key);
+  };
+  const nodes=[];
+  for(const node of response.result.nodes){
+    if(!node.path?.length||node.path.length>128||!node.path.every(p=>[p.x,p.y,p.elevation].every(Number.isFinite)))continue;
+    if(['x','y','elevation'].some(k=>node.path[0][k]!==state.flight.origin[k]||node.path.at(-1)[k]!==node[k]))continue;
+    if(!planner.routeClear(node.path))continue;
+    const cost=flightCost(adapter,node.path,context);if(!Number.isFinite(cost)||cost<=0||cost>state.flight.speed+1e-8)continue;
+    const point=flightPoint(adapter,node);if(!isAirborne(adapter.token,point))continue;
+    const targets=flightMoveTargets(adapter,state,node),risk=Math.max(0,...node.path.slice(0,-1).map(riskAt));
+    const attackHere=Object.values(targets).some(t=>Object.values(t.strikes??{}).some(s=>s.usable));
+    nodes.push({...node,cost,kind:'fly',targets,nearestEnemy:Math.min(...Object.values(targets).map(t=>t.distance/5)),
+      safety:flightSafety(adapter,point,threats),attackEscape:attackHere&&state.actionsRemaining>=3?planner.escape(node,node.path):null,
+      provokes:risk>0,reactionRisk:risk?state.self.averageDamage:0,destinationThreatened:riskAt(node)>0,airborne:true});
+  }
+  if(!nodes.length)return fallback('Native checks rejected the worker routes');
+  state.flight.planning={backend:'worker',proposed:response.result.nodes.length,accepted:nodes.length,
+    exploredDestinations:response.result.exploredDestinations,elapsedMs:Math.round(performance.now()-started)};
+  return nodes;
+}
+
+export function nativeFlightMoves(adapter,state,planner){
   if(!flySpeed(adapter.actor)||state.self.immobile||state.self.prone||state.actionsRemaining<1||!state.enemies.length)return [];
   const context=adapter.movementContext(),bounds=flightBounds(adapter.token),rect=canvas.dimensions.sceneRect;
   const threats=flightThreats(adapter,state,enemy=>perceivedFlightTarget(adapter,enemy));

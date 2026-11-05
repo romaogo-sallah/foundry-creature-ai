@@ -1,0 +1,67 @@
+import {flightBounds} from './flight-surfaces.mjs';
+import {tokenHeight} from './vertical-geometry.mjs';
+import {occupiesMovementSpace} from './combat-state.mjs';
+import {clearSightPath} from './attack-path.mjs';
+import {detectionFor} from './stealth-awareness.mjs';
+import {perceivedFlightTarget} from './flight-movement.mjs';
+import {flySpeed} from './flight-costs.mjs';
+
+function polygon(shape,size){
+  if(shape.type==='polygon'){
+    const points=shape.points??[];
+    return Array.from({length:Math.floor(points.length/2)},(_,i)=>({x:points[i*2]/size,y:points[i*2+1]/size}));
+  }
+  const {x=0,y=0,width=0,height=0,rotation=0}=shape,cx=x+width/2,cy=y+height/2,angle=rotation*Math.PI/180;
+  const points=shape.type==='ellipse'?Array.from({length:16},(_,i)=>[Math.cos(i*Math.PI/8)*width/2,Math.sin(i*Math.PI/8)*height/2]):
+    [[-width/2,-height/2],[width/2,-height/2],[width/2,height/2],[-width/2,height/2]];
+  return points.map(([dx,dy])=>({x:(cx+dx*Math.cos(angle)-dy*Math.sin(angle))/size,y:(cy+dx*Math.sin(angle)+dy*Math.cos(angle))/size}));
+}
+
+export function flightWorkerSnapshot(adapter,state){
+  const size=canvas.grid.size,rect=canvas.dimensions.sceneRect,bounds=flightBounds(adapter.token),origin=state.flight.origin;
+  const footprint={width:adapter.token.w/size,height:adapter.token.h/size,depth:tokenHeight(adapter.token)};
+  const occupied=canvas.tokens.placeables.filter(t=>t!==adapter.token&&occupiesMovementSpace(t)&&!t.document.hidden&&
+    t.document.level===adapter.token.document.level&&detectionFor(adapter.token,t).state==='observed'&&clearSightPath(adapter.token,t))
+    .map(t=>({x:t.document.x/size,y:t.document.y/size,elevation:t.document.elevation,width:t.w/size,height:t.h/size,
+      depth:tokenHeight(t),passable:t.actor.isAllyOf(adapter.actor)}));
+  const walls=(canvas.scene.walls?.contents??[]).filter(w=>w.move!==0&&w._source?.move!==0&&
+    !(w.door>0&&w.ds===1)&&(!w.levels?.size||w.levels.has?.(adapter.token.document.level)))
+    .flatMap(w=>{const c=w.c??w._source?.c;return c?.length===4?[{x1:c[0]/size,y1:c[1]/size,x2:c[2]/size,y2:c[3]/size}]:[];});
+  const surfaces=[];
+  for(const region of canvas.scene.regions?.contents??[]){
+    if(region.hidden||region.includedInLevel&&!region.includedInLevel(adapter.token.document.level))continue;
+    for(const behavior of region.behaviors?.contents??[])if(behavior.type==='defineSurface'&&!behavior.disabled&&behavior.system.move){
+      const heights=[];
+      if(behavior.system.placement!=='top')heights.push(region.elevation.bottom);
+      if(behavior.system.placement!=='bottom')heights.push(region.elevation.top);
+      for(const shape of region._source?.shapes??region.shapes??[]){
+        if(shape.hole||!['rectangle','ellipse','polygon'].includes(shape.type))continue;
+        const points=polygon(shape,size);if(points.length<3)continue;
+        for(const elevation of heights)if(Number.isFinite(elevation))surfaces.push({elevation,points});
+      }
+    }
+  }
+  const preferredElevation=state.flight.hunt?.preferredElevation??origin.elevation;
+  const height=Math.min(preferredElevation,origin.elevation+Math.floor(state.flight.speed/10)*5);
+  const goals=[{...origin,elevation:height},...state.enemies.map(enemy=>{
+    const p=perceivedFlightTarget(adapter,enemy).document;
+    return {...adapter.cell(p),elevation:preferredElevation};
+  })];
+  return {origin,footprint,budget:state.flight.speed,preferredElevation,occupied,walls,surfaces,goals,
+    limits:{left:Math.ceil(rect.x/size),right:Math.floor((rect.x+rect.width-adapter.token.w)/size),
+      top:Math.ceil(rect.y/size),bottom:Math.floor((rect.y+rect.height-adapter.token.h)/size),low:bounds.bottom,high:bounds.top}};
+}
+
+// Authoritative freshness guard only. These unfiltered fields are never sent
+// to the worker or used as an actor's knowledge of a hidden opponent.
+export function flightWorldStamp(adapter){
+  return JSON.stringify([adapter.turnKey(),game.paused,flySpeed(adapter.actor),adapter.actor.hitPoints?.value,
+    canvas.tokens.placeables.map(t=>[t.id,t.document.x,t.document.y,t.document.elevation,t.document.level,t.document.width,t.document.height,t.document.depth,
+      t.actor?._stats?.modifiedTime,t.actor?.hitPoints?.value,t.document._stats?.modifiedTime,
+      t.actor?.hasCondition?.('prone','immobilized','grabbed','restrained','unconscious','dying','dead','stunned'),
+      t.actor?.getFlag?.('foundry-creature-ai','reaction'),
+      (t.actor?.system.actions??[]).map(a=>[a.item?.id,a.totalModifier,a.ready,a.canAttack])]),
+    (canvas.scene.walls?.contents??[]).map(w=>[w.id,w.ds,w._stats?.modifiedTime,w.c,w.move,w.dir]),
+    (canvas.scene.regions?.contents??[]).map(r=>[r.id,r._stats?.modifiedTime,r.elevation,r.hidden,
+      (r.behaviors?.contents??[]).map(b=>[b.id,b.disabled,b._stats?.modifiedTime])])]);
+}

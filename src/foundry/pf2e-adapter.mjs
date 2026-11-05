@@ -480,10 +480,10 @@ export class PF2eCreatureAdapter {
   decide() { throw new Error('No decision policy is registered'); }
   candidates() { throw new Error('No capability providers are registered'); }
 
-  async revalidate(choice, ledger) {
+  async revalidate(choice, ledger,options={}) {
     await this.assertReady();
     if (ledger.turn !== this.turnKey()) throw new Error('The combat turn changed');
-    const current = await this.snapshot(ledger);
+    const current = await this.snapshot(ledger,options);
     // Revalidate legality without making a new random decision.
     const available = this.candidates(current).find(candidate => candidate.id === choice.id && candidate.legal);
     if (!available || available.actionCost > ledger.actionsRemaining || (available.bonusActionCost ?? 0) > (ledger.bonusMovementActions ?? 0)) throw new Error('The chosen action is no longer available');
