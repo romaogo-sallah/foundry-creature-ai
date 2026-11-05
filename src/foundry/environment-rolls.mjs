@@ -12,8 +12,7 @@ const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', 
 const hasOption = (options, option) => options?.has?.(option) ?? options?.includes?.(option) ?? false;
 
 export function concealmentDC(observer, target, environment = environmentBetween(observer, target)) {
-  if(observer.actor?.hasCondition('blinded'))return 11;
-  if (detectionFor(observer, target).state === 'hidden') return 11;
+  if (['hidden','undetected'].includes(detectionFor(observer, target).state)) return 11;
   return observer.actor?.hasCondition('dazzled')||environment.concealed || target.actor && hasUnmanagedConcealment(target.actor) ? 5 : null;
 }
 

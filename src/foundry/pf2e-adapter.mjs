@@ -19,6 +19,7 @@ import { greaseExtraCost, prepareGreaseMove, withGreaseMode, inGrease } from './
 import { settleGreaseSlip, finishGreaseFall } from './grease-landing.mjs';
 import { sameSurfaceElevation } from './surface-terrain.mjs';
 import { distanceToPosition, rayAt, tokenAt } from './vertical-geometry.mjs';
+import { nonvisualSense } from './perception-senses.mjs';
 import { RUNTIME_VERSION } from './runtime-version.mjs';
 import { environmentBetween } from './environment-zones.mjs';
 import { concealmentCheck, concealmentDC } from './environment-rolls.mjs';
@@ -32,7 +33,7 @@ export const MANAGED_TRIP_OPTION = 'foundry-creature-ai:trip';
 // PF2e Automations 1.4.9 honors this per-message option in HandleRuleMessage.
 // This adapter owns AI Trip outcomes, including Prone and critical Trip damage.
 export const SKIP_RULE_AUTOMATION = 'skip-handling-message';
-const blocked = ['unconscious', 'dying', 'dead', 'paralyzed', 'petrified', 'controlled', 'confused', 'fleeing', 'stunned', 'blinded'];
+const blocked = ['unconscious', 'dying', 'dead', 'paralyzed', 'petrified', 'controlled', 'confused', 'fleeing', 'stunned'];
 const sizeOrder = ['tiny', 'sm', 'med', 'lg', 'huge', 'grg'];
 
 export function rollEvent(type) {
@@ -456,7 +457,9 @@ export class PF2eCreatureAdapter {
       'No useful supported action from this position.';
     const bindings = escapeBindings(this.actor), escapes = escapeOptions(this);
     const perception=this.actor.getStatistic('perception');
-    const seek={available:Boolean(perception?.check?.roll)&&!this.actor.hasCondition('blinded','paralyzed','fascinated'),bonus:perception?.check?.mod??0,scope:seekScope(),
+    const seek={available:Boolean(perception?.check?.roll)&&!this.actor.hasCondition('paralyzed','fascinated')&&
+      (!this.actor.hasCondition('blinded')||Boolean(nonvisualSense(this.token))),imprecise:this.actor.hasCondition('blinded'),bonus:perception?.check?.mod??0,scope:seekScope(),
+      origin:Object.fromEntries(['x','y','elevation','level','width','height','depth'].map(key=>[key,this.token.document[key]])),
       suspectedOpponents:targetChecks.filter(check=>!check.target&&check.reason?.includes('no known square')&&!canvas.tokens.get(check.id)?.document.hidden).length};
     return { self, enemies, moves, style, morale, retreatComplete, retreatDistance, seek,
       escapes: escapes.map(({ id, dc, statistic, bonus }) => ({ id, dc, statistic, bonus })), nearestEnemy, ...ledger,

@@ -3,6 +3,7 @@ import { environmentBetween } from './environment-zones.mjs';
 import { checkDegree } from '../framework/math.mjs';
 import { hasUnmanagedConcealment } from './zone-concealment.mjs';
 import { clearStealthBelief } from './stealth-belief.mjs';
+import { sensoryDetection } from './perception-senses.mjs';
 
 const namespace = 'foundry-creature-ai';
 export const STEALTH_MOVEMENT = `${namespace}:sneak`;
@@ -25,16 +26,20 @@ const conditionDetection = subject => subject.actor.hasCondition('undetected','u
 
 export function detectionFor(observer, subject) {
   const record = stealthRecord(subject), saved = record?.entries.find(entry => entry.observerId === observer.id);
-  const entry = saved?.source==='seek' && saved.conditionStamp!==stealthConditionStamp(subject) ? null : saved;
-  if (!entry) return conditionDetection(subject);
-  if(entry.state==='observed')return subject.actor.hasCondition('invisible')?{...entry,state:'hidden'}:entry;
+  let entry = saved?.source==='seek' && saved.conditionStamp!==stealthConditionStamp(subject) ? null : saved;
+  // A hearing result cannot become Observed while vision is unavailable. Once
+  // sight returns it may be improved by Seek again, without discarding the
+  // located square or changing any other observer's detection result.
+  if(entry?.sense&&!observer.actor.hasCondition('blinded'))entry={...entry,precisionBlocked:subject.actor.hasCondition('invisible')};
+  if (!entry) return sensoryDetection(observer,subject,conditionDetection(subject));
+  if(entry.state==='observed')return sensoryDetection(observer,subject,subject.actor.hasCondition('invisible')?{...entry,state:'hidden'}:entry);
   // Once cover is lost in a clear view, geometric observation can reveal the
   // subject. Successful Sneak is provisionally concealed during its native move;
   // its endpoint and check are resolved before the action releases the runner.
   const environment = environmentBetween(observer, subject);
   if (!record.moving && clearSightPath(observer, subject) && !environment.canHide && !openStealth(subject) && !observer.actor.hasCondition('blinded') &&
     !subject.actor.hasCondition('hidden','undetected','unnoticed')) return { state: 'observed' };
-  return entry;
+  return sensoryDetection(observer,subject,entry);
 }
 
 export function stealthObservers(subject) {
@@ -105,7 +110,7 @@ export function visibleToUser(subject, user = game.user) {
   if (subject.actor?.testUserPermission?.(user, 'OWNER')) return true;
   const combatants = game.combat?.started ? new Set(Array.from(game.combat.combatants).filter(c=>!c.defeated).map(c=>c.tokenId)) : null;
   const observers = canvas.tokens.placeables.filter(token => token !== subject && (!combatants || combatants.has(token.id)) && token.actor?.hitPoints?.value>0 &&
-    !token.actor.hasCondition('unconscious','dying','dead','blinded') && token.actor.testUserPermission?.(user, 'OWNER'));
+    !token.actor.hasCondition('unconscious','dying','dead') && token.actor.testUserPermission?.(user, 'OWNER'));
   return observers.some(observer => detectionFor(observer, subject).state !== 'undetected');
 }
 

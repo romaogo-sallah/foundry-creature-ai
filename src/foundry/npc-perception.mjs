@@ -4,6 +4,7 @@ import { clearSightPath } from './attack-path.mjs';
 import { environmentBetween } from './environment-zones.mjs';
 import { detectionFor, stealthRecord, stealthContext, stealthConditionStamp, refreshStealthVisibility } from './stealth-awareness.mjs';
 import { rememberTargets } from './target-memory.mjs';
+import { nonvisualSense } from './perception-senses.mjs';
 
 const ns='foundry-creature-ai';
 export function registerPerceptionSettings(){
@@ -35,6 +36,8 @@ export async function executeSeek(adapter,choice,ledger,{canContinue=()=>true}={
   const valid=()=>canContinue()&&adapter.turnKey()===ledger.turn&&!game.paused&&game.users.activeGM?.id===game.user.id&&
     canvas.scene?.id===context.sceneId&&canvas.tokens.get(observer.id)===observer&&!adapter.turnEndReason();
   if(!valid())return {skipped:true,pause:true,skipReason:'Stopped before Seek began'};
+  const blind=actor.hasCondition('blinded'),sense=blind?nonvisualSense(observer):null;
+  if(blind&&!sense)throw new Error('No usable sense for automatic Seek');
   const statistic=actor.getStatistic('perception');
   if(!statistic?.check?.roll)throw new Error('This creature has no native Perception roll');
   const field=choice.searchScope==='field',area=field?null:seekArea(choice.searchPosition);
@@ -42,7 +45,7 @@ export async function executeSeek(adapter,choice,ledger,{canContinue=()=>true}={
   // area centre, availability, utility, or the creature's narrative intent.
   const subjects=adapter.targetIds().map(id=>adapter.assessTarget(id,{pursuit:true}).target).filter(subject=>subject&&!subject.document.hidden&&
     subject.actor?.hitPoints?.value>0&&subject.document.elevation===observer.document.elevation&&subject.document.level===observer.document.level&&
-    (field||inSeekArea(subject,area))&&clearSightPath(observer,subject)).map(subject=>({
+    (field||inSeekArea(subject,area))&&(blind?nonvisualSense(observer,subject):clearSightPath(observer,subject))).map(subject=>({
       subject,start:detectionFor(observer,subject),position:position(subject),stamp:stealthConditionStamp(subject),
       record:JSON.stringify(stealthRecord(subject))}));
   const roll=await statistic.check.roll({skipDialog:true,action:'seek',traits:['concentrate','secret'],
@@ -65,10 +68,12 @@ export async function executeSeek(adapter,choice,ledger,{canContinue=()=>true}={
     const existing=Math.max(0,...(statistic.dc?.modifiers??statistic.modifiers??[]).filter(m=>m.type==='circumstance'&&m.enabled!==false&&!m.ignored).map(m=>m.modifier??m.value??0));
     const degree=checkDegree(die,roll.total-die,dc+Math.max(0,cover-existing));
     if(degree<2){results.push(`${subject.name}: not located`);continue;}
-    const state=subject.actor.hasCondition('invisible')||start.state==='undetected'&&degree===2?'hidden':'observed';
+    const imprecise=blind&&nonvisualSense(observer,subject)?.acuity!=='precise';
+    const state=imprecise||subject.actor.hasCondition('invisible')||start.state==='undetected'&&degree===2?'hidden':'observed';
     const saved=stealthRecord(subject),entries=(saved?.entries??[]).filter(entry=>entry.observerId!==observer.id);
     entries.push({observerId:observer.id,state,knownPosition:position(subject),source:'seek',conditionStamp:candidate.stamp,
-      precisionBlocked:subject.actor.hasCondition('invisible')});
+      sense:imprecise?nonvisualSense(observer,subject)?.type:null,
+      precisionBlocked:imprecise||subject.actor.hasCondition('invisible')});
     if(!valid())throw new Error('The turn changed before detection was updated');
     await subject.document.setFlag(ns,'stealth',{...context,moving:false,entries});
     knowledge.push({subjectId:subject.id,state,knownPosition:candidate.position});
@@ -82,5 +87,5 @@ export async function executeSeek(adapter,choice,ledger,{canContinue=()=>true}={
   for(const result of knowledge)entries.set(result.subjectId,result);
   if(valid()&&knowledge.length)await observer.document.setFlag(ns,'perception',{...context,entries:[...entries.values()]});
   await rememberTargets(adapter,valid);refreshStealthVisibility();
-  return {resolved:true,lastAction:{kind:'seek'},note:`Seek (${field?'simplified visible field':'15-foot search area'}): ${results.join('; ')||'no additional creature located'}.`};
+  return {resolved:true,lastAction:{kind:'seek'},note:`Seek (${blind?sense.type+'; ':''}${field?'simplified field':'15-foot search area'}): ${results.join('; ')||'no additional creature located'}.`};
 }

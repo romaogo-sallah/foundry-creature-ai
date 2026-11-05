@@ -214,6 +214,31 @@ test('indicators clear for ambiguous observers and use an assigned character whe
   awareness.refresh();assert.equal(awareness.observer,f.player);
 });
 
+test('caption refresh repairs empty native tooltip text even when the computed label did not change',async()=>{
+  const f=setup({cover:'standard'}),awareness=new EnvironmentAwareness();
+  awareness.install();const wrapper=f.wrappers.get('CONFIG.Token.objectClass.prototype._getTooltipText');
+  for(const token of canvas.tokens.placeables){
+    token.tooltip={text:''};token.renderFlags={set:()=>{}};
+    token._getTooltipText=()=>wrapper.call(token,()=>'');
+    token._refreshTooltip=()=>{token.tooltip.text=token._getTooltipText();};
+  }
+  await awareness.schedule();assert.match(f.player.tooltip.text,/Cover \+2/);
+  f.player.tooltip.text='';await awareness.schedule(f.player.id);
+  assert.match(f.player.tooltip.text,/Cover \+2/);
+  f.actor.conditionsSet.add('blinded');await awareness.schedule();
+  assert.match(f.player.tooltip.text,/Hidden \(observer blinded\)/);
+  canvas.tokens.controlled=[f.boss,f.player];await awareness.schedule();
+  assert.equal(f.player.tooltip.text,'','ambiguous observer clears the rendered caption too');
+});
+
+test('manual Strikes against a Blinded defender apply off-guard without creating a global condition',async()=>{
+  const f=setup({concealment:'none'});f.boss.actor.conditionsSet.add('blinded');
+  const context=playerContext(f);let calls=0;
+  await f.wrapper(async(_check,result)=>{calls++;assert.ok(result.options.has('target:condition:off-guard'));assert.equal(result.dc.value,23);},{},context);
+  assert.equal(calls,1);assert.equal(f.boss.actor.hasCondition('off-guard'),false);
+  assert.equal(detectionFor(f.boss,f.player).state,'hidden');
+});
+
 test('indicators do not reveal invisible tokens and can be disabled per client',()=>{
   const f=setup();let enabled=true,queries=0;
   const awareness=new EnvironmentAwareness({enabled:()=>enabled,query:(...args)=>{queries++;return environmentBetween(...args);}});

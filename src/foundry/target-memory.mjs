@@ -3,6 +3,7 @@ import {sharesVerticalSpace} from './vertical-space.mjs';
 import { incapacitationReason } from './combat-state.mjs';
 import { detectionFor } from './stealth-awareness.mjs';
 import { hasUnmanagedConcealment } from './zone-concealment.mjs';
+import { nonvisualSense } from './perception-senses.mjs';
 
 const namespace = 'foundry-creature-ai';
 const locks = new Map();
@@ -51,9 +52,10 @@ export function targetKnowledge(adapter, knownMovement) {
     const stealth = relative.state !== 'observed';
     const concealed = hasUnmanagedConcealment(actor);
     const observerBlind = adapter.actor.hasCondition('blinded');
-    const observed = !observerBlind && sameLevel && !target.document.hidden && !stealth && clearSightPath(adapter.token, target);
+    const precise=!observerBlind||nonvisualSense(adapter.token,target)?.acuity==='precise';
+    const observed = precise && sameLevel && !target.document.hidden && !stealth && clearSightPath(adapter.token, target);
     let entry = previous.find(entry => entry.id === id);
-    if(relative.state==='hidden'&&relative.source!=='invisibility'&&!observerBlind&&sameLevel&&!target.document.hidden){
+    if(relative.state==='hidden'&&relative.source!=='invisibility'&&sameLevel&&!target.document.hidden){
       entry={id,position:position(target),round:game.combat.round,source:'located square'};
     }
     if (entry && knownMovement?.tokenId === id && !observerBlind && !adapter.actor.hasCondition('deafened') && sameLevel && !target.document.hidden &&
@@ -84,11 +86,12 @@ export function targetKnowledge(adapter, knownMovement) {
       flatCheckRequired: concealed || relative.state==='hidden', allowAttackEstimate: false, searchRequired: false };
     const view = rememberedToken(target, entry.position, awareness);
     awareness.searchRequired = clearSightPath(adapter.token, view);
+    if(relative.state==='hidden'&&relative.precisionBlocked)awareness.searchRequired=false;
     if(awareness.searchRequired&&relative.state==='observed')awareness.detection='undetected';
     awareness.attackOnSight=awareness.detection==='hidden'&&relative.source!=='invisibility'&&!target.document.hidden;
     // Hidden has a current known square and permits a DC 11 targeting check.
     // An old Undetected square never permits tracking the real creature.
-    awareness.allowAttackEstimate = awareness.searchRequired && relative.state==='hidden' && relative.source!=='invisibility' && !target.document.hidden;
+    awareness.allowAttackEstimate = clearSightPath(adapter.token,view) && relative.state==='hidden' && relative.source!=='invisibility' && !target.document.hidden;
     checks.push({ ...check, target: view, awareness });
   }
   return { checks, memory: { combatId, sceneId, entries } };

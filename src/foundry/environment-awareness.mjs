@@ -26,6 +26,10 @@ export function captionDetection(observer, target) {
   const causes = [];
   if (relative.state !== 'observed'&&relative.source!=='invisibility'&&!relative.precisionBlocked) causes.push('stealth');
   if (invisible) causes.push('invisibility');
+  if (relative.source==='blinded') {
+    const index=causes.indexOf('stealth');if(index>=0)causes.splice(index,1);
+    causes.push('observer blinded');
+  }
   if (blocked) causes.push('LOS blocked');
   if (target.document.hidden) causes.push('GM hidden');
   if (explicit && !causes.length) causes.push('stealth');
@@ -48,8 +52,16 @@ export class EnvironmentAwareness {
     this.pending = null; this.all = false; this.moved = new Set();
   }
   clear() {
-    for (const { token } of this.entries.values()) token.renderFlags?.set({ refreshTooltip: true });
+    const tokens=[...this.entries.values()].map(entry=>entry.token);
     this.entries.clear(); this.observer = null; this.sceneId = null;
+    for(const token of tokens)this.refreshLabel(token);
+  }
+  refreshLabel(token) {
+    token.renderFlags?.set({ refreshTooltip: true });
+    // Some canvas redraws leave the tooltip empty while the cached label stays
+    // unchanged. Refresh the existing native text object on document/selection
+    // events too; no extra geometry, render ticker, or persistent actor effect.
+    if(token.tooltip&&token.tooltip.text!==token._getTooltipText?.())token._refreshTooltip?.();
   }
   label(token) { return this.entries.get(token.id)?.label ?? ''; }
   refresh({ moved = [], all = true } = {}) {
@@ -74,7 +86,7 @@ export class EnvironmentAwareness {
       const label = environment ? defenseLabel(environment, detection) : '';
       const previous = this.entries.get(token.id);
       this.entries.set(token.id, { token, environment, detection, label });
-      if (previous?.label !== label) token.renderFlags?.set({ refreshTooltip: true });
+      if (previous?.label !== label||token.tooltip?.text!==token._getTooltipText?.())this.refreshLabel(token);
     }
   }
   schedule(tokenId) {

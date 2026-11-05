@@ -16,7 +16,7 @@ export function seekCandidates(state) {
     const unresolved=state.enemies.filter(enemy=>enemy.awareness?.state==='known-square'&&
       !(enemy.awareness.detection==='hidden'&&enemy.awareness.precisionBlocked));
     if(!unresolved.length&&!state.seek.suspectedOpponents)return [];
-    if(!unresolved.some(enemy=>enemy.lineOfSight!==false)&&!state.seek.suspectedOpponents)return [];
+    if(!state.seek.imprecise&&!unresolved.some(enemy=>enemy.lineOfSight!==false)&&!state.seek.suspectedOpponents)return [];
     const before=unresolved.filter(enemy=>enemy.awareness.detection==='hidden').length;
     const gain=success*state.self.averageDamage*(state.actionsRemaining>1?0.8:0.2);
     const marginal=setupUtility(state,{gain,retained:before});
@@ -26,8 +26,8 @@ export function seekCandidates(state) {
         {label:'Setup action cost',contribution:-marginal.actionCost}]}];
   }
   const areas=new Set();
-  return state.enemies.flatMap(enemy=>{
-    if(!enemy.awareness?.searchRequired||enemy.lineOfSight===false||enemy.distance>30)return [];
+  const candidates=state.enemies.flatMap(enemy=>{
+    if(!enemy.awareness?.searchRequired||!state.seek.imprecise&&enemy.lineOfSight===false||enemy.distance>30)return [];
     // A known invisible square cannot become observed with ordinary vision.
     if(enemy.awareness.detection==='hidden'&&enemy.awareness.precisionBlocked)return [];
     const square=enemy.awareness.position;
@@ -41,4 +41,9 @@ export function seekCandidates(state) {
       intent:'search a remembered enemy position',features:{search:true},assessment:{value},
       scoringTerms:[{label:'Estimated benefit of locating an enemy (benchmark Perception odds)',contribution:value}]}];
   });
+  if(!candidates.length&&state.seek.suspectedOpponents&&state.seek.origin){
+    candidates.push({id:'seek:nearby',kind:'seek',actionCost:1,legal:true,searchPosition:{...state.seek.origin},
+      intent:'listen and search the nearby area for undetected opponents',features:{search:true},assessment:{value:0.1}});
+  }
+  return candidates;
 }

@@ -33,6 +33,81 @@ function dc(subject,value,modifiers=[]){
   subject.actor.getStatistic=slug=>slug==='stealth'?{dc:{value,modifiers}}:native(slug);
 }
 
+test('a Blinded NPC can close and Strike a heard Hidden opponent without repeatedly Seeking',async()=>{
+  const f=fixture();f.actor.conditionsSet.add('blinded');f.adapter.assertReady();
+  const state=await f.adapter.snapshot(await ledger(f));
+  assert.equal(state.enemies[0].awareness.detection,'hidden');
+  assert.equal(state.enemies[0].concealmentDC,11);
+  assert.ok(state.moves.length>0);assert.ok(state.seek.available);
+  assert.ok(f.adapter.candidates(state).some(c=>c.kind==='strike'));
+  assert.equal(seekCandidates(state).length,0,'hearing cannot improve a located Hidden creature to Observed');
+  const result=await new TurnRunner(f.adapter).run();
+  assert.equal(result.actionsRemaining,0);assert.ok(f.calls.some(c=>c[0]==='attack'));
+  assert.ok(f.calls.some(c=>c[0]==='flat'));
+  assert.equal(f.calls.some(c=>c[0]==='perception'),false);
+});
+
+test('hearing Seek locates an unknown Undetected creature as Hidden even on a critical success',async()=>{
+  const f=fixture();f.actor.conditionsSet.add('blinded');f.player.actor.conditionsSet.add('undetected');
+  game.settings.get=()=> 'field';
+  dc(f.player,16);perception(f,20,30);
+  const state=await f.adapter.snapshot(await ledger(f));
+  assert.equal(state.enemies.length,0);assert.equal(state.seek.suspectedOpponents,1);
+  assert.equal(seekCandidates(state)[0].kind,'seek');
+  await f.adapter.execute({kind:'seek',actionCost:1,searchScope:'field'},await ledger(f));
+  const detected=detectionFor(f.boss,f.player);
+  assert.equal(detected.state,'hidden');assert.equal(detected.precisionBlocked,true);
+  const next=await f.adapter.snapshot(await ledger(f));
+  assert.equal(next.enemies[0].awareness.position.x,500);
+  assert.equal(next.enemies[0].inReach,true);assert.equal(seekCandidates(next).length,0);
+  assert.equal(f.player.actor.hasCondition('undetected'),true,'the global condition is not removed for other observers');
+  f.actor.conditionsSet.delete('blinded');
+  const sighted=await f.adapter.snapshot(await ledger(f));
+  assert.ok(seekCandidates(sighted).length,'restored vision allows Hidden to improve to Observed');
+  await f.adapter.execute({kind:'seek',actionCost:1,searchScope:'field'},await ledger(f));
+  assert.equal(detectionFor(f.boss,f.player).state,'observed');
+});
+
+test('Blinded and Deafened requires another usable sense; precise nonvisual senses retain observation within range',async()=>{
+  const f=fixture();f.actor.conditionsSet.add('blinded');f.actor.conditionsSet.add('deafened');
+  let state=await f.adapter.snapshot(await ledger(f));
+  assert.equal(state.seek.available,false);assert.equal(state.enemies.length,0);
+  f.actor.system.perception={senses:[{type:'scent',acuity:'imprecise',range:30}]};
+  state=await f.adapter.snapshot(await ledger(f));
+  assert.equal(state.seek.available,true);assert.equal(state.enemies[0].concealmentDC,11);
+  f.actor.system.perception.senses=[{type:'echolocation',acuity:'precise',range:30}];
+  assert.equal(detectionFor(f.boss,f.player).state,'undetected','Deafened disables hearing-based echolocation');
+  f.actor.conditionsSet.delete('deafened');
+  assert.equal(detectionFor(f.boss,f.player).state,'observed');
+  assert.equal(concealmentDC(f.boss,f.player),null);
+  state=await f.adapter.snapshot(await ledger(f));assert.equal(state.enemies[0].awareness.state,'observed');
+  f.actor.system.perception.senses[0].range=5;
+  assert.equal(detectionFor(f.boss,f.player).state,'hidden');
+});
+
+test('bounded hearing Seek can search nearby unknown enemies without aiming at their hidden live square',async()=>{
+  const f=fixture();f.actor.conditionsSet.add('blinded');f.player.actor.conditionsSet.add('undetected');dc(f.player,1);
+  const state=await f.adapter.snapshot(await ledger(f)),search=seekCandidates(state)[0];
+  assert.equal(search.id,'seek:nearby');assert.equal(search.searchPosition.x,f.boss.document.x);
+  assert.notEqual(search.searchPosition.x,f.player.document.x);
+  await f.adapter.revalidate(search,await ledger(f));await f.adapter.execute(search,await ledger(f));
+  assert.equal(detectionFor(f.boss,f.player).state,'hidden');
+});
+
+test('Reactive Strike can target a heard creature while Blinded and awaits its DC 11 check',async()=>{
+  const f=makeFixture();f.actor.conditionsSet.add('blinded');
+  f.combat.turn=1;f.combat.combatant=f.combat.combatants[1];
+  assert.equal(f.reactions.reactors(f.player).includes(f.boss),true);
+  globalThis.Roll=class{async evaluate(){this.total=1;return this;}async toMessage(message){f.calls.push(['flat',message]);}};
+  f.reactions.prompts.ask=async request=>request.choices.find(choice=>!['pass','pause'].includes(choice.id)).id;
+  await f.reactions.action({mover:f.player,kind:'manipulate'});
+  assert.ok(f.calls.some(c=>c[0]==='flat'));
+  assert.equal(f.calls.some(c=>c[0]==='attack'),false,'failed flat check consumes the reaction without rolling an attack');
+  assert.equal(f.reactions.available(f.boss),false);
+  f.player.actor.conditionsSet.add('undetected');
+  assert.equal(f.reactions.meleeStrikes(f.boss,f.player).length,0);
+});
+
 test('Seek uses one native blind Perception roll and updates only its observer, preserving global conditions',async()=>{
   const f=fixture();f.player.actor.conditionsSet.add('hidden');dc(f.player,16);
   await f.player.document.setFlag(ns,'stealth',{combatId:f.combat.id,sceneId:'scene',moving:false,

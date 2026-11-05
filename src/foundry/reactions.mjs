@@ -177,8 +177,7 @@ export class ReactionEngine {
     if (!canReact(reactor.actor) || !reactor.actor.isEnemyOf(mover.actor) || reactor.document.hidden || mover.document.hidden ||
       !planning && detectionFor(reactor,mover).state === 'undetected' ||
       !sharesVerticalSpace(reactor,mover) ||
-      mover.actor.hasCondition('invisible') ||
-      reactor.actor.hasCondition('blinded') || !clearSightPath(reactor, mover) || !clearAttackPath(reactor, mover)) return [];
+      (!reactor.actor.hasCondition('blinded')&&!clearSightPath(reactor, mover)) || !clearAttackPath(reactor, mover)) return [];
     return this.meleeOptions(reactor).filter(({ strike, reason }) => {
       const reach = reactor.actor.getReach({ action: 'attack', weapon: strike.item });
       return !reason && distanceToPosition(reactor,mover,reactor.document._source??reactor.document,reach) <= reach;

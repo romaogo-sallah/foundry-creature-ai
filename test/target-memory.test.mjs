@@ -105,14 +105,19 @@ test('Preview projects knowledge without creating saved memory or altering the t
   assert.deepEqual({x:f.player.document.x,y:f.player.document.y},before);
 });
 
-test('blinded or unconscious observers do not acquire fresh enemy positions',async()=>{
+test('Blinded hearing locates ordinary enemies but never tracks Undetected movement; unconscious observers learn nothing',async()=>{
   const f=fixture();await rememberTargets(f.adapter);
   f.actor.conditionsSet.add('blinded');f.player.document.x=600;
   await rememberTargets(f.adapter);
-  assert.equal(memory(f.boss).entries[0].position.x,500);
+  assert.equal(memory(f.boss).entries[0].position.x,600);
+  assert.equal(targetKnowledge(f.adapter).checks[0].awareness.detection,'hidden');
+  f.player.actor.conditionsSet.add('undetected');f.player.document.x=650;
+  await rememberTargets(f.adapter);
+  assert.equal(memory(f.boss).entries[0].position.x,600,'Sneak prevents ambient hearing from following the live square');
+  f.player.actor.conditionsSet.delete('undetected');
   f.actor.conditionsSet.delete('blinded');f.actor.conditionsSet.add('unconscious');f.player.document.x=700;
   await rememberTargets(f.adapter);
-  assert.equal(memory(f.boss).entries[0].position.x,500);
+  assert.equal(memory(f.boss).entries[0].position.x,600);
   f.actor.conditionsSet.delete('unconscious');await rememberTargets(f.adapter);
   assert.equal(memory(f.boss).entries[0].position.x,700);
 });
