@@ -40,7 +40,7 @@ function setup({die=15,answer='sneak'}={}){
   f.reactions.prompts.ask=async request=>{f.prompts.push(request);return answer;};
   const movement=new ManualMovement(f.reactions,{playerStealth:controller,enabled:()=>false,onError:error=>errors.push(error.message)});
   const point=(x,y=f.player.document.y)=>({x,y,elevation:0,level:'ground',action:'walk'});
-  const data=(...points)=>({sceneId:'scene',tokenId:f.player.id,origin:point(f.player.document.x),path:[point(f.player.document.x),...points],stamp:combatStamp(),expires:Date.now()+120000});
+  const data=(...points)=>({sceneId:'scene',tokenId:f.player.id,mode:answer,origin:point(f.player.document.x),path:[point(f.player.document.x),...points],stamp:combatStamp(),expires:Date.now()+120000});
   const rollWrapper=()=>controller.wrapRoll.bind(controller);
   return {...f,controller,movement,point,data,errors,notices,dialogs,rollWrapper};
 }
@@ -159,15 +159,16 @@ test('native path cost includes alternating diagonals in the half-Speed budget',
   for(const swift of [false,true]){
     const f=setup();fog();await hidden(f);
     if(swift)f.player.actor.items.set('swift',{type:'feat',slug:'swift-sneak'});
-    const completed=await f.movement.receive(f.data(f.point(700,400)),game.user);
-    assert.equal(completed,swift);assert.equal(f.prompts[0].choices.some(c=>c.id==='sneak'),swift);
+    if(swift)assert.equal(await f.movement.receive(f.data(f.point(700,400)),game.user),true);
+    else await assert.rejects(f.movement.receive(f.data(f.point(700,400)),game.user),/Sneak allows/);
+    assert.equal(f.prompts.length,0);
   }
 });
 
-test('player movement offers Stride, Sneak and Step even with automated reactions disabled',async()=>{
+test('native Sneak resolves without a popup even with automated reactions disabled',async()=>{
   const f=setup();fog();await hidden(f);
   assert.equal(await f.movement.receive(f.data(f.point(600)),game.user),true);
-  assert.deepEqual(f.prompts[0].choices.map(c=>c.id),['stride','sneak','step']);
+  assert.equal(f.prompts.length,0);
   assert.equal(state(f),'undetected');assert.equal(f.player.document.x,600);
   assert.equal(stealthRecord(f.player).moving,false);assert.equal(perception(f.boss).entries[0].knownPosition.x,500);
   assert.equal(f.calls.filter(c=>c[0]==='stealth').length,1);
@@ -208,10 +209,10 @@ test('invisibility retains Hidden after a critically failed Sneak',async()=>{
   await f.movement.receive(f.data(f.point(600)),game.user);assert.equal(state(f),'hidden');
 });
 
-test('half-Speed budget omits Sneak for a long path and rejects a forged choice without moving or rolling',async()=>{
+test('native Sneak rejects a path exceeding half Speed without moving or rolling',async()=>{
   const f=setup();fog();await hidden(f);
-  assert.equal(await f.movement.receive(f.data(f.point(800)),game.user),false);
-  assert.equal(f.prompts[0].choices.some(c=>c.id==='sneak'),false);
+  await assert.rejects(f.movement.receive(f.data(f.point(800)),game.user),/Sneak allows/);
+  assert.equal(f.prompts.length,0);
   assert.equal(f.player.document.x,500);assert.equal(f.calls.some(c=>c[0]==='stealth'),false);
 });
 
@@ -387,5 +388,5 @@ test('native hazard checkpoints do not replace the original snapped player movem
   assert.equal(f.movement.intercept(f.player.document,movement,{[MANAGED_MOVEMENT]:true}),undefined);
   assert.equal(f.movement.intercept(f.player.document,movement,{[REQUESTED_MOVEMENT]:initial}),false);
   for(let i=0;i<30&&f.movement.pending.size;i++)await new Promise(resolve=>setTimeout(resolve,1));
-  assert.deepEqual(f.errors,[]);assert.equal(f.player.document.x,600);assert.equal(f.prompts.length,1);
+  assert.deepEqual(f.errors,[]);assert.equal(f.player.document.x,600);assert.equal(f.prompts.length,0);
 });

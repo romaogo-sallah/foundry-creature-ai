@@ -29,15 +29,14 @@ function setup({ answer = 'stride', attackDegree = 2 } = {}) {
   const movement = new ManualMovement(f.reactions, { onError: error => errors.push(error.message) });
   const point = (x, y = f.player.document.y) => ({ x, y, elevation: 0, level: 'ground', action: 'walk' });
   const data = (...points) => ({ sceneId: 'scene', tokenId: 'fighter', origin: point(f.player.document.x),
-    path: [point(f.player.document.x), ...points], stamp: combatStamp(), expires: Date.now() + 120000 });
+    mode:answer,path: [point(f.player.document.x), ...points], stamp: combatStamp(), expires: Date.now() + 120000 });
   return { ...f, movement, data, point, errors, notices };
 }
 
 test('manual Stride rolls the taught ogre reaction automatically before the threatened departure', async () => {
   const f = setup();
   assert.equal(await f.movement.receive(f.data(f.point(700)), game.user), true);
-  assert.equal(f.prompts.length, 1, 'only the movement action is asked, not the NPC reaction');
-  assert.equal(f.prompts[0].kind, 'movement');
+  assert.equal(f.prompts.length, 0, 'native Walk declares Stride; no movement action popup');
   assert.equal(f.calls.filter(call => call[0] === 'attack').length, 1);
   assert.equal(f.calls.find(call => call[0] === 'attack')[3], 0, 'off-turn Strike has no MAP');
   assert.equal(f.calls.find(call => call[0] === 'attack')[4].event.shiftKey, true, 'bypass configured GM roll dialog');
@@ -138,7 +137,7 @@ test('Define Surface geometry does not disable an otherwise legal manual Step',a
   const f=setup({answer:'step'});
   canvas.scene.regions.contents=[{name:'Floor',behaviors:{contents:[{type:'defineSurface',disabled:false}]}}];
   assert.equal(await f.movement.receive(f.data(f.point(600)),game.user),true);
-  assert.ok(f.prompts[0].choices.some(choice=>choice.id==='step'));
+  assert.equal(f.prompts.length,0);
   assert.equal(f.calls.some(call=>call[0]==='attack'),false);
 });
 
@@ -163,13 +162,13 @@ test('disabled automatic reactions, a spent Sweep and an unready hook never inte
   }
 });
 
-test('Step is not offered for a longer path, low Speed or uncertain terrain', async () => {
+test('native Step rejects a longer path, low Speed or uncertain terrain without moving', async () => {
   for (const mode of ['long', 'slow', 'terrain']) {
     const f = setup({ answer: 'step' });
     if (mode === 'slow') f.player.actor.system.attributes.speed.total = 5;
     if (mode === 'terrain') canvas.scene.regions.contents = [{ behaviors: { contents: [{ disabled: false }] } }];
-    assert.equal(await f.movement.receive(f.data(f.point(mode === 'long' ? 700 : 600)), game.user), false);
-    assert.equal(f.prompts[0].choices.some(choice => choice.id === 'step'), false);
+    await assert.rejects(f.movement.receive(f.data(f.point(mode === 'long' ? 700 : 600)), game.user),/Step allows|exceeds one Stride/);
+    assert.equal(f.prompts.length,0);
     assert.equal(f.calls.some(call => call[0] === 'move'), false);
   }
 });
@@ -206,8 +205,8 @@ test('automatic NPC roll still waits for the player Shield Block decision and na
     f.prompts.push(request); return request.kind === 'movement' ? 'stride' : pending;
   };
   const result = f.movement.receive(f.data(f.point(700)), game.user);
-  for (let i = 0; i < 20 && f.prompts.length < 2; i++) await new Promise(resolve => setImmediate(resolve));
-  assert.match(f.prompts[1].title, /Shield Block/);
+  for (let i = 0; i < 20 && f.prompts.length < 1; i++) await new Promise(resolve => setImmediate(resolve));
+  assert.match(f.prompts[0].title, /Shield Block/);
   assert.equal(f.reactions.barrier.pending, true);
   assert.equal(f.calls.some(call => call[0] === 'move' || call[0] === 'damage-applied'), false);
   release('block'); assert.equal(await result, true);
@@ -223,10 +222,10 @@ test('owner-authenticated movement rejects other actors, stale positions and cha
   assert.equal(f.calls.some(call => call[0] === 'attack' || call[0] === 'move'), false);
 });
 
-test('changing turns or stopping while movement choice is open cannot move or spend a reaction', async () => {
+test('changing turns or stopping while queued native movement waits cannot move or spend a reaction', async () => {
   for (const change of ['turn', 'stop']) {
     const f = setup();
-    f.reactions.prompts.ask = async () => { if (change === 'turn') f.combat.round++; else f.movement.cancel(); return 'stride'; };
+    f.reactions.resolve = async operation => { if (change === 'turn') f.combat.round++; else f.movement.cancel(); return operation(); };
     assert.equal(await f.movement.receive(f.data(f.point(600)), game.user), false);
     assert.equal(f.calls.some(call => call[0] === 'attack' || call[0] === 'move'), false);
     assert.equal(f.reactions.available(f.boss), true);

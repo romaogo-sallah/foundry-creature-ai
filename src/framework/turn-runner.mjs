@@ -85,6 +85,7 @@ export class TurnRunner {
       const encounterEnd = await this.completeIfEncounterOver(ledger, turn);
       if (encounterEnd) return encounterEnd;
       if (ledger.uncertain) throw new Error('The previous action was interrupted. Check its result and correct the action ledger before continuing.');
+      ledger=await this.adapter.settleActionEconomy?.(ledger)??ledger;
       const initiallyEnded = await this.completeIfIncapacitated(ledger, { oneAction }, turn);
       if (initiallyEnded) return initiallyEnded;
       ledger = await this.clearRecoveredState(ledger, turn);
@@ -177,7 +178,7 @@ export class TurnRunner {
           await this.adapter.saveLedger(ledger);
           return await this.completeIfEncounterOver(ledger,turn)??ledger;
         }
-        const result = await this.adapter.execute(choice, ledger, {
+        const result = await (this.adapter.executeReservedAction??this.adapter.execute).call(this.adapter,choice, ledger, {
           canContinue: () => !this.cancelled && this.adapter.turnKey() === turn,
           signal: this.abortController.signal,
         });
@@ -221,6 +222,7 @@ export class TurnRunner {
               { completionReason: null, incapacitationReason: null }),
         };
         await this.adapter.saveLedger(ledger);
+        ledger=await this.adapter.settleActionEconomy?.(ledger)??ledger;
         await this.adapter.report(decision, ledger, result);
         const encounterEndAfterAction = await this.completeIfEncounterOver(ledger, turn);
         if (encounterEndAfterAction) return encounterEndAfterAction;

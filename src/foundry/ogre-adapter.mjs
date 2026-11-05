@@ -66,10 +66,6 @@ export class PF2eOgreAdapter extends PF2eCreatureAdapter {
     const current = this.token.document.getFlag(MODULE_ID, 'ledger');
     const ledger = await super.readLedger(turn);
     if (current?.turn === turn) return ledger;
-    if (movementQuickened(this.actor)) {
-      const total = Math.max(0, 4 - (this.actor.getCondition('slowed')?.value ?? 0));
-      ledger.actionsRemaining = Math.min(3, total); ledger.bonusMovementActions = Math.max(0, total - 3);
-    }
     return ledger;
   }
   commandRecipients() {

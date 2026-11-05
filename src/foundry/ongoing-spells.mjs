@@ -1,4 +1,5 @@
 import {actionRestriction} from './action-restrictions.mjs';
+import {manualConditionViolation,resolveConditionChecks} from './condition-actions.mjs';
 const ns='foundry-creature-ai',query=`${ns}.ongoingSpell`;
 const statuses={slowed:'xYTAsEpcJE1Ccni3',stupefied:'e1XGnhKNSQIm5IXg',blinded:'XgEqL1kFApUbl5Z2',enfeebled:'MIRkyAjyBeXivMa7',dazzled:'TkIyaNPgTZFBCCuh',confused:'yblD8fOR1J8rDwEQ'};
 const condition=(slug,value=1)=>({key:'GrantItem',uuid:`Compendium.pf2e.conditionitems.Item.${statuses[slug]}`,inMemoryOnly:true,
@@ -59,12 +60,15 @@ export async function applyConditionSpell({source,target,spell,degree,castId}){
 }
 
 export async function sustainCast(actor,castId){
- const restriction=actionRestriction(actor);if(restriction)throw new Error(restriction.reason);
+ const restriction=actionRestriction(actor,{purelyMental:true});if(restriction)throw new Error(restriction.reason);
  const current=game.combat?.combatant,token=canvas.tokens.get(current?.tokenId);
  if(!game.combat?.started||token?.actor.uuid!==actor.uuid)throw new Error('Sustain during the caster’s own active turn');
  const casts=casterCasts(actor),cast=casts.find(c=>c.id===castId);
  if(!cast||cast.combatId!==game.combat.id||cast.sceneId!==canvas.scene.id||now()>=cast.expiresAt)throw new Error('This sustained spell is no longer active');
+ const reason=manualConditionViolation(actor,{kind:'sustainSpell',targetId:cast.targetId});if(reason)throw new Error(reason);
  if(cast.lastRound===game.combat.round)throw new Error('This spell is already sustained for this turn');
+ if(!await resolveConditionChecks(actor,{kind:'sustainSpell',targetId:cast.targetId},{token,valid:()=>game.combat?.combatant?.id===current.id}))
+  return {resolved:true,note:'Condition flat check failed; Sustain action spent without extending the spell.'};
  await actor.setFlag(ns,'ongoingCasts',casts.map(c=>c.id===castId?{...c,lastRound:game.combat.round,lastTime:now()}:c));
  return {resolved:true,note:'Sustain: the spell continues until the end of the caster’s next turn.'};
 }

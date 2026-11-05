@@ -30,6 +30,11 @@ import { resetActorsToPrototype } from './actor-reset.mjs';
 import { refreshSpellZones, expireSpellZones, installGreaseTerrain } from './spell-zones.mjs';
 import { GoblinScuttle } from './goblin-scuttle.mjs';
 import {installFlightCosts} from './flight-costs.mjs';
+import {registerMovementModes} from './native-movement-modes.mjs';
+import {openConditionActions,installConditionActions} from './manual-condition-actions.mjs';
+import {setSneakMode} from './sneak-mode.mjs';
+import {installFascination} from './fascination.mjs';
+import {registerConditionCompatibility,applyConditionCompatibility,conditionAutomationOwners} from './condition-compatibility.mjs';
 import {installFlightFalls} from './flight-falling.mjs';
 import {actionRestriction,reactionRestriction,installActionRestrictions,installRestrictionMovement} from './action-restrictions.mjs';
 import {openOngoingSpells,installOngoingSpells,advanceOngoingSpells,ongoingCasts,sustainCast,endSustainedCast,resetOngoingSpells} from './ongoing-spells.mjs';
@@ -358,6 +363,8 @@ export async function tacticalMap(token=selected()){
 }
 
 Hooks.once('init', () => {
+  registerMovementModes();
+  registerConditionCompatibility();
   game.settings.register(MODULE_ID,'conditionRestrictions',{name:'Enforce action and reaction restrictions',scope:'world',config:true,type:Boolean,default:true,
     hint:'Honor PF2e and PF2e Automations No Actions/No Reactions effects for AI, manual action rolls, spell casting, voluntary movement and Shield Block. Saving throws and forced movement remain available.'});
   installRestrictionMovement();
@@ -369,7 +376,7 @@ Hooks.once('init', () => {
   reactions.install();
   game.settings.register(MODULE_ID, 'playerStealth', {
     name: 'Player Hide and Sneak', scope: 'world', config: true, type: Boolean, default: true,
-    hint: 'Resolve character Hide checks per enemy and offer Stride/Sneak/Step when moving near enemies. An active GM resolves secret checks; player action counts remain manual.',
+    hint: 'Resolve character Hide checks per enemy. Select Sneak or Step in the native movement menu; an active GM resolves secret checks and reactions. Player action counts remain manual.',
   });
   playerStealth.install();
   game.settings.register(MODULE_ID, 'directionalZoneIndicators', {
@@ -395,6 +402,8 @@ Hooks.once('init', () => {
 
 Hooks.on('getSceneControlButtons', controls => {
   if (!controls.tokens?.tools) return;
+  controls.tokens.tools.conditionActions={name:'conditionActions',title:'Condition actions / sources',icon:'fa-solid fa-heart-pulse',order:106,
+    button:true,control:true,onChange:()=>{openConditionActions().catch(showError);}};
   controls.tokens.tools.playerStealth = { name: 'playerStealth', title: 'Player Hide / Sneak', icon: 'fa-solid fa-user-secret', order: 104,
     button: true, control: true, onChange: () => { playerStealth.open().catch(showError); } };
   controls.tokens.tools.ongoingSpells={name:'ongoingSpells',title:'Ongoing spells / Sustain',icon:'fa-solid fa-wand-sparkles',order:105,
@@ -436,7 +445,10 @@ Hooks.on('preCreateChatMessage', message => {
 
 Hooks.once('ready', async () => {
   if (game.system.id !== 'pf2e' || Number(game.release.generation) !== 14) return;
+  await applyConditionCompatibility();
   installOngoingSpells({reactions,onError:showError});
+  installConditionActions({reactions});
+  installFascination({reactions,onError:showError});
   installManualConditionSpells({reactions});
   installPoisonHooks({reactions,onError:showError,onPause:stop});
   game.modules.get(MODULE_ID).api = { version: RUNTIME_VERSION, planning:{status:()=>planningWorker.status()}, open: openControls, preview, explainLast, runTurn, stop, resetActors, enableFullAuto, correctLedger, tacticalMap, reactions, manualMovement,
@@ -449,7 +461,7 @@ Hooks.once('ready', async () => {
     reveal: token => playerStealth.request('reveal', token) };
   game.modules.get(MODULE_ID).api.spells = { refresh: refreshSpellZones, expire: expireSpellZones,openOngoing:openOngoingSpells,
     ongoing:ongoingCasts,advance:advanceOngoingSpells,sustain:sustainCast,end:endSustainedCast };
-  game.modules.get(MODULE_ID).api.conditions={inspect:(actor=canvas.tokens.controlled[0]?.actor)=>({actions:actionRestriction(actor),reactions:reactionRestriction(actor)})};
+  game.modules.get(MODULE_ID).api.conditions={open:openConditionActions,owners:conditionAutomationOwners,inspect:(actor=canvas.tokens.controlled[0]?.actor)=>({actions:actionRestriction(actor),reactions:reactionRestriction(actor)})};
   game.modules.get(MODULE_ID).api.poisons={advance:token=>reactions.resolve(()=>advancePoisons(token)),expire:expirePoisons};
   game.modules.get(MODULE_ID).api.behaviors = {...behaviorAPI,open:openBehaviorControls,
     inspect:(token=selected())=>({configuration:behaviorConfiguration(createCreatureAdapter(token,profile,{reactions})),
@@ -497,6 +509,10 @@ Hooks.on('moveToken', (document, movement, operation) => {
   }
 });
 Hooks.on('updateToken', (document, changed = {}) => {
+  if(Object.hasOwn(changed,'movementAction')&&document.actor?.isOfType?.('character')&&game.users.activeGM?.id===game.user.id){
+    const token=document.object??canvas.tokens.get(document.id);
+    if(token)void setSneakMode(token,changed.movementAction==='sneak').catch(showError);
+  }
   if (TOKEN_GEOMETRY_FIELDS.some(key => Object.hasOwn(changed, key))) {
     refreshStealthVisibility(); void refreshConcealment(); void refreshEnvironmentView(document.id);
     void refreshPlayerStealth();

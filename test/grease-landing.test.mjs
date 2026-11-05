@@ -93,7 +93,7 @@ test('manual movement settles a failed Balance entry on Grease without a second 
   const result=await movement.receive({sceneId:'scene',tokenId:f.player.id,origin:point(200),
     path:[point(200),point(300),point(400),point(500)],stamp:combatStamp(),expires:Date.now()+120000},game.user);
   assert.equal(result,true);assert.equal(f.player.document.x,400);
-  assert.equal(f.player.actor.hasCondition('prone'),true);assert.equal(prompts,1);assert.equal(moves,1);
+  assert.equal(f.player.actor.hasCondition('prone'),true);assert.equal(prompts,0);assert.equal(moves,1);
   assert.equal(f.calls.filter(call=>call[0]==='spell-save').length,1);
 });
 

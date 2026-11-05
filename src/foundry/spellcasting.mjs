@@ -7,6 +7,7 @@ import { createGreaseZone, applyTangleVine } from './spell-zones.mjs';
 import {waitForPresentation} from './ai-presentation.mjs';
 import {applyConditionSpell,beginSustainedCast} from './ongoing-spells.mjs';
 import {conditionSpells} from '../framework/condition-spells.mjs';
+import {nativeRuleAction,resolveConditionChecks,automationOwnsFlatChecks} from './condition-actions.mjs';
 
 const ns = 'foundry-creature-ai';
 const outcomes = ['criticalFailure','failure','success','criticalSuccess'];
@@ -18,6 +19,10 @@ export async function spellMessage(spell,autoApply = true) {
   message.updateSource({ [`flags.${ns}.managed`]: true,
     'flags.pf2e.context.options': [...new Set([...options,...SPELL_OPTIONS])],
     'flags.xdy-pf2e-workbench.noAutoDamageRoll': true, 'flags.pf2e.suppressDamageButtons': autoApply });
+  // Automations 1.4.10's synchronous pre-create flat hook does not honor
+  // skip-handling-message. Preserve the native spell origin/casting card, but
+  // classify this managed presentation as OTHER; our awaited checks own it.
+  if(automationOwnsFlatChecks())message.updateSource({'flags.pf2e.context.type':'other'});
   return ChatMessage.create(message.toObject());
 }
 
@@ -60,19 +65,8 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
     if (interrupt.disrupted) return { resolved: true, note: 'Reactive Strike disrupted the spell. Its actions and slot remain spent.' };
   }
   if (!valid() || adapter.turnEndReason()) return { resolved: true, endTurn: Boolean(adapter.turnEndReason()), incapacitationReason: adapter.turnEndReason() };
-  const flatChecks = adapter.actor.hasCondition('grabbed') ? [{label:'Grabbed: manipulate',dc:5}] : [];
-  if(adapter.actor.hasCondition('stupefied')){
-    const value=adapter.actor.getCondition('stupefied')?.value;
-    if(!Number.isFinite(value))throw new Error('Cannot determine the Stupefied spellcasting flat-check DC');
-    flatChecks.push({label:'Stupefied: casting',dc:5+value});
-  }
-  for(const check of flatChecks) {
-    const flat = await new Roll('1d20').evaluate();
-    await flat.toMessage({ speaker: ChatMessage.getSpeaker({ token: adapter.token.document }), flavor: `${check.label}: DC ${check.dc} flat check`,
-      flags: { pf2e: { context: { options: SPELL_OPTIONS } } } });
-    if (!valid()) throw new Error('Casting stopped during the grabbed flat check');
-    if (flat.total < check.dc) return { resolved: true, note: `${check.label} flat check failed; spell actions and resources remain spent.` };
-  }
+  if(!await resolveConditionChecks(adapter.actor,nativeRuleAction(spell),{token:adapter.token,valid}))
+    return {resolved:true,note:'Condition flat check failed; spell actions and resources remain spent.'};
   if(choice.features?.conditionSpell){
     if(!valid()||adapter.liveTarget(choice.targetId)!==target)return {resolved:true,note:'The spell lost its target; its action and slot remain spent.'};
     if(!await concealmentCheck(adapter.token,target,{valid}))return {resolved:true,note:'Spell targeting flat check failed; actions and slot remain spent.'};

@@ -1,9 +1,8 @@
 import { MODULE_ID, escapeHTML } from './pf2e-adapter.mjs';
 
 export const REACTION_QUERY = `${MODULE_ID}.reactionPrompt`;
-export function combatStamp(combat = game.combat) {
-  return combat?.started ? `${combat.id}:${combat.round}:${combat.turn ?? 0}:${combat.combatant?.id}` : null;
-}
+import {combatStamp} from './combat-stamp.mjs';
+export {combatStamp};
 
 export function reactionOwner(token) {
   const owners = (game.users.contents ?? []).filter(user => user.active && !user.isGM &&

@@ -4,6 +4,14 @@ import { PRIORITY } from '../dawnsbury/chooser.mjs';
 export function recoveryCandidates(state, { canStrike = false } = {}) {
   const { self, actionsRemaining, attacksMade } = state, candidates = [];
   const map = self.mapPenalties[Math.min(attacksMade, 2)];
+  const sickened=state.sickenedRecovery;
+  if(sickened?.available&&actionsRemaining>0){
+    const odds=checkProbabilities(sickened.bonus,sickened.dc);
+    const value=(odds.success+2*odds.criticalSuccess)*Math.min(2,sickened.value)*
+      (2+Math.max(0,actionsRemaining-1)*self.averageDamage*0.08);
+    candidates.push({id:'retch',kind:'retch',legal:true,actionCost:1,assessment:{value},
+      scoringTerms:[{label:'Recover own Sickened penalties (source DC, Fortitude odds)',contribution:value}]});
+  }
   if (self.prone && !self.immobile && self.canStand !== false) {
     const accuracyBenefit = expectedDamage(self.attackBonus + 2 + map, self.referenceAC, self.averageDamage) -
       expectedDamage(self.attackBonus + map, self.referenceAC, self.averageDamage);

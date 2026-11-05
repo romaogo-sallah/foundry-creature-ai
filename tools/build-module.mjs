@@ -38,6 +38,11 @@ await cp(new URL('docs/manticore-scorpion.md', root), new URL('manticore-scorpio
 await cp(new URL('docs/manticore-quill.md', root), new URL('manticore-quill.md', output));
 await cp(new URL('docs/dero-magister.md',root),new URL('dero-magister.md',output));
 await cp(new URL('docs/condition-handling.md',root),new URL('condition-handling.md',output));
+await cp(new URL('docs/condition-ai.md',root),new URL('condition-ai.md',output));
+await cp(new URL('docs/condition-manual.md',root),new URL('condition-manual.md',output));
+const conditionAudit=await readFile(new URL('docs/condition-rules-audit-2026-11-06.md',root),'utf8');
+await writeFile(new URL('condition-rules-audit-2026-11-06.md',output),conditionAudit.replaceAll('../research/condition-automation-verification-2026-11-06.json','condition-automation-verification-2026-11-06.json'));
+await cp(new URL('research/condition-automation-verification-2026-11-06.json',root),new URL('condition-automation-verification-2026-11-06.json',output));
 await cp(new URL('docs/foundry-diagnostics.md',root),new URL('foundry-diagnostics.md',output));
 await cp(new URL('docs/kobold-scout-foundry.md', root), new URL('kobold-scout-foundry.md', output));
 await cp(new URL('docs/goblin-pyro-foundry.md', root), new URL('goblin-pyro-foundry.md', output));

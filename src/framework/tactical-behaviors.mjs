@@ -7,7 +7,7 @@ const movement = candidate => candidate.assessment?.movement;
 const attack = candidate => ['strike','eagleDive','spikeVolley','castSpell','trip','knockdown','sweepingHook'].includes(candidate.kind);
 export const tacticalBehaviors = new BehaviorSystem();
 for (const [id,label,actionKinds,core] of [
-  ['recovery','Recovery',['endTurn','stand','escape'],true],['perception','Perception',['seek'],true],
+  ['recovery','Recovery',['endTurn','stand','escape','retch'],true],['perception','Perception',['seek'],true],
   ['movement','Movement',['stride','step','crawl','escapeStride','scamper'],true],['strikes','Strikes',['strike'],true],
   ['control','Combat control',['trip','knockdown','sweepingHook','gaze']],['spellcasting','Spellcasting',['castSpell','sustainSpell']],
   ['stealth','Stealth',['hide','sneak']],['equipment','Equipment',['reload','regrip','drawMelee','drawJavelin','drawRefuse','drawSword','stow','stowSword','gripBow']],
@@ -16,7 +16,7 @@ for (const [id,label,actionKinds,core] of [
   ['volleys','Ranged volleys',['spikeVolley']],
 ]) tacticalBehaviors.registerComponent({id,label,actionKinds,core,kind:'ability',
   ...(id==='recovery'?{candidates:state=>[{id:'end',kind:'endTurn',legal:true,actionCost:0,assessment:{value:0}},
-    ...state.actionsRemaining>0&&!state.self.unable&&!state.retreatComplete&&(state.self.prone||state.escapes?.length)?recoveryCandidates(state,{canStrike:state.enemies.some(enemy=>enemy.inReach||Object.values(enemy.strikes??{}).some(position=>position.usable))}):[]]}:{}),
+    ...state.actionsRemaining>0&&!state.self.unable&&!state.retreatComplete&&(state.self.prone||state.escapes?.length||state.sickenedRecovery?.available)?recoveryCandidates(state,{canStrike:state.enemies.some(enemy=>enemy.inReach||Object.values(enemy.strikes??{}).some(position=>position.usable))}):[]]}:{}),
   ...(id==='perception'?{candidates:seekCandidates}:{}),
   ...(id==='strikes'?{candidates:preparedStrikeCandidates}:{}),
   ...(id==='stealth'?{candidates:(state,selection)=>['hiding','lay-low','defensive','avoiding','kiting','aerial-disengage'].includes(selection.planId)?

@@ -10,6 +10,8 @@ import { STEALTH_MOVEMENT } from './stealth-awareness.mjs';
 import { greaseOnPath, prepareGreaseMove, withGreaseMode } from './spell-zones.mjs';
 import { settleGreaseSlip, finishGreaseFall } from './grease-landing.mjs';
 import { surfaceMovementPath } from './surface-terrain.mjs';
+import { selectedGroundAction } from './native-movement-modes.mjs';
+import {withConditionActivity} from './condition-activity.mjs';
 
 export const MOVEMENT_QUERY = `${MODULE_ID}.manualMovement`;
 const positionKeys = ['x', 'y', 'elevation', 'level'];
@@ -92,19 +94,21 @@ export class ManualMovement {
     if (inheritManagedMovement(document,movement,options) || options.isUndo || options.isPaste || options.teleport ||
       !['dragging', 'keyboard', 'api'].includes(movement.method) || !canvas.ready) return;
     const token = document.object ?? canvas.tokens.get(document.id);
-    const player = this.playerStealth?.movementEnabled(token);
     const points = options[REQUESTED_MOVEMENT] ?? [movement.origin, ...movement.passed.waypoints, ...movement.pending.waypoints];
+    let mode;try{mode=selectedGroundAction(document,points);}catch(error){this.onError(error);return false;}
+    const explicitMode=['step','sneak'].includes(mode);
+    const player = this.playerStealth?.movementEnabled(token)||mode==='sneak'&&this.playerStealth?.supports(token);
     const greasy = token?.actor && greaseOnPath(token,points);
-    if (!this.enabled() && !player && !greasy || !game.combat?.started && !player && !greasy) return;
+    if (!this.enabled() && !player && !greasy&&!explicitMode || !game.combat?.started && !player && !greasy&&!explicitMode) return;
     if (!token?.actor || game.combat?.started && (game.combat.combatant?.tokenId !== token.id || game.combat.combatant?.sceneId &&
       game.combat.combatant.sceneId !== document.parent.id)) return;
     if (points.slice(1).every(point => point.x === points[0].x && point.y === points[0].y) ||
       points.slice(1).every(point => point.action === 'displace')) return;
     // Other movement modes keep their native/manual workflow. They must not be
     // recast as walking just because an automated ogre exists in the encounter.
-    if (points.slice(1).some(point => point.action !== 'walk')) return;
+    if (!['stride','step','sneak'].includes(mode)) return;
     // Avoid touching ordinary movement in encounters without automated reactors.
-    if (!player && !greasy && !canvas.tokens.placeables.some(reactor => reactor !== token && this.reactions.automaticReactiveStrike(reactor) &&
+    if (!player && !greasy&&!explicitMode && !canvas.tokens.placeables.some(reactor => reactor !== token && this.reactions.automaticReactiveStrike(reactor) &&
       this.reactions.available(reactor) && reactor.actor.isEnemyOf(token.actor))) return;
     if (this.pending.has(document.id) || this.running) {
       ui.notifications.warn('Finish the pending movement/reaction decision first.'); return false;
@@ -112,10 +116,10 @@ export class ManualMovement {
     let path;
     try {
       path = this.path(token, points);
-      if (!player && !this.hasThreat(token, path)) { this.explainUnready(token, path); return; }
+      if (!player && !greasy&&!explicitMode&&!this.hasThreat(token, path)) { this.explainUnready(token, path); return; }
     } catch (error) { this.onError(error); return false; }
     const data = { sceneId: document.parent.id, tokenId: token.id, origin: position(document), path,
-      stamp: combatStamp(), expires: Date.now() + 120000 };
+      mode,stamp: combatStamp(), expires: Date.now() + 120000 };
     const generation = this.generation;
     this.pending.add(document.id);
     // Yield until Foundry has rejected the initial update and its movement chain.
@@ -132,25 +136,28 @@ export class ManualMovement {
   async receive(data, sender) {
     if (game.users.activeGM?.id !== game.user.id || !sender?.active) throw new Error('Movement needs the active GM.');
     const token = canvas.scene?.id === data.sceneId ? canvas.tokens.get(data.tokenId) : null;
-    const player = this.playerStealth?.movementEnabled(token);
+    const mode=data.mode??selectedGroundAction(token?.document??{},data.path);
+    if(!['stride','step','sneak'].includes(mode))throw new Error('Unsupported ground movement mode');
+    const explicitMode=['step','sneak'].includes(mode);
+    const player = this.playerStealth?.movementEnabled(token)||mode==='sneak'&&this.playerStealth?.supports(token);
     const greasy = token?.actor && greaseOnPath(token,data.path);
-    if (!this.enabled() && !player && !greasy) throw new Error('Manual movement automation is disabled');
+    if (!this.enabled() && !player && !greasy&&!explicitMode) throw new Error('Manual movement automation is disabled');
     if (!token?.actor || !sender.isGM && !token.actor.testUserPermission(sender, 'OWNER')) throw new Error('You do not own this combatant.');
     if (!Number.isFinite(data.expires) || data.expires > Date.now() + 180000) throw new Error('Invalid movement expiry.');
     if (this.running) throw new Error('Another movement decision is still resolving.');
     const generation = this.generation;
     const valid = () => generation === this.generation && combatStamp() === data.stamp && Date.now() < data.expires &&
       game.users.activeGM?.id === game.user.id && canvas.scene?.id === data.sceneId && !game.paused &&
-      canvas.tokens.get(token.id) === token && (!game.combat?.started ? player || greasy : game.combat.combatant?.tokenId === token.id) &&
+      canvas.tokens.get(token.id) === token && (!game.combat?.started ? player || greasy||explicitMode : game.combat.combatant?.tokenId === token.id) &&
       (sender.isGM || token.actor.testUserPermission(sender, 'OWNER'));
     if (!valid() || !samePosition(position(token.document), data.origin)) throw new Error('The movement trigger changed; move again from the current position.');
     let path = this.path(token, data.path);
     if (!samePosition(path[0], data.origin)) throw new Error('Movement origin does not match the token.');
     this.running = true;
     try {
-      return await this.reactions.resolve(async () => {
+      return await this.reactions.resolve(()=>withConditionActivity(token.actor,async () => {
         const stillAtOrigin = () => valid() && samePosition(position(token.document), data.origin);
-        if (!player && !greasy && !this.hasThreat(token, path)) return false; // Never replay a stale reaction request.
+        if (!player && !greasy&&!explicitMode&&!this.hasThreat(token, path)) return false; // Never replay a stale reaction request.
         if (incapacitationReason(token) || token.actor.hasCondition('prone', 'grabbed', 'restrained', 'immobilized')) throw new Error('Resolve the movement-blocking condition before moving.');
         const speed = token.actor.system.movement?.speeds.land?.value ?? token.actor.system.attributes.speed?.total ?? token.actor.system.attributes.speed?.value;
         const history = [...(token.document.movementHistory ?? [])];
@@ -165,12 +172,9 @@ export class ManualMovement {
         const sneakLegal = player && cost <= sneakLimit + 1e-8 && !uncertainTerrain;
         const automaticSneak = player && this.playerStealth.armed(token);
         if (automaticSneak && !sneakLegal) throw new Error(`This Sneak path exceeds its ${sneakLimit}-foot movement budget or uses unsupported terrain. Shorten the path; no movement occurred.`);
-        const answer = automaticSneak ? 'sneak' : await this.reactions.prompts.ask({ token, kind: 'movement', title: `Movement — ${token.name}`,
-          description: player ? `Choose the action for this ${cost}-foot path. Sneak allows ${sneakLimit} feet, requires being hidden or undetected from each relevant observer at the start, and needs cover or concealment at the end unless an ability overrides it. Its secret result applies throughout movement. Stride reveals ordinary hiding. Each choice costs one action.` :
-            `This path could trigger an automated enemy's Reactive Strike. Stride allows reactions before leaving threatened squares.${stepLegal ? ' Step spends one action to move 5 feet without triggering movement reactions.' : ' Step is unavailable for this path, speed, or scene terrain; shorten the path or resolve special terrain manually.'}`,
-          choices: [{ id: 'stride', label: 'Stride' }, ...(sneakLegal ? [{ id: 'sneak', label: 'Sneak — secret Stealth check' }] : []),
-            ...(stepLegal ? [{ id: 'step', label: 'Step — avoid movement reactions' }] : [])], valid: stillAtOrigin });
-        if (answer === 'pass') return false;
+        const answer=mode==='stride'&&automaticSneak&&token.document._source?.movementAction!=='walk'?'sneak':mode;
+        if(answer==='step'&&!stepLegal)throw new Error('Step allows one legal 5-foot square and requires Speed 10 feet or more. Check difficult terrain or select Walk.');
+        if(answer==='sneak'&&!sneakLegal)throw new Error(`Sneak allows ${sneakLimit} feet on this path. Shorten the path or select Walk.`);
         if (!stillAtOrigin() || !['stride', ...(stepLegal ? ['step'] : []), ...(sneakLegal ? ['sneak'] : [])].includes(answer)) {
           this.reactions.onPause(); return false;
         }
@@ -231,7 +235,7 @@ export class ManualMovement {
           else if (player && answer === 'step') await this.playerStealth.afterStep(token);
         }
         });
-      });
+      }));
     } finally { endTerrainAction(token); this.running = false; }
   }
 }

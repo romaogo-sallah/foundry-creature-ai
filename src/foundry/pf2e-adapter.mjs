@@ -20,6 +20,11 @@ import { settleGreaseSlip, finishGreaseFall } from './grease-landing.mjs';
 import { sameSurfaceElevation } from './surface-terrain.mjs';
 import { distanceToPosition, rayAt, tokenAt } from './vertical-geometry.mjs';
 import { nonvisualSense } from './perception-senses.mjs';
+import {conditionFacts,resolveConditionChecks,nativeRuleAction,manualConditionViolation} from './condition-actions.mjs';
+import {initialActionBudget,settleStunned,valuedStunned} from './action-economy.mjs';
+import {withConditionActivity} from './condition-activity.mjs';
+import {retchSource,executeRetch} from './manual-condition-actions.mjs';
+import {breakFascination} from './fascination.mjs';
 import { RUNTIME_VERSION } from './runtime-version.mjs';
 import { environmentBetween } from './environment-zones.mjs';
 import { concealmentCheck, concealmentDC } from './environment-rolls.mjs';
@@ -168,7 +173,7 @@ export class PF2eCreatureAdapter {
     if (this.token.document.locked || this.token.document.hidden) throw new Error('Unlock and reveal the wolf before running it');
     if (this.token.document.actorLink) throw new Error('Use an unlinked wolf token so each wolf has its own actor state');
     if (this.targetMode === 'manual' && !this.config.targetIds?.length) throw new Error('Assign known enemy targets in the Wolf AI controls for manual targeting');
-    const condition = blocked.find(c => this.actor.hasCondition(c));
+    const condition = blocked.find(c => this.actor.hasCondition(c)&&!(c==='stunned'&&valuedStunned(this.actor)));
     if (condition || this.actor.hitPoints.value <= 0) throw new Error(`Wolf requires manual handling: ${condition ?? '0 HP'}`);
     if (this.actor.hasCondition('slowed') && !Number.isFinite(this.actor.getCondition('slowed')?.value)) throw new Error('Cannot determine slowed action loss');
     this.parts();
@@ -180,12 +185,14 @@ export class PF2eCreatureAdapter {
     if (!turn) throw new Error('No active wolf turn');
     const current = this.token.document.getFlag(MODULE_ID, 'ledger');
     if (current?.turn === turn) return structuredClone(current);
-    const slowed = this.actor.getCondition('slowed')?.value ?? 0;
-    return { turn, actionsRemaining: Math.max(0, 3 - slowed), attacksMade: 0, lastAction: null, visited: [], startCell:this.originCell(),
+    const budget=await initialActionBudget(this.actor,{extra:this.movementBonusAvailable()?1:0});
+    return { turn, ...budget, attacksMade: 0, lastAction: null, visited: [], startCell:this.originCell(),
       done: false, uncertain: false, completionReason: null, incapacitationReason: null,
       advanceRequested: false, advanced: false, escapeBlocked: false, freeEscapeStride: false, frontlineEngaged: false,
-      bonusMovementActions: 0, pendingSweep: null, commandedThisTurn: false };
+      pendingSweep: null, commandedThisTurn: false };
   }
+  settleActionEconomy(ledger){return settleStunned(this,ledger);}
+  executeReservedAction(choice,ledger,options){return withConditionActivity(this.actor,()=>this.execute(choice,ledger,options));}
   async saveLedger(ledger) {
     // setFlag merges nested objects. Omitted optional keys would keep an earlier
     // turn's death reason even when the new in-memory ledger is healthy.
@@ -457,11 +464,12 @@ export class PF2eCreatureAdapter {
       'No useful supported action from this position.';
     const bindings = escapeBindings(this.actor), escapes = escapeOptions(this);
     const perception=this.actor.getStatistic('perception');
-    const seek={available:Boolean(perception?.check?.roll)&&!this.actor.hasCondition('paralyzed','fascinated')&&
-      (!this.actor.hasCondition('blinded')||Boolean(nonvisualSense(this.token))),imprecise:this.actor.hasCondition('blinded'),bonus:perception?.check?.mod??0,scope:seekScope(),
+    const seek={available:Boolean(perception?.check?.roll)&&!this.actor.hasCondition('paralyzed')&&
+      (!this.actor.hasCondition('blinded')||Boolean(nonvisualSense(this.token))),imprecise:this.actor.hasCondition('blinded'),bonus:perception?.check?.mod??0,scope:this.actor.hasCondition('fascinated')?'area':seekScope(),
       origin:Object.fromEntries(['x','y','elevation','level','width','height','depth'].map(key=>[key,this.token.document[key]])),
       suspectedOpponents:targetChecks.filter(check=>!check.target&&check.reason?.includes('no known square')&&!canvas.tokens.get(check.id)?.document.hidden).length};
-    return { self, enemies, moves, style, morale, retreatComplete, retreatDistance, seek,
+    const actionTraits=Object.fromEntries([...this.actor.items?.values?.()??[]].map(item=>[item.id,[...item.traits??item.system?.traits?.value??[]]]));
+    return { self, enemies, moves, style, morale, retreatComplete, retreatDistance, seek,conditionRules:{...conditionFacts(this.actor),actionTraits},sickenedRecovery:retchSource(this.actor),
       escapes: escapes.map(({ id, dc, statistic, bonus }) => ({ id, dc, statistic, bonus })), nearestEnemy, ...ledger,
       diagnostics: { policy: 'dawnsbury-4.44-pack', referenceAC: self.referenceAC, encounterLevel: self.encounterLevel,
       morale, retreatComplete, style,
@@ -488,6 +496,9 @@ export class PF2eCreatureAdapter {
   async revalidate(choice, ledger,options={}) {
     await this.assertReady();
     if (ledger.turn !== this.turnKey()) throw new Error('The combat turn changed');
+    const conditionReason=manualConditionViolation(this.actor,nativeRuleAction(this.actor.items?.get?.(choice.spellId??choice.strikeId),
+      {kind:choice.kind,targetId:choice.targetId}));
+    if(conditionReason)throw new Error(conditionReason);
     const current = await this.snapshot(ledger,options);
     // Revalidate legality without making a new random decision.
     const available = this.candidates(current).find(candidate => candidate.id === choice.id && candidate.legal);
@@ -517,6 +528,10 @@ export class PF2eCreatureAdapter {
       return { skipped: true, pause: true, skipReason: 'Automation stopped while waiting for a reaction. No additional action was spent.' };
     }
     const actor = this.actor;
+    if(choice.kind==='retch')return executeRetch(this.token,{valid});
+    if(['strike','trip','knockdown','sweepingHook','spikeVolley','eagleDive','castSpell','gaze'].includes(choice.kind)&&choice.targetId)
+      await breakFascination(canvas.tokens.get(choice.targetId)?.actor);
+    if(choice.kind!=='castSpell'&&!await resolveConditionChecks(actor,choice,{token:this.token,valid}))return {resolved:true,note:'Condition flat check failed; the reserved action remains spent.'};
     if(choice.kind==='seek')return executeSeek(this,choice,ledger,{canContinue});
     const reactions = this.config.pauseForReactions !== false ? this.reactions : null;
     if (['stride', 'step', 'crawl', 'escapeStride'].includes(choice.kind)) {

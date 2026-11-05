@@ -30,6 +30,11 @@ export function setSneakMode(token,enabled){
     const documents=new Set([token.document,...(game.scenes?.contents??[]).flatMap(scene=>scene.tokens?.contents??[])
       .filter(document=>document.actor===actor||actor.uuid&&document.actor?.uuid===actor.uuid)]);
     for(const document of documents)if(document.getFlag(ns,'sneakNextMove'))await document.setFlag(ns,'sneakNextMove',false);
+    if(globalThis.CONFIG?.Token?.movement?.actions?.sneak){
+      for(const document of documents)if(typeof document.update==='function'&&
+        (enabled&&document.movementAction!=='sneak'||!enabled&&document.movementAction==='sneak'))
+        await document.update({movementAction:enabled?'sneak':null});
+    }
   });
   changes.set(actor,operation);
   void operation.finally(()=>{if(changes.get(actor)===operation)changes.delete(actor);}).catch(()=>{});

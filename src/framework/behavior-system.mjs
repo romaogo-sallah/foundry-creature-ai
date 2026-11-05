@@ -1,6 +1,7 @@
 import { chooseOption } from '../dawnsbury/chooser.mjs';
 import {gateFlightHunt} from './flight-candidates.mjs';
 import {gateActivityGoal} from './activity-plan.mjs';
+import {filterConditionActions} from './condition-rules.mjs';
 
 // Components are registered module code. Actor documents store identifiers and
 // data only: neither descriptions nor flags are evaluated as JavaScript.
@@ -103,7 +104,7 @@ export class BehaviorSystem {
       return {...candidate,assessment:{...candidate.assessment,value:candidate.assessment.value+bounded},
         scoringTerms:[...(candidate.scoringTerms??[]),...terms.map(term=>({...term,contribution:term.contribution*scale}))]};
     });
-    const flightSafe=gateActivityGoal(state,gateFlightHunt(state,adjusted));
+    const flightSafe=filterConditionActions(gateActivityGoal(state,gateFlightHunt(state,adjusted)),state.conditionRules);
     const maintenance=state.flight?.airborne&&!state.flight.flown&&flightSafe.some(c=>c.kind==='fly'&&c.legal);
     const takeoff=state.flight?.canFly&&!state.flight.airborne&&state.flight.airCombat?.mode!=='disengage'&&flightSafe.some(c=>c.kind==='fly'&&c.legal);
     return {candidates:takeoff?flightSafe.filter(c=>c.kind==='fly'||['escape','stand'].includes(c.kind)):
@@ -120,6 +121,6 @@ export class BehaviorSystem {
 // Profiles may still provide specialized forecasts, but all runtime profiles
 // share the same plan/component gate and the same final legality/budget checks.
 export function chooseBehaviorAction(system, candidates, state, options = {}) {
-  return state.behavior ? system.decide(state,candidates,options) : chooseOption(candidates,{
+  return state.behavior ? system.decide(state,candidates,options) : chooseOption(filterConditionActions(candidates,state.conditionRules),{
     actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened,...options});
 }

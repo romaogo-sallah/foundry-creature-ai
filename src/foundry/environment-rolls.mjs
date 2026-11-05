@@ -4,6 +4,7 @@ import { hasUnmanagedConcealment } from './zone-concealment.mjs';
 import { tokenRayPoint } from './attack-path.mjs';
 import {checkRestriction,notifyRestriction} from './action-restrictions.mjs';
 import {wrapConditionSave} from './manual-condition-spells.mjs';
+import {nativeRuleAction,resolveConditionChecks} from './condition-actions.mjs';
 
 const namespace = 'foundry-creature-ai';
 const managed = `${namespace}:managed`;
@@ -86,6 +87,9 @@ export function installEnvironmentRolls({playerStealth=null}={}) {
     const options = context?.options ?? [];
     const isManaged = hasOption(options, managed);
     const observer = (context?.origin?.token ?? context?.token)?.object, target = context?.target?.token?.object;
+    if(!isManaged&&context?.type==='skill-check'&&context.action&&observer&&
+      !await resolveConditionChecks(observer.actor,nativeRuleAction(context.item,{kind:context.action,
+        traits:(context.traits??[]).map(t=>typeof t==='string'?t:t.name)}),{token:observer,manual:true}))return null;
     const attackSkill = context?.type === 'skill-check' && (hasOption(options, 'attack') ||
       context.traits?.some(trait => (typeof trait === 'string' ? trait : trait.name) === 'attack'));
     if (!isManaged && !context?.isReroll && context?.createMessage !== false && observer && target &&

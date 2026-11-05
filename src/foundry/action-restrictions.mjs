@@ -1,3 +1,5 @@
+import {nativeRuleAction,manualConditionViolation,resolveConditionChecks} from './condition-actions.mjs';
+import {conditionActivityActive} from './condition-activity.mjs';
 const ns='foundry-creature-ai';
 const actionConditions=['unconscious','dying','dead','paralyzed','petrified','stunned'];
 const optionHas=(options,value)=>options?.has?.(value)??options?.includes?.(value)??false;
@@ -25,12 +27,14 @@ function effectRestriction(actor,key){
   const parent=source&&actor.items?.get?.(source.flags?.pf2e?.grantedBy?.id);
   return {kind:key,sourceId:source?.id??null,reason:`${parent?.name??source?.name??'An active effect'}: ${key==='noActions'?'cannot use actions or reactions':'cannot use reactions'}.`};
 }
-export function actionRestriction(actor){
+export function actionRestriction(actor,{purelyMental=false}={}){
   if(!actor||!restrictionsEnabled())return null;
-  const condition=actionConditions.find(slug=>actor.hasCondition?.(slug));
+  const condition=actionConditions.find(slug=>actor.hasCondition?.(slug)&&!(slug==='paralyzed'&&purelyMental)&&
+    !(slug==='stunned'&&Number.isInteger(actor.getCondition?.('stunned')?.value)&&conditionActivityActive(actor)));
   return condition?{kind:condition,reason:`Cannot act while ${condition}.`}:effectRestriction(actor,'noActions');
 }
 export function reactionRestriction(actor){
+  if(restrictionsEnabled()&&actor?.hasCondition?.('stunned'))return {kind:'stunned',reason:'Cannot use reactions while stunned.'};
   return actionRestriction(actor)??(restrictionsEnabled()?effectRestriction(actor,'noUseReactions'):null);
 }
 
@@ -46,7 +50,13 @@ export function checkRestriction(check,context={}){
   if(context.type!=='attack-roll'&&!context.action&&!explicitReaction&&![...options].some(o=>o.startsWith('action:')))return null;
   const actor=context.actor??context.token?.actor??context.origin?.actor??context.origin?.token?.actor??
     context.token?.object?.actor??context.origin?.token?.object?.actor??check?.actor??item?.actor;
-  return explicitReaction?reactionRestriction(actor):actionRestriction(actor);
+  const basic=explicitReaction?reactionRestriction(actor):actionRestriction(actor,{purelyMental:context.action==='recall-knowledge'});
+  if(basic)return basic;
+  const traits=[...(context.traits??[])].map(t=>typeof t==='string'?t:t.name);
+  const kind=context.action??(context.type==='attack-roll'?'strike':null);
+  const target=context.target?.token?.id;
+  const reason=manualConditionViolation(actor,nativeRuleAction(item,{kind,traits:[...new Set([...traits,...item?.traits??[]])],targetId:target}));
+  return reason?{kind:'condition-rule',reason}:null;
 }
 export function notifyRestriction(actor,restriction){
   if(restriction)ui.notifications.warn(`${actor?.name??'Creature'}: ${restriction.reason}`);
@@ -59,7 +69,8 @@ export function blockedVoluntaryMovement(document,movement,options={}){
   const pending=movement.pending?.waypoints??[];
   const points=pending.length?pending:movement.passed?.waypoints??[];
   if(!points.length||points.every(p=>['displace','fall'].includes(p.action)))return false;
-  const restriction=actionRestriction(document.actor);
+  const reason=manualConditionViolation(document.actor,{kind:points[0].action==='walk'?'stride':points[0].action,traits:['move']});
+  const restriction=actionRestriction(document.actor)??(reason?{kind:'movement',reason}:null);
   if(!restriction)return false;
   notifyRestriction(document.actor,restriction);return true;
 }
@@ -67,16 +78,25 @@ export function blockedVoluntaryMovement(document,movement,options={}){
 // Hook functions are exported separately for deterministic native-boundary
 // tests and to avoid registering Check.roll a second time with libWrapper.
 export async function guardCast(wrapped,spell,options){
-  const restriction=spell?.actionCost?.type==='reaction'?reactionRestriction(this.actor):actionRestriction(this.actor);
+  const reason=restrictionsEnabled()&&manualConditionViolation(this.actor,nativeRuleAction(spell,{targetIds:[...game.user?.targets??[]].map(token=>token.id)}));
+  const restriction=(spell?.actionCost?.type==='reaction'?reactionRestriction(this.actor):actionRestriction(this.actor))??(reason?{kind:'condition-rule',reason}:null);
   if(restriction){notifyRestriction(this.actor,restriction);return;}
   return wrapped(spell,options);
 }
 export async function guardItemMessage(wrapped,event,options={}){
   if(options.actualUse||options.actualCast){
-    const restriction=this.actionCost?.type==='reaction'?reactionRestriction(this.actor):actionRestriction(this.actor);
+    const action=nativeRuleAction(this,{targetIds:[...game.user?.targets??[]].map(token=>token.id)});
+    const reason=options.create!==false&&restrictionsEnabled()&&manualConditionViolation(this.actor,action);
+    const restriction=(this.actionCost?.type==='reaction'?reactionRestriction(this.actor):actionRestriction(this.actor))??(reason?{kind:'condition-rule',reason}:null);
     if(restriction){notifyRestriction(this.actor,restriction);return;}
+    if(options.create!==false&&restrictionsEnabled()&&!await resolveConditionChecks(this.actor,action,{manual:true,spellCard:true}))return;
   }
   return wrapped(event,options);
+}
+export function guardConsumable(wrapped,...args){
+  const reason=restrictionsEnabled()&&manualConditionViolation(this.actor,nativeRuleAction(this));
+  if(reason){notifyRestriction(this.actor,{reason});return;}
+  return wrapped(...args);
 }
 export async function guardShieldDamage(wrapped,options,...rest){
   if(options?.shieldBlockRequest&&!options.final){
@@ -92,6 +112,7 @@ export function installRestrictionMovement(){
 export function installActionRestrictions(){
   const items=CONFIG.PF2E?.Item?.documentClasses;
   if(items?.spellcastingEntry?.prototype?.cast)libWrapper.register(ns,'CONFIG.PF2E.Item.documentClasses.spellcastingEntry.prototype.cast',guardCast,'MIXED');
+  if(items?.consumable?.prototype?.consume)libWrapper.register(ns,'CONFIG.PF2E.Item.documentClasses.consumable.prototype.consume',guardConsumable,'MIXED');
   if(CONFIG.Item?.documentClass?.prototype?.toMessage)libWrapper.register(ns,'CONFIG.Item.documentClass.prototype.toMessage',guardItemMessage,'MIXED');
   if(CONFIG.Actor?.documentClass?.prototype?.applyDamage)libWrapper.register(ns,'CONFIG.Actor.documentClass.prototype.applyDamage',guardShieldDamage,'WRAPPER');
 }

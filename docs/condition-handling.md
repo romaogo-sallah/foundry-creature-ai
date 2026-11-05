@@ -1,4 +1,6 @@
-# Shared conditions and ongoing spells — 0.34.0
+# Shared conditions and ongoing spells — 0.35.0
+
+Version 0.35.0 adds separate [AI condition rules](condition-ai.md) and [manual character automation](condition-manual.md). The [rules/module audit](condition-rules-audit-2026-11-06.md) records ownership, current errata, native verification and remaining manual cases. Manual flat checks fall back to this module when PF2e Automations' flat-check setting is off, as it was in the audited arena world.
 
 The world setting **Enforce action and reaction restrictions** defaults on. It connects prepared PF2e conditions and PF2e Automations 1.4.10 flags to the existing manual and AI workflows. The installed external markers use `flags.pf2e.noUseReactions` and `flags.pf2e.noActions`; effect names and imported prose are not parsed as rules.
 
@@ -14,7 +16,7 @@ Blinded is an observer-relative perception restriction, not a ban on acting. Ord
 
 Blinded plus Deafened disables ordinary hearing; prepared, in-range nonvisual senses can still locate creatures according to their acuity. Sight upgrades such as darkvision do not bypass blindness. Strikes against a defender unable to precisely perceive the attacker apply off-guard contextually, without creating a global Off-Guard condition. A heard Hidden creature can trigger Reactive Strike, which awaits the DC 11 check and spends the reaction on failure. Undetected creatures do not trigger these automated reactions. Manual attacks use the same targeting/defense pipeline. Normal terrain becomes difficult in both native movement measurement and AI planning; ordinary difficult terrain does not stack, greater terrain remains greater, and forced displacement/teleportation are preserved. Step availability follows the native measured cost.
 
-Dazzled attackers use DC 5. Hidden and scene concealment checks take the stronger applicable DC. PF2e handles numeric condition penalties and visual immunity; native validation confirmed Blinded's −4 Perception penalty. Unusual sense exceptions, silence effects and adjudicated sensory environments may still require GM correction. The installed PF2e Automations already checks Stupefied on manual spell cards; Creature AI's managed casting retains its own awaited check instead of adding another manual check.
+Dazzled attackers use DC 5. Hidden and scene concealment checks take the stronger applicable DC. PF2e handles numeric condition penalties and visual immunity; native validation confirmed Blinded's −4 Perception penalty. Unusual sense exceptions, silence effects and adjudicated sensory environments may still require GM correction. Enabled PF2e Automations flat checks own manual spell cards; when that setting is off, Creature AI supplies the manual fallback. Managed casting retains its own awaited checks.
 
 Cover/concealment/Hidden captions remain relative to the single selected observer (or assigned character when nothing is selected). More than one selected token is ambiguous and clears these captions. Blinded observers show `Hidden (observer blinded)` where appropriate. A stale or empty native tooltip is repaired on document/selection refresh, without per-frame geometry queries. Players never receive a caption marking an Undetected enemy's actual square.
 

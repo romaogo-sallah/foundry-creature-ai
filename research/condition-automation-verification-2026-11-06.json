@@ -1,0 +1,384 @@
+{
+  "date": "2026-11-06",
+  "actorCountBefore": 159,
+  "settings": {
+    "pf2e-automations": {
+      "active": true,
+      "version": "1.4.10",
+      "flatCheck": "no",
+      "allSpellsAuditory": false,
+      "decreaseFrightened": true,
+      "addCompatibilityWithToolbelt": true,
+      "basicActionRoll": true
+    },
+    "xdy-pf2e-workbench": {
+      "active": true,
+      "version": "7.7.5",
+      "autoReduceStunned": true,
+      "decreaseFrightenedConditionEachTurn": true,
+      "applyPersistentDamage": true,
+      "applyPersistentDamageRecoveryRoll": true,
+      "applyPersistentHealing": true
+    },
+    "pf2e-toolbelt": {
+      "active": true,
+      "version": "3.59.2",
+      "targetHelper": {
+        "enabled": true,
+        "targets": true
+      }
+    }
+  },
+  "cases": [
+    {
+      "slug": "restrained",
+      "conditionValue": null,
+      "facts": {
+        "restrained": true,
+        "grabbed": false,
+        "immobilized": true,
+        "prone": false,
+        "fascinated": false,
+        "sickened": false,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": "Restrained: only Escape or Force Open can use attack/manipulate actions.",
+      "cast": "Restrained: only Escape or Force Open can use attack/manipulate actions.",
+      "stride": "Immobilized: cannot use move actions.",
+      "escape": null,
+      "ac": 14,
+      "fortitude": 10,
+      "perception": 5,
+      "landSpeed": 25
+    },
+    {
+      "slug": "immobilized",
+      "conditionValue": null,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": true,
+        "prone": false,
+        "fascinated": false,
+        "sickened": false,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": null,
+      "stride": "Immobilized: cannot use move actions.",
+      "escape": null,
+      "ac": 16,
+      "fortitude": 10,
+      "perception": 5,
+      "landSpeed": 25
+    },
+    {
+      "slug": "prone",
+      "conditionValue": null,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": false,
+        "prone": true,
+        "fascinated": false,
+        "sickened": false,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": null,
+      "stride": "Prone: only Crawl and Stand are allowed move actions.",
+      "escape": null,
+      "ac": 14,
+      "fortitude": 10,
+      "perception": 5,
+      "landSpeed": 25
+    },
+    {
+      "slug": "fascinated",
+      "conditionValue": null,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": false,
+        "prone": false,
+        "fascinated": true,
+        "sickened": false,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": "Fascinated: concentrate actions must relate to the subject of fascination.",
+      "stride": null,
+      "escape": null,
+      "ac": 16,
+      "fortitude": 10,
+      "perception": 3,
+      "landSpeed": 25
+    },
+    {
+      "slug": "sickened",
+      "conditionValue": 2,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": false,
+        "prone": false,
+        "fascinated": false,
+        "sickened": true,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": null,
+      "stride": null,
+      "escape": null,
+      "ac": 14,
+      "fortitude": 8,
+      "perception": 3,
+      "landSpeed": 25
+    },
+    {
+      "slug": "stunned",
+      "conditionValue": 2,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": false,
+        "prone": false,
+        "fascinated": false,
+        "sickened": false,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": null,
+      "stride": null,
+      "escape": null,
+      "ac": 16,
+      "fortitude": 10,
+      "perception": 5,
+      "landSpeed": 25
+    },
+    {
+      "slug": "slowed",
+      "conditionValue": 2,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": false,
+        "prone": false,
+        "fascinated": false,
+        "sickened": false,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": null,
+      "stride": null,
+      "escape": null,
+      "ac": 16,
+      "fortitude": 10,
+      "perception": 5,
+      "landSpeed": 25
+    },
+    {
+      "slug": "frightened",
+      "conditionValue": 2,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": false,
+        "prone": false,
+        "fascinated": false,
+        "sickened": false,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": null,
+      "stride": null,
+      "escape": null,
+      "ac": 14,
+      "fortitude": 8,
+      "perception": 3,
+      "landSpeed": 25
+    },
+    {
+      "slug": "enfeebled",
+      "conditionValue": 2,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": false,
+        "prone": false,
+        "fascinated": false,
+        "sickened": false,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": null,
+      "stride": null,
+      "escape": null,
+      "ac": 16,
+      "fortitude": 10,
+      "perception": 5,
+      "landSpeed": 25
+    },
+    {
+      "slug": "clumsy",
+      "conditionValue": 2,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": false,
+        "prone": false,
+        "fascinated": false,
+        "sickened": false,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": null,
+      "stride": null,
+      "escape": null,
+      "ac": 14,
+      "fortitude": 10,
+      "perception": 5,
+      "landSpeed": 25
+    },
+    {
+      "slug": "fatigued",
+      "conditionValue": null,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": false,
+        "prone": false,
+        "fascinated": false,
+        "sickened": false,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": null,
+      "stride": null,
+      "escape": null,
+      "ac": 15,
+      "fortitude": 9,
+      "perception": 5,
+      "landSpeed": 25
+    },
+    {
+      "slug": "deafened",
+      "conditionValue": null,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": false,
+        "prone": false,
+        "fascinated": false,
+        "sickened": false,
+        "deafened": true,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": null,
+      "stride": null,
+      "escape": null,
+      "ac": 16,
+      "fortitude": 10,
+      "perception": 5,
+      "landSpeed": 25
+    },
+    {
+      "slug": "paralyzed",
+      "conditionValue": null,
+      "facts": {
+        "restrained": false,
+        "grabbed": false,
+        "immobilized": false,
+        "prone": false,
+        "fascinated": false,
+        "sickened": false,
+        "deafened": false,
+        "stupefied": 0,
+        "synesthesia": false,
+        "fascinationSubjects": []
+      },
+      "strike": null,
+      "cast": null,
+      "stride": null,
+      "escape": null,
+      "ac": 14,
+      "fortitude": 10,
+      "perception": 5,
+      "landSpeed": 25
+    }
+  ],
+  "modes": [
+    "step",
+    "sneak"
+  ],
+  "actorCountAfter": 159,
+  "valid": true,
+  "browserStartup": {
+    "version": "0.35.0",
+    "modes": [
+      {
+        "id": "step",
+        "label": "Step",
+        "normalized": true,
+        "difficulty": 2
+      },
+      {
+        "id": "sneak",
+        "label": "Sneak",
+        "normalized": true,
+        "difficulty": 2
+      }
+    ],
+    "controls": true,
+    "owners": {
+      "manualFlatChecks": "foundry-creature-ai",
+      "managedFlatChecks": "foundry-creature-ai",
+      "frightened": "pf2e-automations",
+      "duplicateFrightened": false,
+      "stunned": "xdy-pf2e-workbench",
+      "persistentDamage": "xdy-pf2e-workbench"
+    },
+    "regions": 18,
+    "actorCountBefore": 159,
+    "actorCountAfter": 159,
+    "newActors": 0,
+    "moduleErrors": [],
+    "valid": true
+  }
+}

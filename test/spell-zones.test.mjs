@@ -146,7 +146,7 @@ test('manual Step out of Grease works with generic movement reactions disabled a
   const movement=new ManualMovement(f.reactions,{enabled:()=>false});
   const start={x:500,y:200,elevation:0,level:'ground',action:'walk'},end={...start,x:600};
   const count=f.calls.filter(call=>call[0]==='spell-save').length;
-  const result=await movement.receive({sceneId:'scene',tokenId:f.player.id,origin:start,path:[start,end],stamp:combatStamp(),expires:Date.now()+120000},game.user);
+  const result=await movement.receive({sceneId:'scene',tokenId:f.player.id,mode:'step',origin:start,path:[start,end],stamp:combatStamp(),expires:Date.now()+120000},game.user);
   assert.equal(result,true);assert.equal(f.player.document.x,600);
   assert.equal(f.calls.filter(call=>call[0]==='spell-save').length,count);
 });
