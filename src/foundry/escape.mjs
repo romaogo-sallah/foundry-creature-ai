@@ -27,7 +27,7 @@ function supportedGrappleEffect(condition, effect) {
 
 function recordedSource(adapter, group) {
   const spell = group.root.flags?.[MODULE_ID];
-  if (spell?.spellEffect === 'tangle-vine' && Number.isFinite(spell.escapeDC))
+  if ((spell?.spellEffect === 'tangle-vine'||spell?.restraint==='spike-pin') && Number.isFinite(spell.escapeDC))
     return { tokenId: null, actorUuid: null, customDC: spell.escapeDC, recorded: true };
   const origin = group.root.system?.context?.origin;
   if (!origin?.token || !origin.actor) return null;
@@ -43,7 +43,7 @@ function recordedSource(adapter, group) {
 // removes ONE cause, not every condition sharing the same slug on the actor.
 export function escapeBindings(actor) {
   const groups = new Map();
-  for (const effect of actor.itemTypes?.effect ?? []) if (effect.flags?.[MODULE_ID]?.spellEffect === 'tangle-vine')
+  for (const effect of actor.itemTypes?.effect ?? []) if (effect.flags?.[MODULE_ID]?.spellEffect === 'tangle-vine'||effect.flags?.[MODULE_ID]?.restraint==='spike-pin')
     groups.set(effect.id,{id:effect.id,root:effect,conditions:[],kind:'spell-restraint',removable:!effect.isLocked&&!effect.readonly});
   for (const slug of restrictions) for (const condition of actor.getCondition(slug, { all: true }) ?? []) {
     if (condition.active === false) continue;
@@ -52,7 +52,7 @@ export function escapeBindings(actor) {
     while (root.appliedBy && restrictions.has(root.appliedBy.slug) && !seen.has(root.id)) {
       seen.add(root.id); root = root.appliedBy;
     }
-    const wrapped = supportedGrappleEffect(root, root.appliedBy) || root.appliedBy?.flags?.[MODULE_ID]?.spellEffect === 'tangle-vine';
+    const wrapped = supportedGrappleEffect(root, root.appliedBy) || root.appliedBy?.flags?.[MODULE_ID]?.spellEffect === 'tangle-vine'||root.appliedBy?.flags?.[MODULE_ID]?.restraint==='spike-pin';
     if (wrapped) root = root.appliedBy;
     if (!root.id) continue;
     const group = groups.get(root.id) ?? { id: root.id, root, conditions: [],

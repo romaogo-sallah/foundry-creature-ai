@@ -9,10 +9,23 @@ import {rememberedToken} from './target-memory.mjs';
 import {flightThreats,flightSafety} from './flight-safety.mjs';
 import {planningWorker} from './planning-worker.mjs';
 import {flightWorkerSnapshot,flightWorldStamp} from './flight-worker-snapshot.mjs';
+import {flightLevelAt,clearFlightSurfaces} from './vertical-space.mjs';
 
 export const flightPoint=(adapter,cell)=>({...adapter.topLeft(cell),elevation:cell.elevation??adapter.token.document.elevation,
-  level:adapter.token.document.level,action:'fly',snapped:true});
-export const flightPath=(adapter,path)=>[{...adapter.actualWaypoint(),action:'fly'},...path.slice(1).map(p=>flightPoint(adapter,p))];
+  level:flightLevelAt(adapter.token,cell.elevation??adapter.token.document.elevation),action:'fly',snapped:true});
+export function flightPath(adapter,path){
+ const points=[{...adapter.actualWaypoint(),...flightPoint(adapter,path[0]),action:'fly'},...path.slice(1).map(p=>flightPoint(adapter,p))],result=[points[0]];
+ for(let i=1;i<points.length;i++){
+  const from=points[i-1],to=points[i];
+  const count=from.level===to.level?1:Math.max(1,Math.ceil(Math.max(Math.abs(to.x-from.x)/canvas.grid.size,
+   Math.abs(to.y-from.y)/canvas.grid.size,Math.abs(to.elevation-from.elevation)/canvas.grid.distance)));
+  for(let j=1;j<=count;j++){
+   const t=j/count,elevation=from.elevation+(to.elevation-from.elevation)*t;
+   result.push({...to,x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t,elevation,level:flightLevelAt(adapter.token,elevation)});
+  }
+ }
+ return result;
+}
 export function flightCost(adapter,path,context=adapter.movementContext()){
   const points=flightPath(adapter,path),terrain=adapter.token.createTerrainMovementPath?.(points,{preview:false})??points;
   return Math.max(0,adapter.token.measureMovementPath([...context.history,...terrain]).cost-context.historyCost);
@@ -27,6 +40,7 @@ export function flightMoveTargets(adapter,state,point){
     const target=perceivedFlightTarget(adapter,enemy),geometry=adapter.targetAt(point,target,[],position);
     const strikes=Object.fromEntries((state.strikes??[]).map(description=>{
       const strike=adapter.actor.system.actions.find(s=>s.item.id===description.id);
+      if(strike&&adapter.strikeGeometry)return [description.id,adapter.strikeGeometry(point,target,[],position,strike)];
       const result=adapter.targetAt(point,target,[],position,strike?.item);
       return [description.id,{...result,usable:result.inReach&&strike?.ready!==false}];
     }));
@@ -36,7 +50,7 @@ export function flightMoveTargets(adapter,state,point){
 }
 export function flightCollision(adapter,from,to){
   const [,blocked]=adapter.token.constrainMovementPath([from,to],{ignoreWalls:false,ignoreCost:true});
-  return !blocked;
+  return !blocked&&clearFlightSurfaces(adapter.token,from,to,tokenHeight(adapter.token));
 }
 export async function flightMoves(adapter,state,planner,{signal}={}){
   if(!flySpeed(adapter.actor)||state.self.immobile||state.self.prone||state.actionsRemaining<1||!state.enemies.length)return [];
@@ -82,12 +96,12 @@ export function nativeFlightMoves(adapter,state,planner){
   const start={...adapter.originCell(),elevation:adapter.token.document.elevation},cache=new Map();
   const others=canvas.tokens.placeables.filter(token=>token!==adapter.token&&occupiesMovementSpace(token)&&!token.document.hidden&&
     detectionFor(adapter.token,token).state==='observed'&&clearSightPath(adapter.token,token));
-  const canStop=point=>!others.some(other=>volumesOverlap(tokenAt(adapter.token,flightPoint(adapter,point)),other));
+  const canStop=point=>!others.some(other=>volumesOverlap(tokenAt(adapter.token,flightPoint(adapter,point)),other,{acrossLevels:true}));
   const canEnter=point=>{
     const p=flightPoint(adapter,point);
     return point.elevation>=bounds.bottom&&point.elevation<=bounds.top&&p.x>=rect.x&&p.y>=rect.y&&
       p.x+adapter.token.w<=rect.x+rect.width&&p.y+adapter.token.h<=rect.y+rect.height&&
-      !others.some(other=>!other.actor.isAllyOf(adapter.actor)&&volumesOverlap(tokenAt(adapter.token,p),other));
+      !others.some(other=>!other.actor.isAllyOf(adapter.actor)&&volumesOverlap(tokenAt(adapter.token,p),other,{acrossLevels:true}));
   };
   const canTraverse=(from,to)=>{
     const key=`${from.x},${from.y},${from.elevation}>${to.x},${to.y},${to.elevation}`;
@@ -104,13 +118,14 @@ export function nativeFlightMoves(adapter,state,planner){
       ({x:cell.x+dx*radius,y:cell.y+dy*radius,elevation}))];
   });
   const hunt=state.flight.hunt;
-  const height=hunt?Math.min(hunt.preferredElevation,start.elevation+Math.floor(state.flight.speed/10)*5):null;
-  const huntGoals=hunt?[{...start,elevation:height},...state.enemies.map(enemy=>({...adapter.cell(perceivedFlightTarget(adapter,enemy).document),elevation:hunt.preferredElevation}))]:null;
+  const cruising=hunt||state.flight.ranged?{preferredElevation:hunt?.preferredElevation??planner.preferredElevation}:null;
+  const height=cruising?Math.min(cruising.preferredElevation,start.elevation+Math.floor(state.flight.speed/10)*5):null;
+  const huntGoals=cruising?[{...start,elevation:height},...state.enemies.map(enemy=>({...adapter.cell(perceivedFlightTarget(adapter,enemy).document),elevation:cruising.preferredElevation}))]:null;
   const goals=huntGoals??(state.actionsRemaining===1||state.attacksMade>0?escapeGoals:attackGoals);
   const nodes=reachableFlightCells(start,flySpeed(adapter.actor),{canEnter,canStop,canTraverse,goals,maxNodes:450,
     pathCost:path=>flightCost(adapter,path,context),edgeRisk:from=>adapter.movementThreats(from,flightPoint(adapter,from)).length})
     .filter(node=>node.cost>0);
-  if(hunt&&height>start.elevation){
+  if(cruising&&height>start.elevation){
     const point={...start,elevation:height},path=[start,point],cost=flightCost(adapter,path,context);
     if(planner.routeClear(path)&&cost<=state.flight.speed&&!nodes.some(n=>n.x===point.x&&n.y===point.y&&n.elevation===height))
       nodes.push({...point,path,cost,risk:adapter.movementThreats(start,flightPoint(adapter,start)).length});

@@ -6,6 +6,7 @@ import { incapacitationReason } from './combat-state.mjs';
 import { clearAttackPath, clearSightPath } from './attack-path.mjs';
 import { concealmentCheck } from './environment-rolls.mjs';
 import { detectionFor } from './stealth-awareness.mjs';
+import {sharesVerticalSpace} from './vertical-space.mjs';
 
 export const REACTION_OPTION = `${MODULE_ID}:reaction`;
 export const REACTION_AUTO_DAMAGE = `${MODULE_ID}:reaction-auto-damage`;
@@ -174,7 +175,7 @@ export class ReactionEngine {
   meleeStrikes(reactor, mover, { planning = false } = {}) {
     if (!canReact(reactor.actor) || !reactor.actor.isEnemyOf(mover.actor) || reactor.document.hidden || mover.document.hidden ||
       !planning && detectionFor(reactor,mover).state === 'undetected' ||
-      reactor.document.level !== mover.document.level ||
+      !sharesVerticalSpace(reactor,mover) ||
       mover.actor.hasCondition('invisible') ||
       reactor.actor.hasCondition('blinded') || !clearSightPath(reactor, mover) || !clearAttackPath(reactor, mover)) return [];
     return this.meleeOptions(reactor).filter(({ strike, reason }) => {

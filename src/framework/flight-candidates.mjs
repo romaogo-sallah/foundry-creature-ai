@@ -1,5 +1,6 @@
 import {preparedStrikeCandidates} from './strike-capability.mjs';
 import {PRIORITY} from '../dawnsbury/chooser.mjs';
+import {aerialAttackCandidates} from './spike-volley.mjs';
 export function flightCandidates(state){
   const flight=state.flight;
   if(!flight?.canFly||state.actionsRemaining<1)return [];
@@ -11,13 +12,18 @@ export function flightCandidates(state){
     intent:'hover',features:{flight:true,hover:true},assessment:{value:hoverValue},
     scoringTerms:[{label:'Use Fly to remain airborne',contribution:hoverValue}]});
   const current=Math.min(...state.enemies.map(enemy=>enemy.distance/5));
+  const currentAttack=flight.ranged?Math.max(0,...aerialAttackCandidates(state).map(c=>c.assessment.value)):0;
   for(const move of flight.moves??[]){
     if(!move.airborne)continue;
     const key=`${move.x},${move.y},${move.elevation}`;
     if(state.visited?.includes(key)&&!(flight.safety?.safe===false&&move.safety?.safe))continue;
     const next={...state,actionsRemaining:state.actionsRemaining-1,enemies:state.enemies.map(enemy=>({...enemy,...move.targets[enemy.id]}))};
-    const attacks=preparedStrikeCandidates(next),follow=Math.max(0,...attacks.map(c=>c.assessment.value))*
+    const attacks=aerialAttackCandidates(next),follow=Math.max(0,...attacks.map(c=>c.assessment.value))*
       (state.actionsRemaining===2&&move.safety?.safe===false?0.15:1);
+    const cruise=flight.preferredElevation??flight.origin.elevation;
+    const heightGain=flight.ranged?Math.max(0,Math.min(cruise,move.elevation)-Math.min(cruise,flight.origin.elevation))/5:0;
+    if(flight.ranged&&flight.safety?.safe&&move.safety?.safe&&flight.origin.elevation>=cruise&&
+      currentAttack>0&&follow<=currentAttack&&heightGain===0)continue;
     const progress=Math.max(0,current-move.nearestEnemy)*0.15;
     const setup=move.diveSetupValue??0,reset=state.attacksMade>0&&move.elevation>flight.origin.elevation&&setup>0?0.6:0;
     const exposure=move.destinationThreatened?0.25:0,maintenance=flight.airborne&&!flight.flown&&state.actionsRemaining===1?0.25:0;
@@ -25,18 +31,20 @@ export function flightCandidates(state){
     const sightPenalty=losesSight?Math.max(2,state.self.averageDamage):0;
     const escaping=flight.safety?.safe===false&&move.safety?.safe;
     const retreat=escaping?(state.actionsRemaining===1||state.attacksMade>0?state.self.averageDamage*2+2:0.2):0;
-    const heightPreference=escaping&&move.safety.aboveReach?1.5:0;
-    const safeHold=flight.safety?.safe&&move.safety?.safe===false&&state.actionsRemaining<=2?state.self.averageDamage*2:0;
-    const value=Math.max(follow,setup)+progress+reset+maintenance+retreat+heightPreference-(move.reactionRisk??0)-exposure-sightPenalty-safeHold;
+    const heightPreference=(escaping||flight.ranged&&heightGain>0)&&move.safety.aboveReach?1.5:0;
+    const safeHold=(flight.ranged||flight.safety?.safe&&state.actionsRemaining<=2)&&move.safety?.safe===false?state.self.averageDamage*2:0;
+    const altitudeSetup=heightGain*2;
+    const value=Math.max(follow,setup)+progress+reset+maintenance+retreat+heightPreference+altitudeSetup-(move.reactionRisk??0)-exposure-sightPenalty-safeHold;
     if(value<=0&&flight.airborne)continue;
     candidates.push({id:`fly:${key}`,kind:'fly',legal:true,actionCost:1,path:move.path,destination:{x:move.x,y:move.y,elevation:move.elevation},
       movementCost:move.cost,provokes:move.provokes,destinationThreatened:move.destinationThreatened,
       intent:escaping&&retreat>0.2?'fly out of melee reach':!flight.airborne?'take off and approach':setup>follow?'gain height for a dive':move.nearestEnemy<current?'approach in flight':'reposition in flight',
-      features:{flight:true,diveSetup:setup>follow,flightRetreat:escaping&&retreat>0.2},assessment:{value:Math.max(0.01,value),movement:true,fullTurnPlan:escaping&&retreat>0.2,goodAttacksLeft:follow>0||setup>0&&state.actionsRemaining>=3,
+      features:{flight:true,diveSetup:setup>follow,flightRetreat:escaping&&retreat>0.2},assessment:{value:Math.max(0.01,value),movement:true,fullTurnPlan:escaping&&retreat>0.2||altitudeSetup>0,goodAttacksLeft:follow>0||setup>0&&state.actionsRemaining>=3,
         nearestEnemy:move.nearestEnemy,currentNearestEnemy:current,distanceMoved:move.cost/5,reachSquares:state.self.reachSquares},
       scoringTerms:[{label:'Attack or dive after flight',contribution:Math.max(follow,setup)},
         {label:'Approach and prepare another pass',contribution:progress+reset+maintenance},
         {label:'Finish outside enemy melee reach with clearance',contribution:retreat+heightPreference-safeHold},
+        ...(altitudeSetup?[{label:'Build a safe firing altitude',contribution:altitudeSetup}]:[]),
         {label:'Known reaction, lost sight and destination exposure',contribution:-(move.reactionRisk??0)-exposure-sightPenalty}]});
   }
   return candidates;

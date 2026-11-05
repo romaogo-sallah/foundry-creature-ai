@@ -6,9 +6,10 @@ import { rememberedToken } from './target-memory.mjs';
 import { detectionFor } from './stealth-awareness.mjs';
 import { clearSightPath } from './attack-path.mjs';
 
-export const basicMeleeStrikes=actor=>(actor?.system?.actions??[]).filter(strike=>strike.type==='strike'&&strike.item?.isMelee&&
+export const preparedNPCStrikes=actor=>(actor?.system?.actions??[]).filter(strike=>strike.type==='strike'&&strike.item&&
   Number.isFinite(strike.totalModifier)&&Object.values(strike.item.system?.damageRolls??{}).some(part=>part.damage)&&
   strike.variants?.length>=3&&typeof strike.variants[0].roll==='function'&&typeof strike.damage==='function');
+export const basicMeleeStrikes=actor=>preparedNPCStrikes(actor).filter(strike=>strike.item.isMelee);
 const average=strike=>Object.values(strike.item.system.damageRolls??{}).filter(part=>!part.category).reduce((sum,part)=>sum+averageFormula(part.damage),0);
 
 export class PF2eBasicNPCAdapter extends PF2eCreatureAdapter {
@@ -22,23 +23,30 @@ export class PF2eBasicNPCAdapter extends PF2eCreatureAdapter {
     if(this.actor.system.actions.some(action=>action.item?.isRanged))unsupported.push('Untaught ranged weapon/ammunition configuration');
     return {strike,native,averageDamage:average(strike),abilityNames:[...native.map(action=>action.item.name),'Stand','Escape','Seek','Hide','Sneak'],unsupported};
   }
-  planningReach(){return Math.max(...this.parts().native.map(strike=>this.actor.getReach({action:'attack',weapon:strike.item})));}
+  planningReach(){return Math.max(...this.parts().native.filter(strike=>strike.item.isMelee).map(strike=>this.actor.getReach({action:'attack',weapon:strike.item})));}
   targetAt(cell,target,allies,position,weapon=this.parts().strike.item){return super.targetAt(cell,target,allies,position,weapon);}
+  strikeGeometry(cell,target,allies,position,strike){
+    const geometry=this.targetAt(cell,target,allies,position,strike.item),range=strike.item.system.range;
+    const inReach=strike.item.isRanged?geometry.distance<=(range?.max??range?.increment*6):geometry.inReach;
+    return {...geometry,inReach,flanked:!strike.item.isRanged&&geometry.flanked,
+      rangePenalty:strike.item.isRanged&&range?.increment?Math.max(0,Math.ceil(geometry.distance/range.increment)-1)*2:0,
+      usable:inReach&&geometry.lineOfEffect&&strike.ready!==false&&strike.canAttack!==false};
+  }
+  describeStrike(strike){return {id:strike.item.id,bonus:strike.totalModifier,damage:average(strike),ranged:strike.item.isRanged,
+    mapPenalties:[0,strike.variants[1]?.penalty??-5,strike.variants[2]?.penalty??-10]};}
   async snapshot(ledger,options){
     const state=await super.snapshot(ledger,options),parts=this.parts();
     const describe=(cell,enemy,position)=>{
       const target=this.perceivedTarget(enemy);
       const allies=target.memoryView?[]:this.allies(target).filter(ally=>detectionFor(this.token,ally).state==='observed'&&clearSightPath(this.token,ally));
       const positions=Object.fromEntries(parts.native.map(strike=>{
-        const geometry=this.targetAt(cell,target,allies,position,strike.item);
-        return [strike.item.id,{...geometry,usable:geometry.inReach&&geometry.lineOfEffect&&strike.ready!==false}];
+        return [strike.item.id,this.strikeGeometry(cell,target,allies,position,strike)];
       }));
       return {strikes:positions,inReach:Object.values(positions).some(position=>position.usable)};
     };
     for(const enemy of state.enemies)Object.assign(enemy,describe(state.self.cell,enemy,this.actualWaypoint()));
     for(const move of state.moves)for(const enemy of state.enemies)Object.assign(move.targets[enemy.id],describe(move,enemy));
-    return {...state,strikes:parts.native.map(strike=>({id:strike.item.id,bonus:strike.totalModifier,damage:average(strike),ranged:false,
-      mapPenalties:[0,strike.variants[1]?.penalty??-5,strike.variants[2]?.penalty??-10]})),
+    return {...state,strikes:parts.native.map(strike=>this.describeStrike(strike)),
       diagnostics:{...state.diagnostics,profileId:this.profileId,manualAbilities:parts.unsupported}};
   }
   perceivedTarget(enemy){
@@ -49,7 +57,7 @@ export class PF2eBasicNPCAdapter extends PF2eCreatureAdapter {
   decide(state){const decision=basicCapabilities.decide('basic-npc',state);return {...decision,diagnostics:{...state.diagnostics,...decision.diagnostics}};}
   async executeProfileAction(choice,ledger,context){
     const target=this.liveTarget(choice.targetId),strike=this.parts().native.find(strike=>strike.item.id===choice.strikeId);
-    if(choice.kind!=='strike'||!target||!strike||strike.ready===false||!this.targetAt(this.originCell(),target,[],this.actualWaypoint(),strike.item).inReach)
+    if(choice.kind!=='strike'||!target||!strike||!this.strikeGeometry(this.originCell(),target,[],this.actualWaypoint(),strike).usable)
       return {skipped:true,skipReason:'The prepared melee Strike or its target is no longer available'};
     return executeNativeStrike(this,strike,target,ledger,context);
   }

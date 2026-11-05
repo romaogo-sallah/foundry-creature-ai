@@ -3,6 +3,7 @@ import {floorBelow,isAirborne} from './flight-surfaces.mjs';
 import {incapacitationReason,occupiesMovementSpace} from './combat-state.mjs';
 import {tokenAt,volumesOverlap} from './vertical-geometry.mjs';
 import {MANAGED_MOVEMENT} from './movement-options.mjs';
+import {flightLevelAt} from './vertical-space.mjs';
 const ns='foundry-creature-ai',pending=new Map();
 export const flightLost=token=>Boolean(incapacitationReason(token)||token.actor.hasCondition('prone','paralyzed','petrified','unconscious')||!flySpeed(token.actor));
 const validToken=token=>canvas.ready&&canvas.tokens.get(token.id)===token&&game.users.activeGM?.id===game.user.id;
@@ -27,8 +28,8 @@ export async function resolveFlightFall(token,{reactions,force=false,applyDamage
       });
     }
     if(!validToken(token)||!valid())return {pause:true};
-    const landing={...from,elevation:floor,action:'displace',snapped:false};
-    const occupants=canvas.tokens.placeables.filter(other=>other!==token&&occupiesMovementSpace(other)&&volumesOverlap(tokenAt(token,landing),other));
+    const landing={...from,elevation:floor,level:flightLevelAt(token,floor),action:'displace',snapped:false};
+    const occupants=canvas.tokens.placeables.filter(other=>other!==token&&occupiesMovementSpace(other)&&volumesOverlap(tokenAt(token,landing),other,{acrossLevels:true}));
     const moved=await token.document.move([landing],{[MANAGED_MOVEMENT]:true,animate:true,showRuler:false});
     await (token.movementAnimationPromise??token.document.movement?.animation?.ended);
     if(!moved)throw new Error('Foundry stopped the fall before its landing; inspect the position.');

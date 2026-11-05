@@ -1,7 +1,7 @@
 export function flySpeed(actor){
-  const speed=actor.system.movement?.speeds?.fly;
+  const speed=actor?.system?.movement?.speeds?.fly;
   const prepared=speed?.total??speed?.value;
-  const other=actor.system.attributes?.speed?.otherSpeeds?.find(speed=>speed.type==='fly');
+  const other=actor?.system?.attributes?.speed?.otherSpeeds?.find(speed=>speed.type==='fly');
   const legacy=other?.total??other?.value;
   const value=prepared??legacy;
   return Number.isFinite(value)&&value>0?value:0;

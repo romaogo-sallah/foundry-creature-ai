@@ -1,4 +1,8 @@
-# Foundry Creature AI — version 0.30.0
+# Foundry Creature AI — version 0.31.0
+
+Version **0.31.0** adds the [Manticore (Quill Tail)](manticore-quill.md): native ranged Spike, one-action split/pinning Spike Volley, persistent 12-spike resources, 24-hour recovery and safe aerial firing. Pins integrate with NPC Escape DC 23; the GM can correct supply in Alt+W. Worker proposals retain sideways escapes under low ceilings. Reload all clients with **Ctrl+F5** and confirm **Running code 0.31.0**.
+
+Flight treats scene level boundaries as open air unless an actual surface blocks them. Cross-level paths preserve native movement costs, known targets, physical occupancy and reach-based reactions. A level’s elevation range alone creates no ceiling or upper floor.
 
 Version **0.30.0** adds the supplied [Manticore (Scorpion Tail)](manticore-scorpion.md). It uses shared flight hunting, a reach-10 venomous Stinger, Jaws and agile Claw. Its three-stage venom uses native Fortitude saves and poison damage, tracks its six-round maximum, and grants stage Enfeebled through an owned effect. Ongoing stages resolve at the poisoned combatant’s turn end while the shared reaction barrier holds automation. Worker shortlists now preserve generic flying melee approaches. Reload all clients with **Ctrl+F5** and confirm **Running code 0.30.0**.
 

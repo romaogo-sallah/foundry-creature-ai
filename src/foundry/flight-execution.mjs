@@ -50,6 +50,6 @@ export async function executeFlight(adapter,choice,ledger,{canContinue=()=>true,
   return {resolved:true,destination:Math.hypot(to.x-from.x,to.y-from.y,to.elevation-from.elevation)>0.1?{...adapter.originCell(),elevation:to.elevation}:null,
     ...(choice.features?.flightAttackPass&&arrived?{lastAction:{kind:'fly',flightAttackPass:true}}:{}),
     endTurn:Boolean(ended),incapacitationReason:ended,pause,pauseReason,
-    note:fall.note??(!completed||!arrived?'Foundry stopped this flight. Its action remains spent; reassessing from the actual position.':choice.features?.hover?'The eagle hovers to remain airborne.':null),
+    note:fall.note??(!completed||!arrived?'Foundry stopped this flight. Its action remains spent; reassessing from the actual position.':choice.features?.hover?'The creature hovers to remain airborne.':null),
     movement:{from,to,completed,arrived,cost:completed&&arrived?cost:adapter.token.document.movement?.passed?.cost??0}};
 }

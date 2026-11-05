@@ -189,6 +189,7 @@ export async function openControls(token = selected()) {
     pauseForReactions: button.form.elements.pauseForReactions.checked,
     autoReactions: button.form.elements.autoReactions?.checked ?? config.autoReactions !== false,
     refuseCount: Number(button.form.elements.refuseCount?.value ?? config.refuseCount ?? 0),
+    quillsRemaining:taught.id==='manticore-quill'?Number(button.form.elements.quillsRemaining?.value??adapter.spikesRemaining):null,
     crossbowLoaded: button.form.elements.crossbowLoaded?.checked ?? config.crossbowLoaded !== false,
     entertaining: button.form.elements.entertaining?.checked ?? config.entertaining !== false,
     packMorale: button.form.elements.packMorale?.checked ?? config.packMorale !== false,
@@ -204,6 +205,7 @@ export async function openControls(token = selected()) {
       ${taught.id === 'kobold-scout' ? `<div class="form-group"><label>Crossbow currently loaded</label><input name="crossbowLoaded" type="checkbox" ${adapter.loaded ? 'checked' : ''}></div><p>Reload costs one Interact; each shot consumes one bolt. Hide and Sneak use scene cover/concealment zones and separate checks against each observer's Perception DC. Use the cloud toolbar button to configure zones and the eye button to inspect or correct detection. Construct Trap remains manual. Darkness, special senses and visual cover from walls alone need GM adjudication.</p>` : ''}
       ${taught.id === 'eagle' ? '<p>The Eagle gains a safe hunting altitude, approaches from above and commits only when an attack and escape fit the remaining actions. Upward flight adds difficult-terrain cost; straight downward flight costs half. Eagle Dive costs two actions, descends at least 10 feet in a straight line, then makes one native Talon Strike. Its return climb needs another Fly action.</p>' : ''}
       ${taught.id === 'manticore-scorpion' ? '<p>This scorpion-tail Manticore uses Fly 40 ft, reach-10 Stinger with DC 22 venom, Jaws and agile Claw. It plans an approach, Strike and escape. Venom stages, poison damage and stage Enfeebled resolve automatically using native saves and effects; ongoing saves occur at the poisoned creature’s turn end. This variant has no ranged spikes.</p>' : ''}
+      ${taught.id === 'manticore-quill' ? `<div class="form-group"><label>Spikes remaining (12 per 24 hours)</label><input name="quillsRemaining" type="number" min="0" max="12" step="1" value="${adapter.spikesRemaining}"></div><p>Fly 40 ft; Spike range increment 40 ft. Spike Volley costs one action and two spikes: attack two foes within 20 ft of each other at the same MAP, or attack one foe and pin it on a hit (Escape or Force Open DC 23). It shoots from safer altitude and uses melee when its spikes run out. Each spent spike regrows after 24 hours of world time.</p>` : ''}
       ${abilities.unsupported?.length ? `<p>Additional abilities need manual handling: ${abilities.unsupported.map(escapeHTML).join(', ')}.</p>` : ''}
       <div class="form-group"><label>Target selection</label><select name="targetMode">
         ${side ? `<option value="alliance" ${mode === 'alliance' ? 'selected' : ''}>All opposing combatants (default)</option>` : ''}
@@ -249,11 +251,13 @@ export async function openControls(token = selected()) {
     if (targetMode === 'manual' && !targetIds.length) throw new Error('Target at least one known enemy with Foundry’s target tool first for manual targeting');
     if (!Number.isFinite(answer.showcaseBonus) || answer.showcaseBonus < 0 || answer.showcaseBonus > 20) throw new Error('Showcase bonus must be between 0 and 20');
     if (!Number.isInteger(answer.refuseCount) || answer.refuseCount < 0 || answer.refuseCount > 999) throw new Error('Refuse remaining must be a whole number from 0 to 999');
+    if(taught.id==='manticore-quill'&&(!Number.isInteger(answer.quillsRemaining)||answer.quillsRemaining<0||answer.quillsRemaining>12))throw new Error('Spikes remaining must be a whole number from 0 to 12');
     if (!/^[a-zA-Z0-9 _-]{0,40}$/.test(answer.packGroup)) throw new Error('Use up to 40 letters, numbers, spaces, underscores or hyphens for the pack group');
     nextConfig = { ...config, enabled: true, targetIds, targetMode, autoRun: answer.autoRun, autoAdvance: answer.autoAdvance, applyDamage: answer.applyDamage,
       entertaining: answer.entertaining, showcaseBonus: answer.showcaseBonus, frontlineTargetIds: null,
       packMorale: answer.packMorale, packGroup: answer.packGroup || 'default', pauseForReactions: answer.pauseForReactions, autoReactions: answer.autoReactions,
       ...(taught.id === 'ogre' ? { refuseCount: answer.refuseCount } : {}),
+      ...(taught.id==='manticore-quill'&&answer.action==='preview'?{quillPreviewRemaining:answer.quillsRemaining}:{}),
       ...(taught.id === 'kobold-scout' ? { crossbowLoaded: answer.crossbowLoaded, packMorale: false } : {}) };
     if (answer.action !== 'preview') {
       if (runners.get(token.id)?.running) throw new Error('Wait for the current creature action before changing its settings');
@@ -261,6 +265,7 @@ export async function openControls(token = selected()) {
       await token.document.setFlag(MODULE_ID, 'config', nextConfig);
       if (taught.id === 'kobold-scout') await token.document.setFlag(MODULE_ID, 'scoutGear', { loaded: answer.crossbowLoaded });
       if (taught.id === 'ogre' && nextConfig.refuseCount === 0) await token.document.setFlag(MODULE_ID, 'ogreGear', { refuseHeld: false });
+      if(taught.id==='manticore-quill'&&answer.quillsRemaining!==adapter.spikesRemaining)await adapter.setSpikesRemaining(answer.quillsRemaining);
       if (nextConfig.autoRun) automaticStartsPaused = false;
     }
   }

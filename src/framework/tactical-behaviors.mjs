@@ -13,6 +13,7 @@ for (const [id,label,actionKinds,core] of [
   ['stealth','Stealth',['hide','sneak']],['equipment','Equipment',['reload','regrip','drawMelee','drawJavelin','drawRefuse','drawSword','stow','stowSword','gripBow']],
   ['leadership','Leadership',['bellow']],['pack','Pack coordination',[]],
   ['flight','Flight',['fly']],['diving','Dive attacks',['eagleDive']],
+  ['volleys','Ranged volleys',['spikeVolley']],
 ]) tacticalBehaviors.registerComponent({id,label,actionKinds,core,kind:'ability',
   ...(id==='recovery'?{candidates:state=>[{id:'end',kind:'endTurn',legal:true,actionCost:0,assessment:{value:0}},
     ...state.actionsRemaining>0&&!state.self.unable&&!state.retreatComplete&&(state.self.prone||state.escapes?.length)?recoveryCandidates(state,{canStrike:state.enemies.some(enemy=>enemy.inReach||Object.values(enemy.strikes??{}).some(position=>position.usable))}):[]]}:{}),
@@ -99,6 +100,7 @@ tacticalBehaviors.registerPlan({id:'aerial-hunt',label:'Aerial hunt',requires:['
 
 export const defaultBehaviorConfiguration = profileId => ({
   components:['recovery','perception','movement','strikes','control','stealth','equipment',
+    ...(profileId==='manticore-quill'?['volleys']:[]),
     ...(['goblin-pyro','generic'].includes(profileId)?['spellcasting']:[]),...(['ogre-boss','generic'].includes(profileId)?['leadership']:[]),
     ...['wolf','kobold-scout'].includes(profileId)?['pack']:[],
     'pressure','advance','protection','distance','surround','assist','withdraw'],

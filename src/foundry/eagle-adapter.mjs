@@ -45,7 +45,7 @@ export class PF2eEagleAdapter extends PF2eBasicNPCAdapter{
           if(!isAirborne(this.token,p))continue;
           if(p.x<rect.x||p.y<rect.y||p.x+this.token.w>rect.x+rect.width||p.y+this.token.h>rect.y+rect.height)continue;
           if(canvas.tokens.placeables.some(other=>other!==this.token&&other.actor.hitPoints?.value>0&&
-            detectionFor(this.token,other).state==='observed'&&clearSightPath(this.token,other)&&volumesOverlap(tokenAt(this.token,p),other)))continue;
+            detectionFor(this.token,other).state==='observed'&&clearSightPath(this.token,other)&&volumesOverlap(tokenAt(this.token,p),other,{acrossLevels:true})))continue;
           const positions=flightMoveTargets(this,state,point),geometry=positions[enemy.id].strikes[talon.item.id];
           if(!geometry?.usable)continue;
           const after={...state,enemies:[{...enemy,...positions[enemy.id]}]},strike=preparedStrikeCandidates(after).find(c=>c.strikeId===talon.item.id);

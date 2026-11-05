@@ -4,7 +4,7 @@ The workspace is a Git repository on `main`. The initial commit is `4e6e7ab`, ta
 
 Inspect history with `git log --oneline --decorate` and local changes with `git status` / `git diff`.
 
-Release tags include **`v0.29.0`** (background flight worker) and **`v0.30.0`** (scorpion-tail Manticore and staged venom). Their corresponding ZIPs are tracked in `releases/` for reinstalling a previous build without changing Git branches.
+Release tags include **`v0.29.0`** (background flight worker), **`v0.30.0`** (scorpion-tail Manticore and staged venom) and **`v0.31.0`** (quill-tail Manticore and faster parallel tests). Their corresponding ZIPs are tracked in `releases/` for reinstalling a previous build without changing Git branches.
 
 To review or restore the baseline without deleting later history, first commit any work you want to retain, then create a separate branch:
 

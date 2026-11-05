@@ -5,6 +5,8 @@ import {clearSightPath} from './attack-path.mjs';
 import {detectionFor} from './stealth-awareness.mjs';
 import {perceivedFlightTarget} from './flight-movement.mjs';
 import {flySpeed} from './flight-costs.mjs';
+import {flightThreats} from './flight-safety.mjs';
+import {sceneLevels} from './vertical-space.mjs';
 
 function polygon(shape,size){
   if(shape.type==='polygon'){
@@ -21,15 +23,19 @@ export function flightWorkerSnapshot(adapter,state){
   const size=canvas.grid.size,rect=canvas.dimensions.sceneRect,bounds=flightBounds(adapter.token),origin=state.flight.origin;
   const footprint={width:adapter.token.w/size,height:adapter.token.h/size,depth:tokenHeight(adapter.token)};
   const occupied=canvas.tokens.placeables.filter(t=>t!==adapter.token&&occupiesMovementSpace(t)&&!t.document.hidden&&
-    t.document.level===adapter.token.document.level&&detectionFor(adapter.token,t).state==='observed'&&clearSightPath(adapter.token,t))
+    detectionFor(adapter.token,t).state==='observed'&&clearSightPath(adapter.token,t))
     .map(t=>({x:t.document.x/size,y:t.document.y/size,elevation:t.document.elevation,width:t.w/size,height:t.h/size,
       depth:tokenHeight(t),passable:t.actor.isAllyOf(adapter.actor)}));
-  const walls=(canvas.scene.walls?.contents??[]).filter(w=>w.move!==0&&w._source?.move!==0&&
-    !(w.door>0&&w.ds===1)&&(!w.levels?.size||w.levels.has?.(adapter.token.document.level)))
-    .flatMap(w=>{const c=w.c??w._source?.c;return c?.length===4?[{x1:c[0]/size,y1:c[1]/size,x2:c[2]/size,y2:c[3]/size}]:[];});
+  const walls=(canvas.scene.walls?.contents??[]).filter(w=>w.move!==0&&w._source?.move!==0&&!(w.door>0&&w.ds===1))
+    .flatMap(w=>{
+      const c=w.c??w._source?.c;if(c?.length!==4)return [];
+      const assigned=sceneLevels(canvas.scene,adapter.token.document.level).filter(l=>!w.levels?.size||w.levels.has?.(l.id));
+      return assigned.length?assigned.map(l=>({x1:c[0]/size,y1:c[1]/size,x2:c[2]/size,y2:c[3]/size,
+        low:l.elevation?.bottom??-Infinity,high:l.elevation?.top??Infinity})):[{x1:c[0]/size,y1:c[1]/size,x2:c[2]/size,y2:c[3]/size}];
+    });
   const surfaces=[];
   for(const region of canvas.scene.regions?.contents??[]){
-    if(region.hidden||region.includedInLevel&&!region.includedInLevel(adapter.token.document.level))continue;
+    if(region.hidden)continue;
     for(const behavior of region.behaviors?.contents??[])if(behavior.type==='defineSurface'&&!behavior.disabled&&behavior.system.move){
       const heights=[];
       if(behavior.system.placement!=='top')heights.push(region.elevation.bottom);
@@ -41,15 +47,24 @@ export function flightWorkerSnapshot(adapter,state){
       }
     }
   }
-  const preferredElevation=state.flight.hunt?.preferredElevation??origin.elevation;
+  const preferredElevation=state.flight.hunt?.preferredElevation??state.flight.preferredElevation??origin.elevation;
   const height=Math.min(preferredElevation,origin.elevation+Math.floor(state.flight.speed/10)*5);
   const goals=[{...origin,elevation:height},...state.enemies.map(enemy=>{
     const p=perceivedFlightTarget(adapter,enemy).document;
     return {...adapter.cell(p),elevation:preferredElevation};
   })];
+  // A low ceiling prevents the usual vertical retreat. Preserve lateral
+  // escape goals so the bounded worker shortlist does not offer only overhead
+  // squares that remain inside the conservative melee danger margin.
+  if(state.flight.safety?.safe===false)for(const threat of flightThreats(adapter,state,e=>perceivedFlightTarget(adapter,e)).slice(0,2)){
+    if(threat.safeElevation<=(state.flight.preferredElevation??bounds.top))continue;
+    const cell=adapter.cell(threat.target.document),radius=Math.ceil((threat.reach+25)/5)+1;
+    for(const [dx,dy]of [[1,0],[-1,0],[0,1],[0,-1]])goals.push({x:cell.x+dx*radius,y:cell.y+dy*radius,elevation:state.flight.preferredElevation??bounds.top});
+  }
   const attackTargets=state.enemies.map(enemy=>{const t=perceivedFlightTarget(adapter,enemy);return {x:t.document.x/size,y:t.document.y/size,
     elevation:t.document.elevation,width:t.w/size,height:t.h/size,depth:tokenHeight(t)};});
-  return {origin,footprint,budget:state.flight.speed,preferredElevation,occupied,walls,surfaces,goals,attackTargets,attackReach:adapter.planningReach(),
+  return {origin,footprint,budget:state.flight.speed,preferredElevation,occupied,walls,surfaces,goals,
+    attackTargets:state.flight.ranged?[]:attackTargets,attackReach:adapter.planningReach(),
     limits:{left:Math.ceil(rect.x/size),right:Math.floor((rect.x+rect.width-adapter.token.w)/size),
       top:Math.ceil(rect.y/size),bottom:Math.floor((rect.y+rect.height-adapter.token.h)/size),low:bounds.bottom,high:bounds.top}};
 }
@@ -58,6 +73,7 @@ export function flightWorkerSnapshot(adapter,state){
 // to the worker or used as an actor's knowledge of a hidden opponent.
 export function flightWorldStamp(adapter){
   return JSON.stringify([adapter.turnKey(),game.paused,flySpeed(adapter.actor),adapter.actor.hitPoints?.value,
+    sceneLevels(canvas.scene,adapter.token.document.level).map(l=>[l.id,l.elevation]),
     canvas.tokens.placeables.map(t=>[t.id,t.document.x,t.document.y,t.document.elevation,t.document.level,t.document.width,t.document.height,t.document.depth,
       t.actor?._stats?.modifiedTime,t.actor?.hitPoints?.value,t.document._stats?.modifiedTime,
       t.actor?.hasCondition?.('prone','immobilized','grabbed','restrained','unconscious','dying','dead','stunned'),

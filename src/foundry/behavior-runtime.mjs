@@ -182,8 +182,8 @@ export function attachBehaviorSystem(adapter) {
       if(!result.skipped)await retainStepStealth(adapter,before);
       return result;
     }
-    if(!['kobold-scout','goblin-pyro'].includes(adapter.profileId)&&!['step','hide','strike'].includes(choice.kind))await reveal(adapter.token);
-    if(!['kobold-scout','goblin-pyro'].includes(adapter.profileId)&&choice.kind==='strike'){
+    if(!['kobold-scout','goblin-pyro'].includes(adapter.profileId)&&!['step','hide','strike','spikeVolley'].includes(choice.kind))await reveal(adapter.token);
+    if(!['kobold-scout','goblin-pyro'].includes(adapter.profileId)&&['strike','spikeVolley'].includes(choice.kind)){
       try{return await execute(choice,ledger,context);}finally{await reveal(adapter.token);}
     }
     return execute(choice,ledger,context);

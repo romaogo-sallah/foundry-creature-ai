@@ -18,12 +18,14 @@ export function attachFlightSystem(adapter){
     const canFly=!flightLost(adapter.token)&&!adapter.actor.hasCondition('immobilized','grabbed','restrained');
     state.flight={speed:flySpeed(adapter.actor),airborne:isAirborne(adapter.token),canFly,
       flown:saved?.combatId===game.combat.id&&saved.round===game.combat.round,
+      ranged:adapter.preferRangedFlight?.(state)??false,
       origin:{...adapter.originCell(),elevation:adapter.token.document.elevation},moves:[]};
     if(state.flight.airborne||canFly)state.moves=[];
     const planner=canFly?flightRoutePlanner(adapter,state):null;
     if(planner){
       state.flight.safety=planner.safety(state.flight.origin);
-      if(state.enemies.length&&state.strikes?.some(strike=>!strike.ranged)){
+      state.flight.preferredElevation=planner.preferredElevation;
+      if(!state.flight.ranged&&state.enemies.length&&state.strikes?.some(strike=>!strike.ranged)){
         const recovering=state.attacksMade>0,engaging=state.lastAction?.flightAttackPass===true;
         const phase=recovering?'recover':!engaging&&(!state.flight.airborne||state.flight.origin.elevation<planner.preferredElevation)?'gain-height':'stalk';
         state.flight.hunt={phase,engaging,preferredElevation:planner.preferredElevation,highPossible:planner.highPossible,

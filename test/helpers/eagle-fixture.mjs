@@ -3,6 +3,20 @@ import {fixture as creatureFixture} from './ogre-fixture.mjs';
 import {PF2eEagleAdapter} from '../../src/foundry/eagle-adapter.mjs';
 import {flightStepCost} from '../../src/foundry/flight-costs.mjs';
 export const eagleData=JSON.parse(await readFile(new URL('../fixtures/eagle-mechanics.json',import.meta.url)));
+export function tallEnemy(f){f.player.actor.dimensions.height=10;f.player.actor.getReach=()=>10;}
+export function addCeiling(f,elevation=20){
+ const rectangle={type:'rectangle',x:0,y:0,width:canvas.dimensions.sceneRect.width,height:canvas.dimensions.sceneRect.height};
+ const region={id:'ceiling',elevation:{bottom:elevation,top:elevation},_source:{shapes:[rectangle]},
+  behaviors:{contents:[{type:'defineSurface',disabled:false,system:{move:true,sight:true,placement:'both'}}]},
+  testPoint:p=>p.x>=0&&p.y>=0&&p.x<=rectangle.width&&p.y<=rectangle.height};
+ canvas.scene.regions.contents.push(region);
+ canvas.scene.testSurfaceCollision=(a,b,{side='below'}={})=>{
+  if(a.elevation===b.elevation)return false;
+  const low=Math.min(a.elevation,b.elevation),high=Math.max(a.elevation,b.elevation);
+  return side==='above'?elevation>=low&&elevation<high:elevation>low&&elevation<=high;
+ };
+ return region;
+}
 export function fixture({size=14,altitude=0,attackDegree=2,npcData=eagleData,Adapter=PF2eEagleAdapter,footprint=1}={}){
  const f=creatureFixture({npcData,Adapter,footprint,size,attackDegree});
  for(const token of [f.boss,f.player]){

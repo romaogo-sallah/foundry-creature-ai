@@ -1,10 +1,11 @@
-import {flightPoint,perceivedFlightTarget} from './flight-movement.mjs';
-import {flightBounds,isAirborne} from './flight-surfaces.mjs';
+import {flightPoint,flightPath,perceivedFlightTarget} from './flight-movement.mjs';
+import {flightBounds,isAirborne,ceilingAbove} from './flight-surfaces.mjs';
 import {flightThreats,flightSafety} from './flight-safety.mjs';
-import {tokenAt,volumesOverlap} from './vertical-geometry.mjs';
+import {tokenAt,tokenHeight,volumesOverlap} from './vertical-geometry.mjs';
 import {occupiesMovementSpace} from './combat-state.mjs';
 import {detectionFor} from './stealth-awareness.mjs';
 import {clearSightPath} from './attack-path.mjs';
+import {clearFlightSurfaces} from './vertical-space.mjs';
 
 // A read-only oracle shared by aerial approach, native Strikes and Dive. Costs
 // include the planned inbound path, so the escape starts with its real diagonal
@@ -13,8 +14,9 @@ export function flightRoutePlanner(adapter,state){
   const bounds=flightBounds(adapter.token),context=adapter.movementContext(),step=canvas.grid.distance;
   const origin={...adapter.originCell(),elevation:adapter.token.document.elevation},rect=canvas.dimensions.sceneRect;
   const threats=flightThreats(adapter,state,enemy=>perceivedFlightTarget(adapter,enemy));
-  const preferredElevation=Math.min(bounds.top,Math.max(bounds.bottom+step,...threats.map(t=>t.safeElevation)));
-  const highPossible=threats.every(t=>t.safeElevation<=bounds.top);
+  const headroom=Math.floor((ceilingAbove(adapter.token)-tokenHeight(adapter.token))/step)*step;
+  const preferredElevation=Math.max(bounds.bottom,Math.min(bounds.top,headroom,Math.max(bounds.bottom+step,...threats.map(t=>t.safeElevation))));
+  const highPossible=threats.every(t=>t.safeElevation<=Math.min(bounds.top,headroom));
   const others=canvas.tokens.placeables.filter(t=>t!==adapter.token&&occupiesMovementSpace(t)&&!t.document.hidden&&
     detectionFor(adapter.token,t).state==='observed'&&clearSightPath(adapter.token,t));
   const safety=point=>flightSafety(adapter,flightPoint(adapter,point),threats);
@@ -22,12 +24,13 @@ export function flightRoutePlanner(adapter,state){
     const p=flightPoint(adapter,point);
     return point.elevation>=bounds.bottom&&point.elevation<=bounds.top&&p.x>=rect.x&&p.y>=rect.y&&
       p.x+adapter.token.w<=rect.x+rect.width&&p.y+adapter.token.h<=rect.y+rect.height&&
-      !others.some(t=>!t.actor.isAllyOf(adapter.actor)&&volumesOverlap(tokenAt(adapter.token,p),t));
+      !others.some(t=>!t.actor.isAllyOf(adapter.actor)&&volumesOverlap(tokenAt(adapter.token,p),t,{acrossLevels:true}));
   };
-  const canStop=point=>canEnter(point)&&!others.some(t=>volumesOverlap(tokenAt(adapter.token,flightPoint(adapter,point)),t));
+  const canStop=point=>canEnter(point)&&!others.some(t=>volumesOverlap(tokenAt(adapter.token,flightPoint(adapter,point)),t,{acrossLevels:true}));
   const routeClear=path=>{
-    const points=path.map(p=>flightPoint(adapter,p));
+    const points=flightPath(adapter,path);
     if(!canStop(path.at(-1))||adapter.token.constrainMovementPath(points,{ignoreWalls:false,ignoreCost:true})[1])return false;
+    for(let i=1;i<points.length;i++)if(!clearFlightSurfaces(adapter.token,points[i-1],points[i],tokenHeight(adapter.token)))return false;
     for(let i=1;i<path.length;i++){
       const from=path[i-1],to=path[i],n=Math.ceil(Math.max(Math.abs(to.x-from.x),Math.abs(to.y-from.y),Math.abs(to.elevation-from.elevation)/step));
       for(let j=1;j<=n;j++)if(!canEnter({x:from.x+(to.x-from.x)*j/n,y:from.y+(to.y-from.y)*j/n,
@@ -36,7 +39,7 @@ export function flightRoutePlanner(adapter,state){
     return true;
   };
   const measure=(path,{fresh=false}={})=>{
-    const points=path.map(p=>flightPoint(adapter,p)),terrain=adapter.token.createTerrainMovementPath?.(points,{preview:false})??points;
+    const points=flightPath(adapter,path),terrain=adapter.token.createTerrainMovementPath?.(points,{preview:false})??points;
     return Math.max(0,adapter.token.measureMovementPath([...(fresh?[]:context.history),...terrain]).cost-(fresh?0:context.historyCost));
   };
   const escapeCache=new Map();

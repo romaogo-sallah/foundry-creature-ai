@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Worker as NodeWorker} from 'node:worker_threads';
+import {BrowserWorker} from './helpers/browser-worker.mjs';
 import {planFlightRoutes,rankDiveSetups,numericFlightCost} from '../src/framework/flight-worker-planner.mjs';
 import {PlanningWorker,planningWorker} from '../src/foundry/planning-worker.mjs';
 import {flightWorkerSnapshot} from '../src/foundry/flight-worker-snapshot.mjs';
@@ -9,14 +9,6 @@ import {createCreatureAdapter} from '../src/foundry/creature-profiles.mjs';
 import {TurnRunner} from '../src/framework/turn-runner.mjs';
 import {fixture as manticoreFixture} from './helpers/manticore-fixture.mjs';
 
-class BrowserWorker {
-  constructor(url){
-    this.thread=new NodeWorker(`const {parentPort,workerData}=require('node:worker_threads');global.self=globalThis;global.postMessage=data=>parentPort.postMessage(data);import(workerData.url).then(()=>parentPort.on('message',data=>global.onmessage({data})));`,{eval:true,workerData:{url:url.href}});
-    this.thread.on('message',data=>this.onmessage?.({data}));this.thread.on('error',error=>this.onerror?.(error));
-  }
-  postMessage(data){this.thread.postMessage(data);}
-  terminate(){void this.thread.terminate();}
-}
 const model=()=>({origin:{x:1,y:2,elevation:0},footprint:{width:1,height:1,depth:5},budget:60,preferredElevation:25,
   goals:[{x:1,y:2,elevation:25},{x:6,y:2,elevation:25}],occupied:[],walls:[],surfaces:[],
   limits:{left:0,right:10,top:0,bottom:10,low:0,high:30}});

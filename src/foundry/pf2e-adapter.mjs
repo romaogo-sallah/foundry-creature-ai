@@ -5,6 +5,7 @@ import { standardArmorClass } from '../dawnsbury/chooser.mjs';
 import { canAssignTarget, combatantSceneId, targetingMode, targetRoster } from './targeting.mjs';
 import { incapacitationReason, encounterOutcome, occupiesMovementSpace } from './combat-state.mjs';
 import { clearAttackPath, clearSightPath } from './attack-path.mjs';
+import {sharesVerticalSpace} from './vertical-space.mjs';
 import { unsupportedMovementRegions, terrainMovementPath } from './movement-regions.mjs';
 import { escapeBindings, escapeOptions, configureEscapes, executeEscape } from './escape.mjs';
 import { decisionExplanation } from '../wolf/decision-explanation.mjs';
@@ -260,7 +261,7 @@ export class PF2eCreatureAdapter {
     if (!(target.actor.hitPoints?.value > 0)) return reject('no remaining HP');
     if (target.actor.hasCondition('unconscious', 'dying')) return reject('unconscious or dying');
     if (!pursuit && detectionFor(this.token, target).state === 'undetected') return reject('enemy is undetected to this observer; Seek is needed to locate it');
-    if (!pursuit && target.document.level !== this.token.document.level) return reject('on another scene level');
+    if (!pursuit && !sharesVerticalSpace(this.token,target)) return reject('on another scene level');
     if (!pursuit && !this.sight(this.token.center, target)) return reject('target is not currently observed');
     return { id, name: target.name, target, reason: null };
   }

@@ -28,8 +28,8 @@ export function distanceToPosition(token,target,position,reach){
   const gap=lowA>=highB?lowA-highB:lowB>=highA?lowB-highA:-1;
   return Math.max(native,gap<0?0:(Math.ceil(gap/step)+1)*step);
 }
-export function volumesOverlap(one,two){
+export function volumesOverlap(one,two,{acrossLevels=false}={}){
   const a=one.document,b=two.document;
-  return a.level===b.level&&a.elevation<b.elevation+tokenHeight(two)&&a.elevation+tokenHeight(one)>b.elevation&&
+  return (acrossLevels||a.level===b.level)&&a.elevation<b.elevation+tokenHeight(two)&&a.elevation+tokenHeight(one)>b.elevation&&
     a.x< b.x+two.w&&a.x+one.w>b.x&&a.y<b.y+two.h&&a.y+one.h>b.y;
 }

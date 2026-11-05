@@ -1,4 +1,5 @@
 import { clearSightPath } from './attack-path.mjs';
+import {sharesVerticalSpace} from './vertical-space.mjs';
 import { incapacitationReason } from './combat-state.mjs';
 import { detectionFor } from './stealth-awareness.mjs';
 import { hasUnmanagedConcealment } from './zone-concealment.mjs';
@@ -45,7 +46,7 @@ export function targetKnowledge(adapter, knownMovement) {
     const check = adapter.assessTarget(id, { pursuit: true });
     if (!check.target) { checks.push(check); continue; }
     const target = check.target, actor = target.actor;
-    const sameLevel = target.document.level === adapter.token.document.level;
+    const sameLevel = sharesVerticalSpace(adapter.token,target);
     const relative = detectionFor(adapter.token, target);
     const stealth = relative.state !== 'observed';
     const concealed = hasUnmanagedConcealment(actor);
@@ -74,7 +75,7 @@ export function targetKnowledge(adapter, knownMovement) {
       checks.push({ ...check, awareness: { state: 'observed', detection: 'observed', position: entry.position, source: entry.source, searchRequired: false,
         flatCheckRequired: concealed } }); continue;
     }
-    if (entry.position.level !== adapter.token.document.level) {
+    if (!sharesVerticalSpace(adapter.token,rememberedToken(target,entry.position))) {
       checks.push({ ...check, target: null, reason: 'last known square is on another elevation or level' }); continue;
     }
     const awareness = { state: 'known-square', position: entry.position, source: entry.source, round: entry.round,

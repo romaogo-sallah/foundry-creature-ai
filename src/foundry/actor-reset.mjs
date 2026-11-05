@@ -1,6 +1,6 @@
 const namespace = 'foundry-creature-ai';
 const transientFlags = [
-  'ledger', 'scoutGear', 'ogreGear', 'ogreAttacks', 'scoutActions', 'scoutShown', 'pyroShown', 'pyroActions','flight','eagleShown','manticoreHunts',
+  'ledger', 'scoutGear', 'ogreGear', 'ogreAttacks', 'scoutActions', 'scoutShown', 'pyroShown', 'pyroActions','flight','eagleShown','manticoreHunts','quillShown',
   'scoutThreats', 'casterTargets', 'behaviorState', 'behaviorActions', 'scoutFocus', 'scoutMotion', 'targetMemory', 'stealth',
   'stealthBelief', 'perception', 'playState', 'retreated', 'scampering', 'sneakNextMove',
 ];

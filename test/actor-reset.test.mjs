@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resetActorsToPrototype } from '../src/foundry/actor-reset.mjs';
+import {quillSupply} from '../src/foundry/spike-supply.mjs';
 
 const ns = 'foundry-creature-ai';
 function fixture() {
@@ -8,7 +9,7 @@ function fixture() {
     ledger: { done: true, actionsRemaining: 0 }, scoutGear: { loaded: false }, scoutMotion: { entries: [1] },
     casterTargets: { combatId: 'combat', entries: { other: { role: 'melee' } } },
     pyroActions: { turn:'old',hideAttempted:true,holdTurns:2 },
-    manticoreHunts:{combatId:'combat',hits:{other:3}},
+    manticoreHunts:{combatId:'combat',hits:{other:3}},quillShown:{combatId:'combat'},
     behaviorState: {planId:'avoiding'},behaviorActions:{turn:'old'},behaviors:{preferredPlan:'defensive'},
     retreated: { combatId: 'combat' }, escapeSources: { restraint: { dc: 20 } } };
   const prototype = { name: 'Scout prototype', system: { attributes: { hp: { value: 12, max: 16, temp: 0 } },
@@ -73,6 +74,7 @@ test('prototype reset recovers deleted ammunition, HP, spell slots and equipment
   assert.equal(f.flags.casterTargets, undefined);
   assert.equal(f.flags.pyroActions, undefined);
   assert.equal(f.flags.manticoreHunts,undefined);
+  assert.equal(f.flags.quillShown,undefined);
   assert.equal(f.flags.behaviorState,undefined);assert.equal(f.flags.behaviorActions,undefined);
   assert.deepEqual(f.flags.behaviors,{preferredPlan:'defensive'});
   assert.equal(f.flags.retreated, undefined); assert.deepEqual(f.flags.escapeSources, { restraint: { dc: 20 } });
@@ -144,4 +146,11 @@ test('baseline conditions and resource values replace temporary combat effects a
   const report = await resetActorsToPrototype();
   assert.equal(report.restored.length, 1);
   assert.equal(f.token.actor.items.find(i => i._id === 'bolts').system.quantity, 20);
+});
+
+test('prototype reset restores the saved quill supply along with the actor delta',async()=>{
+ const f=fixture();f.prototype.flags[ns].quills={spent:[{time:0,count:4}]};
+ await resetActorsToPrototype();assert.equal(quillSupply(f.token.actor).remaining,8);
+ f.token.actor.flags[ns].quills={spent:[{time:0,count:12}]};
+ await resetActorsToPrototype();assert.equal(quillSupply(f.token.actor).remaining,8);
 });

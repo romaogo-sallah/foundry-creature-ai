@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.31.0:** adds the [quill-tail Manticore](docs/manticore-quill.md), airborne ranged tactics, one-action split/pinning Spike Volley, a persistent 12-spike supply and automatic NPC Escape from pins. Shared flight crosses open scene levels; physical surfaces define ceilings. Ranged flyers preserve safe firing altitude and worker proposals retain lateral escapes under low ceilings. Reload **all clients with Ctrl+F5** and confirm **Running code 0.31.0**. [Tests](docs/testing.md) now use configurable isolated parallel processes and faster worker-backed flight groups: `npm test`, or `npm test -- --jobs 4`.
+
 **Version 0.30.0:** adds the supplied [scorpion-tail Manticore](docs/manticore-scorpion.md): shared Fly → native Strike → Fly passes, reach-10 Stinger, Jaws, agile Claw and staged venom. Native Fortitude saves, poison damage/IWR and owned Enfeebled effects resolve on exposure and poisoned combatants’ turn ends. Flight workers retain melee approaches as well as high-altitude staging routes. Reload **all clients with Ctrl+F5**, select the imported Manticore and open **Alt+W**; confirm **Running code 0.30.0**.
 
 **Version 0.29.0:** background Web Worker flight search and Dive setup ranking, with a bounded shortlist checked by native Foundry geometry and movement costs. Cancellation and stale-result guards protect action reservations; automatic and explicit native fallback remain available. Reload **all clients with Ctrl+F5** and confirm **Running code 0.29.0**. See [flight worker](docs/flight-worker.md) and [Git / rollback](docs/version-control.md).
@@ -121,7 +123,7 @@ node examples/decide.mjs
 node tools/build-module.mjs
 ```
 
-The demo gives the same options to four illustrative policies. It uses the earlier linear-weight demo engine, not the recovered live wolf chooser. Run `node --test` for the full suite. After locally decompiling the required types as described in the research report, `node tools/verify-dawnsbury-policy.mjs` verifies the reconstruction against actual methods.
+The demo gives the same options to four illustrative policies. It uses the earlier linear-weight demo engine, not the recovered live wolf chooser. Run `npm test` for the full parallel suite. After locally decompiling the required types as described in the research report, `node tools/verify-dawnsbury-policy.mjs` verifies the reconstruction against actual methods.
 
 To refresh the game API inventory, with .NET 10 SDK:
 
