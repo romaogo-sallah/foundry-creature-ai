@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.31.0
+# Foundry Creature AI — version 0.31.1
+
+Patch **0.31.1** fixes early-turn escape scoring for threatened melee flyers. A known Reactive Strike can no longer make every otherwise useful escape climb lose to Hover, followed by End Turn. Reactions still resolve before movement. Full-turn tests explicitly cover attacks against airborne targets for Eagle and both Manticore variants. Reload all clients with **Ctrl+F5** and confirm **Running code 0.31.1**.
 
 Version **0.31.0** adds the [Manticore (Quill Tail)](manticore-quill.md): native ranged Spike, one-action split/pinning Spike Volley, persistent 12-spike resources, 24-hour recovery and safe aerial firing. Pins integrate with NPC Escape DC 23; the GM can correct supply in Alt+W. Worker proposals retain sideways escapes under low ceilings. Reload all clients with **Ctrl+F5** and confirm **Running code 0.31.0**.
 

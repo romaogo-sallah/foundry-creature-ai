@@ -86,7 +86,10 @@ function huntingFlightCandidates(state){
     const sightPenalty=losesSight?Math.max(2,state.self.averageDamage):0;
     const preparation=state.attacksMade===0&&['gain-height','stalk'].includes(hunt.phase);
     const climb=heightGain*(preparation?2:1)+(staging&&flight.origin.elevation<hunt.preferredElevation?2:0);
-    const recovery=escaping?(state.attacksMade>0||state.actionsRemaining===1?state.self.averageDamage*2+2:1):0;
+    // Leaving a threatened position is useful at the start of the turn too.
+    // Otherwise a known reaction can outweigh every climb, causing Hover ->
+    // End Turn indefinitely while the creature remains inside enemy reach.
+    const recovery=escaping?state.self.averageDamage*2+2:0;
     const progress=staging&&state.attacksMade===0?Math.max(0,current-move.nearestEnemy)*0.15:0;
     const setup=staging?Math.max(0,(move.diveSetupValue??0)-currentPass):0;
     const pass=attackPass?follow+0.25-(move.attackEscape.reactionRisk??0):0;

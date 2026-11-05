@@ -9,3 +9,5 @@ A read-only native preview loaded the installed 0.31.0 source through an isolate
 No movement, attacks, resource changes or actor resets were performed. The temporary inspection Region removed itself and the isolated source copy was removed after the report was read. Full raw logs and the native inspection report remain in the ignored workspace `.scratch/` directory.
 
 The remedy is to reload the GM client with **Ctrl+F5**, verify **Running code 0.31.0** in Alt+W, and continue on the next eagle turn. Other connected clients should reload as well. This investigation does not justify weakening the attack-and-escape safety rules or forcing attacks against genuinely unreachable sheltered opponents.
+
+The [airborne-opponent follow-up](aerial-combat.md) subsequently verified native Dive plans against the flying Manticore and identified a separate known-reaction escape scoring deadlock after the GM client loaded 0.31.0. Patch **0.31.1** fixes that additional cause; reload clients again to use it.
