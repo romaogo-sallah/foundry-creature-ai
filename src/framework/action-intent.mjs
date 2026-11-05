@@ -6,11 +6,15 @@ export function actionIntent({profileId,choice,state={}}){
   const retreat=choice.intent==='retreat'||choice.features?.retreat,again=(state.attacksMade??0)%2===1;
   if(retreat)return animal?'A frightened whine; the wolf looks for a way out.':'This fight is lost. Get out while we can!';
   switch(choice.kind){
-    case 'fly':return choice.features?.flightRetreat?'The flyer pulls away, beyond its prey’s reach.':choice.intent==='climb before hunting'?'The eagle climbs, watching the battlefield below.':choice.features?.hover?'The eagle beats its wings, watching for an opening.':choice.intent==='survey from safe altitude'?'The eagle circles high above, watching its prey.':choice.features?.diveSetup?'The eagle climbs, watching for a chance to swoop.':'The eagle wheels through the air toward its prey.';
+    case 'fly':{
+      const flyer=profileId==='manticore-scorpion'?'manticore':'eagle';
+      return choice.features?.flightRetreat?'The flyer pulls away, beyond its prey’s reach.':choice.intent==='climb before hunting'?`The ${flyer} climbs, watching the battlefield below.`:choice.features?.hover?`The ${flyer} beats its wings, watching for an opening.`:choice.intent==='survey from safe altitude'?`The ${flyer} circles high above, watching its prey.`:choice.features?.diveSetup?`The ${flyer} climbs, watching for a chance to swoop.`:`The ${flyer} wheels through the air toward its prey.`;
+    }
     case 'eagleDive':return 'Wings fold; the eagle dives with talons extended.';
     case 'castSpell':return choice.features?.preparation?'Come closer, longshanks. Watch your feet!':choice.spellSlug==='breathe-fire'?'All together? Good. More things to burn!':choice.spellSlug==='grease'?'Try running over this, longshanks!':choice.spellSlug==='tangle-vine'?'Stay there. The vines have you!':'Burn, burn, burn!';
     case 'goblinScuttle':return 'Make room! I have a better spot!';
     case 'strike':
+      if(profileId==='manticore-scorpion')return 'The manticore lashes out, keeping its wings ready to pull away.';
       if(animal)return choice.packAttack?'A sharp bark; the wolf closes in with its pack.':enemy?.prone?'The wolf lunges at the fallen prey.':again?'Teeth flash as the wolf presses its attack.':'A low growl; the wolf bares its teeth and lunges.';
       if(profileId==='kobold-scout')return choice.features?.groupGoal==='kite'?'Shoot, then keep our distance. Keep them chasing!':choice.features?.groupGoal==='swarm'?'Keep it busy. We are closing in!':enemy?.prone||enemy?.offGuard?'You left yourself open. This is my chance!':enemy?.stealthChance>0?'If they lost sight of me, this is my chance!':'Hold still. I only need one good opening.';
       if(choice.features?.frontline&&state.style?.enabled&&!state.frontlineEngaged)return "Let's see how tough you really are!";

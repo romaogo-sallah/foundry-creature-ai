@@ -1939,6 +1939,12 @@ test('managed messages suppress Workbench duplicate damage and leave ordinary me
   handler({ flags: { pf2e: { context: { options: [MANAGED_OPTION] } } }, speaker: { token: 'wolf' }, updateSource: value => { changes = value; } });
   assert.equal(changes['flags.xdy-pf2e-workbench.noAutoDamageRoll'], true);
   assert.equal(changes['flags.pf2e.suppressDamageButtons'], true);
+  handler({flags:{[MODULE_ID]:{damageAutoApplied:true},pf2e:{context:{options:[MANAGED_OPTION]}}},
+    speaker:{token:'target'},updateSource:value=>{changes=value;}});
+  assert.equal(changes['flags.pf2e.suppressDamageButtons'],true,'auto-applied poison uses the victim as speaker, without requiring victim AI controls');
+  handler({flags:{[MODULE_ID]:{damageAutoApplied:false},pf2e:{context:{options:[MANAGED_OPTION]}}},
+    speaker:{token:'wolf'},updateSource:value=>{changes=value;}});
+  assert.equal(changes['flags.pf2e.suppressDamageButtons'],false,'manual poison damage retains its buttons');
   changes = undefined;
   handler({ flags: { pf2e: { context: { options: [] } } }, updateSource: value => { changes = value; } });
   assert.equal(changes, undefined);
@@ -2149,7 +2155,7 @@ test('init installs the native reaction query and API exposes reaction controls'
   f.hooks.get('init')();
   assert.equal(typeof CONFIG.queries[`${MODULE_ID}.reactionPrompt`], 'function');
   assert.equal(typeof game.modules.get(MODULE_ID).api.reactions.openControls, 'function');
-  assert.equal(game.modules.get(MODULE_ID).api.version,'0.29.0');
+  assert.equal(game.modules.get(MODULE_ID).api.version,'0.30.0');
   assert.equal(typeof game.modules.get(MODULE_ID).api.resetActors,'function');
 });
 

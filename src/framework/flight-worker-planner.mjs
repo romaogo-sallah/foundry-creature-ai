@@ -81,6 +81,19 @@ export function planFlightRoutes(model){
   // the bounded shortlist. Exact costs and attacks are evaluated by Foundry.
   nodes.sort((a,b)=>score(b)-score(a)||a.cost-b.cost);
   nodes.slice(0,6).forEach(add);
+  // Flying melee kits without a Dive need low approach positions too. A
+  // high-altitude-only shortlist otherwise makes Fly -> Strike -> Fly vanish.
+  const meleeDistance=(p,t)=>{
+    const xy=p.x<t.x+t.width&&p.x+f.width>t.x&&p.y<t.y+t.height&&p.y+f.height>t.y;
+    const dx=xy?0:Math.max(p.x-t.x-t.width,t.x-p.x-f.width,0)+1;
+    const dy=xy?0:Math.max(p.y-t.y-t.height,t.y-p.y-f.height,0)+1;
+    const z=p.elevation<t.elevation+t.depth&&p.elevation+f.depth>t.elevation;
+    const dz=z?0:Math.max(p.elevation-t.elevation-t.depth,t.elevation-p.elevation-f.depth,0)/5+1;
+    const [one,two,three]=[dx,dy,dz].sort((a,b)=>a-b);
+    return (Math.floor(one*1.75+(two-one)*1.5+three-two)-Number(model.attackReach===10&&two>1))*5;
+  };
+  for(const target of (model.attackTargets??[]).slice(0,6))nodes.filter(p=>meleeDistance(p,target)<=(model.attackReach??5))
+    .sort((a,b)=>b.elevation-a.elevation||a.cost-b.cost).slice(0,2).forEach(add);
   for(const goal of actualGoals.slice(0,12))nodes.slice().sort((a,b)=>distance(a,goal)-distance(b,goal)||a.cost-b.cost).slice(0,2).forEach(add);
   const sectors=new Set();
   for(const p of nodes){const sector=`${Math.sign(p.x-origin.x)},${Math.sign(p.y-origin.y)},${Math.sign(p.elevation-origin.elevation)}`;

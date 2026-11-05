@@ -7,6 +7,7 @@ import {flightWorkerSnapshot} from '../src/foundry/flight-worker-snapshot.mjs';
 import {fixture} from './helpers/eagle-fixture.mjs';
 import {createCreatureAdapter} from '../src/foundry/creature-profiles.mjs';
 import {TurnRunner} from '../src/framework/turn-runner.mjs';
+import {fixture as manticoreFixture} from './helpers/manticore-fixture.mjs';
 
 class BrowserWorker {
   constructor(url){
@@ -74,6 +75,17 @@ test('live adapter uses actual worker proposals, native validation and the Dive-
   const result=await new TurnRunner(adapter).run();
   assert.equal(result.uncertain,false);assert.equal(result.attacksMade,1);assert.equal(result.actionsRemaining,0);
   assert.ok(f.boss.document.elevation>=25);assert.equal(f.calls.find(c=>c[0]==='attack')[2],adapter.parts().talon.item.id);
+});
+
+test('worker retains melee approaches for a non-diving flyer and completes its Stinger and escape pass',async t=>{
+  enableWorker(t);const f=manticoreFixture({altitude:25});f.player.actor.dimensions.height=10;f.player.actor.getReach=()=>10;
+  const adapter=createCreatureAdapter(f.boss,null,{reactions:f.reactions}),state=await adapter.snapshot(await adapter.readLedger(adapter.turnKey()));
+  assert.equal(state.flight.planning.backend,'worker');
+  assert.ok(state.flight.moves.some(m=>m.attackEscape),'high-altitude routes must not crowd out melee attack positions');
+  const result=await new TurnRunner(adapter).run();
+  assert.equal(result.uncertain,false);assert.equal(result.attacksMade,1);assert.equal(result.actionsRemaining,0);
+  assert.ok(f.boss.document.elevation>=25);assert.equal(f.calls.find(c=>c[0]==='attack')[2],adapter.parts().stinger.item.id);
+  assert.equal(f.calls.filter(c=>c[0]==='venom-save').length,1);
 });
 
 test('worker snapshot excludes unseen live occupancy and remembers enemy positions',async()=>{

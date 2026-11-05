@@ -8,6 +8,7 @@ function fixture() {
     ledger: { done: true, actionsRemaining: 0 }, scoutGear: { loaded: false }, scoutMotion: { entries: [1] },
     casterTargets: { combatId: 'combat', entries: { other: { role: 'melee' } } },
     pyroActions: { turn:'old',hideAttempted:true,holdTurns:2 },
+    manticoreHunts:{combatId:'combat',hits:{other:3}},
     behaviorState: {planId:'avoiding'},behaviorActions:{turn:'old'},behaviors:{preferredPlan:'defensive'},
     retreated: { combatId: 'combat' }, escapeSources: { restraint: { dc: 20 } } };
   const prototype = { name: 'Scout prototype', system: { attributes: { hp: { value: 12, max: 16, temp: 0 } },
@@ -71,6 +72,7 @@ test('prototype reset recovers deleted ammunition, HP, spell slots and equipment
   assert.equal(f.flags.ledger, undefined); assert.equal(f.flags.scoutGear, undefined); assert.equal(f.flags.scoutMotion, undefined);
   assert.equal(f.flags.casterTargets, undefined);
   assert.equal(f.flags.pyroActions, undefined);
+  assert.equal(f.flags.manticoreHunts,undefined);
   assert.equal(f.flags.behaviorState,undefined);assert.equal(f.flags.behaviorActions,undefined);
   assert.deepEqual(f.flags.behaviors,{preferredPlan:'defensive'});
   assert.equal(f.flags.retreated, undefined); assert.deepEqual(f.flags.escapeSources, { restraint: { dc: 20 } });
@@ -83,7 +85,8 @@ test('reset prunes other observers memories only for the restored actors', async
     perception: { entries: [{ subjectId: 'scout' }, { subjectId: 'unrelated' }] },
     stealth: { entries: [{ observerId: 'scout' }, { observerId: 'unrelated' }] },
     stealthBelief: { entries: [{ observerId: 'scout' }, { observerId: 'unrelated' }] }, scoutFocus: { targetId: 'scout' },
-    casterTargets: { combatId: 'combat', entries: { scout: { role: 'ranged' }, unrelated: { role: 'melee' } } } };
+    casterTargets: { combatId: 'combat', entries: { scout: { role: 'ranged' }, unrelated: { role: 'melee' } } },
+    manticoreHunts:{combatId:'combat',hits:{scout:2,unrelated:1}} };
   canvas.tokens.placeables.push({ id: 'observer', document: { getFlag: (namespace, key) => memory[key],
     setFlag: async (namespace, key, value) => { memory[key] = value; }, unsetFlag: async (namespace, key) => { delete memory[key]; } } });
   await resetActorsToPrototype();
@@ -93,6 +96,7 @@ test('reset prunes other observers memories only for the restored actors', async
   assert.deepEqual(memory.stealthBelief.entries, [{ observerId: 'unrelated' }]);
   assert.equal(memory.scoutFocus, undefined);
   assert.deepEqual(memory.casterTargets, { combatId: 'combat', entries: { unrelated: { role: 'melee' } } });
+  assert.deepEqual(memory.manticoreHunts,{combatId:'combat',hits:{unrelated:1}});
 });
 
 test('linked actors and missing prototypes are skipped before any reset or AI pause', async () => {

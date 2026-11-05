@@ -47,7 +47,9 @@ export function flightWorkerSnapshot(adapter,state){
     const p=perceivedFlightTarget(adapter,enemy).document;
     return {...adapter.cell(p),elevation:preferredElevation};
   })];
-  return {origin,footprint,budget:state.flight.speed,preferredElevation,occupied,walls,surfaces,goals,
+  const attackTargets=state.enemies.map(enemy=>{const t=perceivedFlightTarget(adapter,enemy);return {x:t.document.x/size,y:t.document.y/size,
+    elevation:t.document.elevation,width:t.w/size,height:t.h/size,depth:tokenHeight(t)};});
+  return {origin,footprint,budget:state.flight.speed,preferredElevation,occupied,walls,surfaces,goals,attackTargets,attackReach:adapter.planningReach(),
     limits:{left:Math.ceil(rect.x/size),right:Math.floor((rect.x+rect.width-adapter.token.w)/size),
       top:Math.ceil(rect.y/size),bottom:Math.floor((rect.y+rect.height-adapter.token.h)/size),low:bounds.bottom,high:bounds.top}};
 }

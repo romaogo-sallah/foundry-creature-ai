@@ -1,6 +1,6 @@
 const namespace = 'foundry-creature-ai';
 const transientFlags = [
-  'ledger', 'scoutGear', 'ogreGear', 'ogreAttacks', 'scoutActions', 'scoutShown', 'pyroShown', 'pyroActions','flight','eagleShown',
+  'ledger', 'scoutGear', 'ogreGear', 'ogreAttacks', 'scoutActions', 'scoutShown', 'pyroShown', 'pyroActions','flight','eagleShown','manticoreHunts',
   'scoutThreats', 'casterTargets', 'behaviorState', 'behaviorActions', 'scoutFocus', 'scoutMotion', 'targetMemory', 'stealth',
   'stealthBelief', 'perception', 'playState', 'retreated', 'scampering', 'sneakNextMove',
 ];
@@ -91,6 +91,9 @@ async function forgetResetActors(ids) {
       const entries = Object.fromEntries(Object.entries(casterTargets.entries).filter(([id]) => !ids.has(id)));
       await document.setFlag(namespace, 'casterTargets', { ...casterTargets, entries });
     }
+    const hunts=document.getFlag(namespace,'manticoreHunts');
+    if(hunts?.hits&&Object.keys(hunts.hits).some(id=>ids.has(id)))await document.setFlag(namespace,'manticoreHunts',
+      {...hunts,hits:Object.fromEntries(Object.entries(hunts.hits).filter(([id])=>!ids.has(id)))});
   }
   for (const combat of game.combats ?? []) {
     if (combat.scene?.id !== canvas.scene.id) continue;

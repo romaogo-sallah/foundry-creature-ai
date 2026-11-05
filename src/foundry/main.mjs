@@ -11,6 +11,7 @@ import { ManualMovement } from './manual-movement.mjs';
 import { rememberTargets, movementKnowledge } from './target-memory.mjs';
 import { RUNTIME_VERSION } from './runtime-version.mjs';
 import {planningWorker} from './planning-worker.mjs';
+import {installPoisonHooks,advancePoisons,expirePoisons} from './poison-effects.mjs';
 import { installGreaseLandingHooks } from './grease-landing.mjs';
 import { behaviorAPI, behaviorConfiguration, behaviorCatalog, configureBehaviors } from './behavior-runtime.mjs';
 import { configureZone, environmentBetween, openZones } from './environment-zones.mjs';
@@ -202,6 +203,7 @@ export async function openControls(token = selected()) {
       ${taught.id === 'ogre' ? `<div class="form-group"><label>Refuse remaining (including any held piece)</label><input name="refuseCount" type="number" min="0" max="999" step="1" value="${escapeHTML(config.refuseCount ?? 0)}"></div><p>Refuse uses a limited supply. Picking up a piece costs one Interact action; throwing it costs a Strike action and consumes one piece. Zero disables this attack. This ogre has no boss command, Sweeping Hook reaction, or Reactive Strike.</p>` : ''}
       ${taught.id === 'kobold-scout' ? `<div class="form-group"><label>Crossbow currently loaded</label><input name="crossbowLoaded" type="checkbox" ${adapter.loaded ? 'checked' : ''}></div><p>Reload costs one Interact; each shot consumes one bolt. Hide and Sneak use scene cover/concealment zones and separate checks against each observer's Perception DC. Use the cloud toolbar button to configure zones and the eye button to inspect or correct detection. Construct Trap remains manual. Darkness, special senses and visual cover from walls alone need GM adjudication.</p>` : ''}
       ${taught.id === 'eagle' ? '<p>The Eagle gains a safe hunting altitude, approaches from above and commits only when an attack and escape fit the remaining actions. Upward flight adds difficult-terrain cost; straight downward flight costs half. Eagle Dive costs two actions, descends at least 10 feet in a straight line, then makes one native Talon Strike. Its return climb needs another Fly action.</p>' : ''}
+      ${taught.id === 'manticore-scorpion' ? '<p>This scorpion-tail Manticore uses Fly 40 ft, reach-10 Stinger with DC 22 venom, Jaws and agile Claw. It plans an approach, Strike and escape. Venom stages, poison damage and stage Enfeebled resolve automatically using native saves and effects; ongoing saves occur at the poisoned creature’s turn end. This variant has no ranged spikes.</p>' : ''}
       ${abilities.unsupported?.length ? `<p>Additional abilities need manual handling: ${abilities.unsupported.map(escapeHTML).join(', ')}.</p>` : ''}
       <div class="form-group"><label>Target selection</label><select name="targetMode">
         ${side ? `<option value="alliance" ${mode === 'alliance' ? 'selected' : ''}>All opposing combatants (default)</option>` : ''}
@@ -404,13 +406,15 @@ Hooks.on('preCreateChatMessage', message => {
   message.updateSource({
     [`flags.${MODULE_ID}.managed`]: true,
     'flags.xdy-pf2e-workbench.noAutoDamageRoll': true,
-    'flags.pf2e.suppressDamageButtons': options.includes(REACTION_OPTION)
+    'flags.pf2e.suppressDamageButtons': typeof message.flags[MODULE_ID]?.damageAutoApplied==='boolean'
+      ? message.flags[MODULE_ID].damageAutoApplied : options.includes(REACTION_OPTION)
       ? options.includes(REACTION_AUTO_DAMAGE) : Boolean(token?.document.getFlag(MODULE_ID, 'config')?.applyDamage),
   });
 });
 
 Hooks.once('ready', async () => {
   if (game.system.id !== 'pf2e' || Number(game.release.generation) !== 14) return;
+  installPoisonHooks({reactions,onError:showError,onPause:stop});
   game.modules.get(MODULE_ID).api = { version: RUNTIME_VERSION, planning:{status:()=>planningWorker.status()}, open: openControls, preview, explainLast, runTurn, stop, resetActors, correctLedger, tacticalMap, reactions, manualMovement,
     zones: { open: openZones, configure: configureZone, between: environmentBetween, refresh:refreshTerrain,
       view: () => ({ observerId: environmentAwareness.observer?.id ?? null, defenses: [...environmentAwareness.entries].map(([tokenId, entry]) => ({ tokenId, ...entry.environment, detection: entry.detection })) }) },
@@ -420,6 +424,7 @@ Hooks.once('ready', async () => {
     stopSneak: token => playerStealth.request('stop-sneak', token), revealAction: token => playerStealth.request('reveal-action', token),
     reveal: token => playerStealth.request('reveal', token) };
   game.modules.get(MODULE_ID).api.spells = { refresh: refreshSpellZones, expire: expireSpellZones };
+  game.modules.get(MODULE_ID).api.poisons={advance:token=>reactions.resolve(()=>advancePoisons(token)),expire:expirePoisons};
   game.modules.get(MODULE_ID).api.behaviors = {...behaviorAPI,open:openBehaviorControls,
     inspect:(token=selected())=>({configuration:behaviorConfiguration(createCreatureAdapter(token,profile,{reactions})),
       lastPlan:token.document.getFlag(MODULE_ID,'behaviorState')??null})};

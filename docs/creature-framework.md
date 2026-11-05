@@ -74,7 +74,7 @@ Wolf behavior remains specialized as a pack hunter. Version 0.12.0 adds a [Kobol
 
 ## Scope
 
-The framework has five specialized kits: Wolf, Ogre Boss, legacy Ogre, Kobold Scout and Goblin Pyro. An unfamiliar NPC with valid prepared native melee Strikes can use the **Basic NPC** binding. It is not a universal stat-block interpreter or a complete PF2e rules engine. Native PF2e rolls resolve checks and damage; scoring remains an estimate. The basic binding lists untaught actions, ranged/ammunition configurations and spell lists for manual handling. Actors without a supported native binding are rejected.
+The framework has seven specialized kits: Wolf, Ogre Boss, legacy Ogre, Kobold Scout, Goblin Pyro, Eagle and scorpion-tail Manticore. An unfamiliar NPC with valid prepared native melee Strikes can use the **Basic NPC** binding. It is not a universal stat-block interpreter or a complete PF2e rules engine. Native PF2e rolls resolve checks and damage; scoring remains an estimate. The basic binding lists untaught actions, ranged/ammunition configurations and spell lists for manual handling. Actors without a supported native binding are rejected.
 
 The regular Ogre composes the shared recovery, Strike and movement providers with its own ammunition-preparation provider. Its adapter extends the ogre equipment/roll integration through hooks for primary weapon readiness, available attacks, range, ammunition consumption and per-Strike options. This supports the axe's native Sweep option and a finite Refuse supply without enabling boss-only capabilities. See [Ogre behavior](ogre-foundry.md).
 

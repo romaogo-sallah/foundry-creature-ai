@@ -1,0 +1,308 @@
+{
+  "name": "Manticore (Scorpion Tail)",
+  "type": "npc",
+  "source": "Compendium.pf2e.pathfinder-monster-core.Actor.k89Kw65a4Ip2ZSGA",
+  "system": {
+    "attributes": {
+      "hp": {
+        "value": 90,
+        "temp": 0,
+        "max": 90,
+        "details": ""
+      },
+      "ac": {
+        "value": 23,
+        "details": ""
+      },
+      "allSaves": {
+        "value": ""
+      },
+      "speed": {
+        "value": 25,
+        "otherSpeeds": [
+          {
+            "type": "fly",
+            "value": 40
+          }
+        ],
+        "details": ""
+      }
+    },
+    "initiative": {
+      "statistic": "perception"
+    },
+    "details": {
+      "languages": {
+        "value": [
+          "common"
+        ],
+        "details": ""
+      },
+      "level": {
+        "value": 6
+      },
+      "blurb": "",
+      "publication": {
+        "title": "Pathfinder Monster Core",
+        "authors": "",
+        "license": "ORC",
+        "remaster": true
+      }
+    },
+    "resources": {},
+    "abilities": {
+      "str": {
+        "mod": 5
+      },
+      "dex": {
+        "mod": 2
+      },
+      "con": {
+        "mod": 4
+      },
+      "int": {
+        "mod": -2
+      },
+      "wis": {
+        "mod": 2
+      },
+      "cha": {
+        "mod": -1
+      }
+    },
+    "perception": {
+      "details": "",
+      "mod": 14,
+      "senses": [
+        {
+          "type": "darkvision"
+        },
+        {
+          "acuity": "imprecise",
+          "range": 30,
+          "type": "scent"
+        }
+      ],
+      "vision": true
+    },
+    "saves": {
+      "fortitude": {
+        "value": 16,
+        "saveDetail": ""
+      },
+      "reflex": {
+        "value": 12,
+        "saveDetail": ""
+      },
+      "will": {
+        "value": 12,
+        "saveDetail": ""
+      }
+    },
+    "skills": {
+      "acrobatics": {
+        "base": 10
+      },
+      "athletics": {
+        "base": 15
+      },
+      "intimidation": {
+        "base": 11
+      },
+      "survival": {
+        "base": 12
+      }
+    },
+    "traits": {
+      "value": [
+        "beast"
+      ],
+      "rarity": "common",
+      "size": {
+        "value": "lg"
+      }
+    }
+  },
+  "items": [
+    {
+      "_id": "jHv2A4kh5nyPGSxF",
+      "name": "Jaws",
+      "type": "melee",
+      "system": {
+        "attackEffects": {
+          "value": []
+        },
+        "bonus": {
+          "value": 17
+        },
+        "damageRolls": {
+          "y5afadj9h39cfjrh3fo1": {
+            "damage": "2d8+8",
+            "damageType": "piercing",
+            "category": null
+          }
+        },
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "publication": {
+          "license": "ORC",
+          "remaster": true,
+          "title": "",
+          "authors": ""
+        },
+        "range": null,
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "unarmed"
+          ],
+          "otherTags": [],
+          "config": {}
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        },
+        "action": "strike",
+        "area": null,
+        "subjectToMAP": true
+      }
+    },
+    {
+      "_id": "WzNNAcPz7ibjxcS8",
+      "name": "Claw",
+      "type": "melee",
+      "system": {
+        "attackEffects": {
+          "value": []
+        },
+        "bonus": {
+          "value": 17
+        },
+        "damageRolls": {
+          "6dypo2fua6lyv4uzhur5": {
+            "damage": "2d6+8",
+            "damageType": "slashing",
+            "category": null
+          }
+        },
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "publication": {
+          "license": "ORC",
+          "remaster": true,
+          "title": "",
+          "authors": ""
+        },
+        "range": null,
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "agile",
+            "unarmed"
+          ],
+          "otherTags": [],
+          "config": {}
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        },
+        "action": "strike",
+        "area": null,
+        "subjectToMAP": true
+      }
+    },
+    {
+      "_id": "SndM1V5FDCAciHzN",
+      "name": "Stinger",
+      "type": "melee",
+      "system": {
+        "attackEffects": {
+          "value": [
+            "manticore-venom"
+          ]
+        },
+        "bonus": {
+          "value": 17
+        },
+        "damageRolls": {
+          "JsWcmQm6J4J1S7R9": {
+            "damage": "1d8+8",
+            "damageType": "piercing",
+            "category": null
+          }
+        },
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "publication": {
+          "license": "ORC",
+          "remaster": true,
+          "title": "",
+          "authors": ""
+        },
+        "range": null,
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "reach-10"
+          ],
+          "otherTags": [],
+          "config": {}
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        },
+        "action": "strike",
+        "area": null,
+        "subjectToMAP": true
+      }
+    },
+    {
+      "_id": "ZBtCPkUsbHV2Q27J",
+      "name": "Manticore Venom",
+      "type": "action",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "offensive",
+        "description": {
+          "value": "<p><strong>Saving Throw</strong> @Check[fortitude|dc:22]</p>\n<hr>\n<p><strong>Maximum Duration</strong> 6 rounds</p>\n<p><strong>Stage 1</strong> @Damage[1d10[poison]] damage and @UUID[Compendium.pf2e.conditionitems.Item.MIRkyAjyBeXivMa7]{Enfeebled 1} (1 round)</p>\n<p><strong>Stage 2</strong> @Damage[2d10[poison]] damage and enfeebled 1 (1 round)</p>\n<p><strong>Stage 3</strong> @Damage[2d10[poison]] damage and @UUID[Compendium.pf2e.conditionitems.Item.MIRkyAjyBeXivMa7]{Enfeebled 2} (1 round)</p>",
+          "gm": ""
+        },
+        "publication": {
+          "license": "ORC",
+          "remaster": true,
+          "title": "",
+          "authors": ""
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "poison"
+          ],
+          "otherTags": []
+        },
+        "_migration": {
+          "version": 0.959,
+          "previous": null
+        }
+      }
+    }
+  ]
+}

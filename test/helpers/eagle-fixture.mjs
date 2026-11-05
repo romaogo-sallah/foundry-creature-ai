@@ -3,10 +3,10 @@ import {fixture as creatureFixture} from './ogre-fixture.mjs';
 import {PF2eEagleAdapter} from '../../src/foundry/eagle-adapter.mjs';
 import {flightStepCost} from '../../src/foundry/flight-costs.mjs';
 export const eagleData=JSON.parse(await readFile(new URL('../fixtures/eagle-mechanics.json',import.meta.url)));
-export function fixture({size=14,altitude=0,attackDegree=2}={}){
- const f=creatureFixture({npcData:eagleData,Adapter:PF2eEagleAdapter,footprint:1,size,attackDegree});
+export function fixture({size=14,altitude=0,attackDegree=2,npcData=eagleData,Adapter=PF2eEagleAdapter,footprint=1}={}){
+ const f=creatureFixture({npcData,Adapter,footprint,size,attackDegree});
  for(const token of [f.boss,f.player]){
-  token.document.depth=1;token.actor.dimensions={height:5};
+  token.document.depth=1;token.actor.dimensions={height:token.document.width*5};
   token.document.update=async changes=>{Object.assign(token.document,changes);return token.document;};
  }
  f.player.actor.level=1;f.boss.document.elevation=altitude;
@@ -24,8 +24,9 @@ export function fixture({size=14,altitude=0,attackDegree=2}={}){
   return (Math.floor(one*1.75+diagonal*1.5+three-two)-Number(reach===10&&two>1))*5;
  };
  canvas.scene.levels={get:()=>({elevation:{bottom:0,top:25}})};
- f.actor.system.actions.find(s=>s.item.name==='Talon').variants[1].penalty=-4;
- f.actor.system.actions.find(s=>s.item.name==='Talon').variants[2].penalty=-8;
+ for(const strike of f.actor.system.actions.filter(s=>s.item.traits.has('agile'))){
+  strike.variants[1].penalty=-4;strike.variants[2].penalty=-8;
+ }
  f.actor.getStatistic=slug=>({check:{mod:6,...slug==='acrobatics'?{roll:async options=>{f.calls.push(['arrest',options]);return {degreeOfSuccess:f.arrestDegree??2};}}:{}},dc:{value:16}});
  f.boss.measureMovementPath=path=>{
   let cost=0,diagonals=0;

@@ -29,6 +29,7 @@ await cp(new URL('docs/player-stealth.md', root), new URL('player-stealth.md', o
 await cp(new URL('docs/ai-pacing.md', root), new URL('ai-pacing.md', output));
 await cp(new URL('docs/scene-terrain.md', root), new URL('scene-terrain.md', output));
 await cp(new URL('docs/eagle-flight.md', root), new URL('eagle-flight.md', output));
+await cp(new URL('docs/manticore-scorpion.md', root), new URL('manticore-scorpion.md', output));
 await cp(new URL('docs/kobold-scout-foundry.md', root), new URL('kobold-scout-foundry.md', output));
 await cp(new URL('docs/goblin-pyro-foundry.md', root), new URL('goblin-pyro-foundry.md', output));
 await cp(new URL('docs/reactions-foundry.md', root), new URL('reactions-foundry.md', output));

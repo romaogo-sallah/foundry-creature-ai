@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.29.0
+# Foundry Creature AI — version 0.30.0
+
+Version **0.30.0** adds the supplied [Manticore (Scorpion Tail)](manticore-scorpion.md). It uses shared flight hunting, a reach-10 venomous Stinger, Jaws and agile Claw. Its three-stage venom uses native Fortitude saves and poison damage, tracks its six-round maximum, and grants stage Enfeebled through an owned effect. Ongoing stages resolve at the poisoned combatant’s turn end while the shared reaction barrier holds automation. Worker shortlists now preserve generic flying melee approaches. Reload all clients with **Ctrl+F5** and confirm **Running code 0.30.0**.
 
 Version **0.29.0** uses a persistent background Web Worker for flight route proposals and Dive setup ranking. A small shortlist receives native geometry, cost, reach and reaction validation. Worker failures fall back to native search; **Flight planning engine** can also select that compatibility backend explicitly. Stop cancels pending work before reservation and changed battlefields invalidate results. Reload all clients and confirm **Running code 0.29.0**. See [background flight planning](flight-worker.md).
 

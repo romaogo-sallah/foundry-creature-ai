@@ -10,6 +10,7 @@ import { attachBehaviorSystem } from './behavior-runtime.mjs';
 import { PF2eBasicNPCAdapter, basicMeleeStrikes } from './basic-npc-adapter.mjs';
 import { PF2eEagleAdapter, EAGLE_SOURCE } from './eagle-adapter.mjs';
 import { attachFlightSystem } from './flight-runtime.mjs';
+import {PF2eManticoreAdapter,MANTICORE_SCORPION_SOURCE} from './manticore-adapter.mjs';
 
 const profiles = [];
 export function registerCreatureProfile(profile) {
@@ -37,6 +38,10 @@ registerCreatureProfile({ id: 'goblin-pyro', label: 'Goblin Pyro', roles: ['cast
 registerCreatureProfile({id:'eagle',label:'Eagle',roles:['flying skirmisher','diving predator'],Adapter:PF2eEagleAdapter,
   matches:actor=>actor?.type==='npc'&&[actor.sourceId,actor._stats?.compendiumSource,actor._stats?.duplicateSource,actor.flags?.core?.sourceId]
     .some(source=>source===EAGLE_SOURCE||source===EAGLE_SOURCE.replace('.Actor.','.'))});
+registerCreatureProfile({id:'manticore-scorpion',label:'Manticore (Scorpion Tail)',roles:['flying skirmisher','venom predator'],Adapter:PF2eManticoreAdapter,
+  matches:actor=>actor?.type==='npc'&&[actor.sourceId,actor._stats?.compendiumSource,actor._stats?.duplicateSource,actor.flags?.core?.sourceId]
+    .some(source=>source===MANTICORE_SCORPION_SOURCE||source===MANTICORE_SCORPION_SOURCE.replace('.Actor.','.'))&&
+    actor.system.actions?.some(s=>(s.item?.attackEffects??s.item?.system.attackEffects?.value??[]).includes('manticore-venom'))});
 export function creatureProfile(actor) {
   const profile = profiles.find(profile => profile.matches(actor)) ?? (actor?.type==='npc'&&basicMeleeStrikes(actor).length?
     {id:'basic-npc',label:'Basic NPC',roles:['combatant'],Adapter:PF2eBasicNPCAdapter}:null);
