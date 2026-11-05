@@ -14,7 +14,7 @@ Select its unlinked scene token, open Alt+W, save its AI settings and run or ena
 | Sustain | One action per ongoing spell, once per turn; retained only while its declared target remains relevant |
 | Staff | Native melee Strike with the current MAP |
 
-Native saves retain condition modifiers and incapacitation adjustments. Native GrantItem rules grant conditions, respect condition immunities and remove only this source's contribution. A temporary Dero inspection confirmed that its immunity to Confused suppresses that condition while Dazzled still applies. Stupefied 3 lowered its native spell DC from 24 to 21.
+Native saves retain condition modifiers and incapacitation adjustments. Native GrantItem rules grant conditions, respect condition immunities and remove only this source's contribution. A native Dero inspection confirmed that its immunity to Confused suppresses that condition while Dazzled still applies. Stupefied 3 lowered its native spell DC from 24 to 21. The original inspection mistakenly persisted diagnostic actors; their cleanup and the corrected in-memory workflow are documented in [Foundry diagnostics](foundry-diagnostics.md).
 
 The existing shared caster forecast budgets a two-action spell plus a one-action gaze or Sustain, or a move plus a spell. Once-per-turn capability keys prevent forecasting three gazes or repeatedly Sustaining the same spell. Gaze is planned before Blindness when combining them; a recent declared Blindness attempt suppresses another visual gaze against that target.
 
