@@ -9,14 +9,16 @@ import {TurnRunner} from '../src/framework/turn-runner.mjs';
 import {resolveFlightFall} from '../src/foundry/flight-falling.mjs';
 import {flightThreats,flightSafety} from '../src/foundry/flight-safety.mjs';
 const ns='foundry-creature-ai';
-test('flight cost adds difficult terrain upward, discounts only straight downward, and preserves terrain costs',()=>{
+test('flight cost doubles all upward steps, halves all downward steps and preserves higher terrain costs',()=>{
  const from={i:0,j:0,k:0};
  assert.equal(flightStepCost(5,from,{i:0,j:0,k:1},5),10);
- assert.equal(flightStepCost(10,from,{i:1,j:0,k:1},10),15,'alternating uphill diagonal adds five, rather than doubling');
- assert.equal(flightStepCost(15,from,{i:1,j:0,k:1},10),15,'difficulty is not stacked twice');
+ assert.equal(flightStepCost(10,from,{i:1,j:0,k:1},10),20,'an expensive upward diagonal doubles the full distance');
+ assert.equal(flightStepCost(15,from,{i:1,j:0,k:1},10),20,'ordinary difficulty is not stacked on top of the ascent multiplier');
  assert.equal(flightStepCost(5,from,{i:0,j:0,k:-1},5),2.5);
  assert.equal(flightStepCost(2.5,from,{i:0,j:0,k:-1},5),2.5,'another provider already applying the discount is not halved again');
- assert.equal(flightStepCost(5,from,{i:1,j:0,k:-1},5),5);
+ assert.equal(flightStepCost(5,from,{i:1,j:0,k:-1},5),2.5);
+ assert.equal(flightStepCost(10,from,{i:1,j:1,k:-1},10),5);
+ assert.equal(flightStepCost(30,from,{i:1,j:0,k:1},10),30,'a higher native cost is preserved');
  assert.equal(flightStepCost(Infinity,from,{i:0,j:0,k:-1},5),Infinity);
 });
 test('an airborne Eagle can see ground targets, reserves its last action for Fly and cannot Stride in midair',async()=>{

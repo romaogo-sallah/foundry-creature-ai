@@ -1,10 +1,12 @@
 export const TERRAIN_NAMESPACE = 'foundry-creature-ai';
-export const ENVIRONMENT_SCRIPT = "game.modules.get('foundry-creature-ai')?.api?.zones?.refresh?.();";
-export const HAZARD_SCRIPT = "await game.modules.get('foundry-creature-ai')?.api?.terrain?.onHazardMove(event, region, behavior);";
+export const ENVIRONMENT_SCRIPT = "game.modules.get('pf2e-tactical-core')?.api?.rules?.zones?.refresh?.();";
+export const HAZARD_SCRIPT = "await game.modules.get('pf2e-tactical-core')?.api?.rules?.terrain?.onHazardMove(event, region, behavior);";
 
 export function terrainBehavior(behavior, kind) {
   const source = kind === 'environment' ? ENVIRONMENT_SCRIPT : kind === 'hazard' ? HAZARD_SCRIPT : null;
-  return Boolean(source && behavior.type === 'executeScript' && behavior.system?.source === source &&
+  const legacy=kind==='environment'?"game.modules.get('foundry-creature-ai')?.api?.zones?.refresh?.();":
+    kind==='hazard'?"await game.modules.get('foundry-creature-ai')?.api?.terrain?.onHazardMove(event, region, behavior);":null;
+  return Boolean(source && behavior.type === 'executeScript' && [source,legacy].includes(behavior.system?.source) &&
     behavior.flags?.[TERRAIN_NAMESPACE]?.terrain?.kind === kind);
 }
 

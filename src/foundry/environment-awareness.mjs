@@ -98,9 +98,9 @@ export class EnvironmentAwareness {
     }).finally(() => { this.pending = null; });
     return this.pending;
   }
-  install() {
+  install({packageId=namespace}={}) {
     const awareness = this;
-    libWrapper.register(namespace, 'CONFIG.Token.objectClass.prototype._getTooltipText', function (wrapped, ...args) {
+    libWrapper.register(packageId, 'CONFIG.Token.objectClass.prototype._getTooltipText', function (wrapped, ...args) {
       return [wrapped(...args), awareness.label(this)].filter(Boolean).join('\n');
     }, 'WRAPPER');
   }

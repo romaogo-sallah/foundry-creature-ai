@@ -1,4 +1,4 @@
-import { MODULE_ID, MANAGED_OPTION, SKIP_RULE_AUTOMATION, escapeHTML, rollEvent } from './pf2e-adapter.mjs';
+import { MODULE_ID, MANAGED_OPTION, SKIP_RULE_AUTOMATION, escapeHTML, rollEvent } from './rules-context.mjs';
 
 const restrictions = new Set(['grabbed', 'restrained', 'immobilized']);
 const grappleEffects = {

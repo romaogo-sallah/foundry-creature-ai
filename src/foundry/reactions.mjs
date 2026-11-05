@@ -1,6 +1,6 @@
-import { MODULE_ID, MANAGED_OPTION, escapeHTML, rollEvent } from './pf2e-adapter.mjs';
+import { MODULE_ID, MANAGED_OPTION, escapeHTML, rollEvent } from './rules-context.mjs';
 import { ReactionPrompts } from './reaction-prompts.mjs';
-import { ReactionBarrier } from '../wolf/reaction-barrier.mjs';
+import { ReactionBarrier } from '../shared/reaction-barrier.mjs';
 import {distanceToPosition} from './vertical-geometry.mjs';
 import { incapacitationReason } from './combat-state.mjs';
 import { clearAttackPath, clearSightPath } from './attack-path.mjs';

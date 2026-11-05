@@ -1,4 +1,5 @@
 import {conditionViolation,conditionFlatChecks,ruleAction} from '../framework/condition-rules.mjs';
+import {rulesSetting} from './rules-settings.mjs';
 const ns='foundry-creature-ai';
 export function conditionFacts(actor){
   const condition=slug=>Boolean(actor?.hasCondition?.(slug));
@@ -20,7 +21,7 @@ export function automationOwnsFlatChecks(){
   try{return ['attack','all'].includes(game.settings.get('pf2e-automations','flatCheck'));}catch{return false;}
 }
 export async function resolveConditionChecks(actor,action,{token,valid=()=>true,manual=false,spellCard=false}={}){
-  if(manual&&game.settings?.get(ns,'conditionRestrictions')===false)return true;
+  if(manual&&rulesSetting('conditionRestrictions')===false)return true;
   // Reuse the enabled module's native item/spell-card checks. Managed AI never
   // delegates an async failure to a fire-and-forget chat hook.
   if(manual&&spellCard&&automationOwnsFlatChecks())return true;

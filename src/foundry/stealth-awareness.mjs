@@ -132,10 +132,10 @@ export async function openStealthControls(subject = canvas.tokens.controlled[0])
   refreshStealthVisibility();
 }
 
-export function installStealthVisibility() {
+export function installStealthVisibility({packageId=namespace}={}) {
   // Use the native visibility getter so Foundry also updates the primary-group
   // token mesh, hit testing, auras and other renderers that inspect visibility.
-  libWrapper.register(namespace, 'CONFIG.Token.objectClass.prototype.isVisible', function (wrapped) {
+  libWrapper.register(packageId, 'CONFIG.Token.objectClass.prototype.isVisible', function (wrapped) {
     return wrapped() && visibleToUser(this);
   }, 'WRAPPER');
 }

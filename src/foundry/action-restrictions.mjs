@@ -1,11 +1,11 @@
 import {nativeRuleAction,manualConditionViolation,resolveConditionChecks} from './condition-actions.mjs';
 import {conditionActivityActive} from './condition-activity.mjs';
+import {rulesSetting} from './rules-settings.mjs';
 const ns='foundry-creature-ai';
 const actionConditions=['unconscious','dying','dead','paralyzed','petrified','stunned'];
 const optionHas=(options,value)=>options?.has?.(value)??options?.includes?.(value)??false;
 export function restrictionsEnabled(){
-  if(game.settings?.settings&&!game.settings.settings.has(`${ns}.conditionRestrictions`))return true;
-  return game.settings?.get(ns,'conditionRestrictions')!==false;
+  try{return rulesSetting('conditionRestrictions')!==false;}catch{return true;}
 }
 
 function liveSource(item,actor,seen=new Set()){
@@ -109,10 +109,10 @@ export async function guardShieldDamage(wrapped,options,...rest){
 export function installRestrictionMovement(){
   Hooks.on('preMoveToken',(document,movement,options)=>blockedVoluntaryMovement(document,movement,options)?false:undefined);
 }
-export function installActionRestrictions(){
+export function installActionRestrictions({packageId=ns}={}){
   const items=CONFIG.PF2E?.Item?.documentClasses;
-  if(items?.spellcastingEntry?.prototype?.cast)libWrapper.register(ns,'CONFIG.PF2E.Item.documentClasses.spellcastingEntry.prototype.cast',guardCast,'MIXED');
-  if(items?.consumable?.prototype?.consume)libWrapper.register(ns,'CONFIG.PF2E.Item.documentClasses.consumable.prototype.consume',guardConsumable,'MIXED');
-  if(CONFIG.Item?.documentClass?.prototype?.toMessage)libWrapper.register(ns,'CONFIG.Item.documentClass.prototype.toMessage',guardItemMessage,'MIXED');
-  if(CONFIG.Actor?.documentClass?.prototype?.applyDamage)libWrapper.register(ns,'CONFIG.Actor.documentClass.prototype.applyDamage',guardShieldDamage,'WRAPPER');
+  if(items?.spellcastingEntry?.prototype?.cast)libWrapper.register(packageId,'CONFIG.PF2E.Item.documentClasses.spellcastingEntry.prototype.cast',guardCast,'MIXED');
+  if(items?.consumable?.prototype?.consume)libWrapper.register(packageId,'CONFIG.PF2E.Item.documentClasses.consumable.prototype.consume',guardConsumable,'MIXED');
+  if(CONFIG.Item?.documentClass?.prototype?.toMessage)libWrapper.register(packageId,'CONFIG.Item.documentClass.prototype.toMessage',guardItemMessage,'MIXED');
+  if(CONFIG.Actor?.documentClass?.prototype?.applyDamage)libWrapper.register(packageId,'CONFIG.Actor.documentClass.prototype.applyDamage',guardShieldDamage,'WRAPPER');
 }

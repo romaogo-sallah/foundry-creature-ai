@@ -1,6 +1,6 @@
 import { detectionFor } from './stealth-awareness.mjs';
 import { concealmentCheck } from './environment-rolls.mjs';
-import { rollEvent, MANAGED_OPTION } from './pf2e-adapter.mjs';
+import { rollEvent, MANAGED_OPTION } from './rules-context.mjs';
 
 // The binding establishes weapon readiness/range. Every caller uses the same
 // targeted flat check, MAP, native roll, damage/IWR and Shield Block barrier.

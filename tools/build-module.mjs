@@ -1,12 +1,23 @@
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
+import path from 'node:path';
+import {PACKAGE_IDS,ENTRIES,DEPENDENCIES,packageGraph,packagedSource,packageManifest} from './package-graph.mjs';
 import { fileURLToPath } from 'node:url';
 
 const root = new URL('../', import.meta.url);
 const output = new URL('dist/foundry-creature-ai/', root);
-await mkdir(output, { recursive: true });
-await cp(new URL('module/module.json', root), new URL('module.json', output));
-await cp(new URL('module/styles', root), new URL('styles', output), { recursive: true });
-await cp(new URL('module/macros', root), new URL('macros', output), { recursive: true });
+const version=JSON.parse(await readFile(new URL('package.json',root),'utf8')).version;
+const graph=await packageGraph(),workspace=fileURLToPath(root),dist=path.resolve(workspace,'dist');
+for(const id of PACKAGE_IDS){
+ const target=path.resolve(dist,id);if(path.dirname(target)!==dist||!PACKAGE_IDS.includes(path.basename(target)))throw new Error('Unexpected build output');
+ await rm(target,{recursive:true,force:true});await mkdir(target,{recursive:true});
+ await writeFile(path.join(target,'module.json'),JSON.stringify(packageManifest(id,version),null,2)+'\n');
+}
+for(const [file,source]of graph.sources){
+ const target=path.join(dist,graph.owners.get(file),file);await mkdir(path.dirname(target),{recursive:true});
+ await writeFile(target,packagedSource(file,source,graph.owners));
+}
+await cp(new URL('module/styles',root),new URL('styles',output),{recursive:true});
+await cp(new URL('module/macros',root),new URL('macros',output),{recursive:true});
 const resetCommand = await readFile(new URL('module/macros/reset-selected-actors.js', root), 'utf8');
 await writeFile(new URL('macros/reset-selected-actors.json', output), JSON.stringify({
   name: 'Reset selected actors to prototype', type: 'script', scope: 'global',
@@ -16,7 +27,6 @@ const fullAutoCommand=await readFile(new URL('module/macros/enable-selected-full
 await writeFile(new URL('macros/enable-selected-full-auto.json',output),JSON.stringify({
   name:'Enable full auto for selected NPCs',type:'script',scope:'global',img:'icons/svg/clockwork.svg',command:fullAutoCommand,
 },null,2));
-await cp(new URL('src', root), new URL('src', output), { recursive: true });
 await cp(new URL('profiles', root), new URL('profiles', output), { recursive: true });
 await cp(new URL('docs/creature-ai-foundry.md', root), new URL('README.md', output));
 await cp(new URL('docs/actor-reset.md', root), new URL('actor-reset.md', output));
@@ -61,8 +71,18 @@ await writeFile(new URL('dawnsbury-ai-behavior.md', output), behaviorReport
   .replaceAll('(../research/dawnsbury-behavior-verification.json)', '(dawnsbury-behavior-verification.json)')
   .replaceAll('[initial report](dawnsbury-ai-findings.md)', 'initial metadata report in the source workspace'));
 await cp(new URL('research/dawnsbury-behavior-verification.json', root), new URL('dawnsbury-behavior-verification.json', output));
-const manifest = JSON.parse(await readFile(new URL('module.json', output)));
-await writeFile(new URL('BUILD.json', output), JSON.stringify({ version: manifest.version, builtAt: new Date().toISOString(),
-  source: 'New JavaScript implementing recovered Dawnsbury 4.44 decision behavior, with Foundry adaptations; no game binaries or raw decompiled C# included',
-  dawnsburyAssemblySha256: '61d48e6c059777a74b17e0fe4d9bc6600d57fbf6a09fe78e47cfdb7272304b23' }, null, 2));
-console.log(`Built ${fileURLToPath(output)}`);
+const index={version,apiVersion:1,packages:[]};
+for(const id of PACKAGE_IDS){
+ const files=[...graph.owners].filter(([,owner])=>owner===id).map(([file])=>file).sort();
+ const build={version,apiVersion:1,builtAt:new Date().toISOString(),sourceFiles:files,dependencies:DEPENDENCIES[id]};
+ await writeFile(path.join(dist,id,'BUILD.json'),JSON.stringify(build,null,2)+'\n');
+ index.packages.push({id,entry:ENTRIES[id],sourceFiles:files.length,dependencies:DEPENDENCIES[id]});
+ if(id!=='foundry-creature-ai')await cp(new URL('docs/modular-suite.md',root),path.join(dist,id,'README.md'));
+}
+await cp(new URL('docs/modular-suite.md',root),new URL('modular-suite.md',output));
+for(const [id,documents]of [['pf2e-tactical-environment',['environment-zones.md','scene-terrain.md']],
+ ['pf2e-tactical-conditions',['condition-manual.md','condition-handling.md']],['pf2e-tactical-movement',['player-stealth.md','eagle-flight.md','condition-manual.md']]]){
+ for(const document of documents)await cp(new URL('docs/'+document,root),path.join(dist,id,document));
+}
+await writeFile(path.join(dist,'package-index.json'),JSON.stringify(index,null,2)+'\n');
+console.log('Built '+PACKAGE_IDS.length+' independent packages ('+[...graph.sources].length+' source modules, one canonical owner each)');

@@ -2147,15 +2147,14 @@ test('neutral controls require manual targets, and an aligned wolf can explicitl
   assert.deepEqual(f.adapter.config.targetIds, ['target']);
 });
 
-test('init installs the native reaction query and API exposes reaction controls', async () => {
+test('shared core installs the reaction query and AI exposes the same reaction controls', async () => {
   const f = await controlsFixture('save');
-  globalThis.CONFIG = { queries: {} };
   game.keybindings = { register: () => {} };
   game.settings = { register: () => {} };
   f.hooks.get('init')();
   assert.equal(typeof CONFIG.queries[`${MODULE_ID}.reactionPrompt`], 'function');
   assert.equal(typeof game.modules.get(MODULE_ID).api.reactions.openControls, 'function');
-  assert.equal(game.modules.get(MODULE_ID).api.version,'0.35.0');
+  assert.equal(game.modules.get(MODULE_ID).api.version,'0.36.0');
   assert.equal(typeof game.modules.get(MODULE_ID).api.resetActors,'function');
 });
 

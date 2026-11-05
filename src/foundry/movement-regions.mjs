@@ -1,5 +1,5 @@
 import { terrainBehavior } from './terrain-contract.mjs';
-import { GREASE_SCRIPT } from './spell-zones.mjs';
+import { GREASE_SCRIPT,LEGACY_GREASE_SCRIPT } from './spell-zones.mjs';
 
 // Measurement consumes terrain annotations; it does not discover Regions itself.
 // Regionalize only new movement, preserving the recorded history's terrain and
@@ -14,5 +14,5 @@ export function unsupportedMovementRegions(scene) {
     (region.behaviors?.contents ?? []).some(behavior => !behavior.disabled &&
       !['defineSurface','modifyMovementCost','suppressWeather'].includes(behavior.type) &&
       !terrainBehavior(behavior,'environment') && !terrainBehavior(behavior,'hazard') &&
-      !(behavior.type==='executeScript' && behavior.system?.source===GREASE_SCRIPT && behavior.flags?.['foundry-creature-ai']?.spellTerrain==='grease')));
+      !(behavior.type==='executeScript' && [GREASE_SCRIPT,LEGACY_GREASE_SCRIPT].includes(behavior.system?.source) && behavior.flags?.['foundry-creature-ai']?.spellTerrain==='grease')));
 }

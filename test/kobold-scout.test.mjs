@@ -203,7 +203,7 @@ test('relative visibility wraps the native getter and suppresses movement rulers
   assert.equal(moveOptions.showRuler,false);assert.equal(detectionFor(f.player,f.boss).state,'undetected');
 });
 
-test('Alt+W recognizes the scout, saves unloaded state, and exposes terrain/detection tools',async()=>{
+test('Alt+W recognizes the scout and consumes shared terrain/detection APIs without installing manual hooks',async()=>{
   const f=fixture(),hooks=new Map(),wrappers=[];
   globalThis.Hooks={once:(id,fn)=>hooks.set(id,fn),on:(id,fn)=>hooks.set(id,fn)};
   globalThis.libWrapper={register:(id,path)=>{
@@ -221,9 +221,9 @@ test('Alt+W recognizes the scout, saves unloaded state, and exposes terrain/dete
   const main=await import('../src/foundry/main.mjs?scout-controls');await hooks.get('ready')();await main.openControls(f.boss);
   assert.equal(f.adapter.loaded,false);assert.equal(f.adapter.config.enabled,true);assert.equal(f.adapter.config.packMorale,false);
   assert.equal(typeof game.modules.get(MODULE_ID).api.zones.open,'function');assert.equal(typeof game.modules.get(MODULE_ID).api.stealth.open,'function');
-  assert.deepEqual(wrappers,['game.pf2e.Check.roll','CONFIG.Token.documentClass.prototype._preUpdate','CONFIG.Token.objectClass.prototype._getMovementCostFunction','CONFIG.Token.objectClass.prototype._getTooltipText','CONFIG.Token.objectClass.prototype.isVisible']);
+  assert.deepEqual(wrappers,[],'manual packages own all native rule wrappers');
   const controls={tokens:{tools:{}}};hooks.get('getSceneControlButtons')(controls);
-  assert.equal(controls.tokens.tools.environmentZones.title,'Cover / concealment zones');assert.equal(controls.tokens.tools.stealthControls.title,'Detection controls');
+  assert.ok(controls.tokens.tools.wolfAI);assert.equal(controls.tokens.tools.environmentZones,undefined);assert.equal(controls.tokens.tools.stealthControls,undefined);
 });
 
 test('Preview can inspect a different loaded state without changing the saved ammunition state',async()=>{

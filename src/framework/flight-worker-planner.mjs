@@ -1,6 +1,7 @@
 // Pure numeric flight proposals. Native Foundry geometry and costs validate
 // the shortlist on the main thread before any action can execute.
 import {reachableFlightCells} from './flight-navigation.mjs';
+import {flightStepCost} from '../shared/flight-cost.mjs';
 const epsilon=1e-7;
 const cross=(a,b,c)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
 function hull(points){
@@ -38,8 +39,7 @@ export function numericFlightCost(path,step=5){
     for(let j=0;j<n;j++){
       const axes=Number(dx>epsilon)+Number(dy>epsilon)+Number(dz>epsilon);
       let edge=axes>1?(++diagonals%2?step:step*2):step;
-      if(b.elevation>a.elevation)edge+=step;
-      else if(b.elevation<a.elevation&&dx<epsilon&&dy<epsilon)edge/=2;
+      edge=flightStepCost(edge,{k:a.elevation},{k:b.elevation},edge);
       cost+=edge;
     }
   }

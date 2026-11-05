@@ -1,4 +1,4 @@
-import { MODULE_ID, escapeHTML } from './pf2e-adapter.mjs';
+import { MODULE_ID, escapeHTML } from './rules-context.mjs';
 
 export const REACTION_QUERY = `${MODULE_ID}.reactionPrompt`;
 import {combatStamp} from './combat-stamp.mjs';

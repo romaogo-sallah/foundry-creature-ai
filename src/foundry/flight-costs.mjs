@@ -1,3 +1,5 @@
+import {flightStepCost} from '../shared/flight-cost.mjs';
+export {flightStepCost};
 export function flySpeed(actor){
   const speed=actor?.system?.movement?.speeds?.fly;
   const prepared=speed?.total??speed?.value;
@@ -5,12 +7,6 @@ export function flySpeed(actor){
   const legacy=other?.total??other?.value;
   const value=prepared??legacy;
   return Number.isFinite(value)&&value>0?value:0;
-}
-export function flightStepCost(base,from,to,distance,step=5){
-  if(!Number.isFinite(base))return base;
-  if(to.k>from.k)return Math.max(base,distance+step);
-  if(to.k<from.k&&to.i===from.i&&to.j===from.j)return base<=distance/2?base:base/2;
-  return base;
 }
 let installed=false;
 export function creatureMovementCost(native,document){
@@ -25,9 +21,9 @@ export function creatureMovementCost(native,document){
       flightStepCost(base,from,to,distance):base;
   };
 }
-export function installFlightCosts(){
+export function installFlightCosts({packageId='foundry-creature-ai'}={}){
   if(installed)return;
-  libWrapper.register('foundry-creature-ai','CONFIG.Token.objectClass.prototype._getMovementCostFunction',function(wrapped,...args){
+  libWrapper.register(packageId,'CONFIG.Token.objectClass.prototype._getMovementCostFunction',function(wrapped,...args){
     return creatureMovementCost(wrapped(...args),this.document);
   },'WRAPPER');
   installed=true;

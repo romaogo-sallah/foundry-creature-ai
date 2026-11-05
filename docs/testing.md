@@ -1,6 +1,6 @@
 # Running tests
 
-Use `npm test`. The runner discovers `test/*.test.mjs`, excludes fixture/helper files and launches isolated Node test processes in parallel. On this 12-thread PC it uses **11 workers**, leaving one logical CPU available. It prints the selected concurrency and elapsed time.
+Use `npm test`. It builds the five-module suite first so integration checks import current generated packages, then discovers `test/*.test.mjs`, excludes fixture/helper files and launches isolated Node test processes in parallel. On this 12-thread PC it uses **11 workers**, leaving one logical CPU available. It prints the selected concurrency and elapsed time.
 
 ```powershell
 npm test

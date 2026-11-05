@@ -5,6 +5,7 @@ import { tokenRayPoint } from './attack-path.mjs';
 import {checkRestriction,notifyRestriction} from './action-restrictions.mjs';
 import {wrapConditionSave} from './manual-condition-spells.mjs';
 import {nativeRuleAction,resolveConditionChecks} from './condition-actions.mjs';
+import {rulesAPI} from './rules-api.mjs';
 
 const namespace = 'foundry-creature-ai';
 const managed = `${namespace}:managed`;
@@ -61,12 +62,12 @@ export function applyEnvironmentCover(context) {
   return environment;
 }
 
-export function installEnvironmentRolls({playerStealth=null}={}) {
+export function installEnvironmentRolls({playerStealth=null,packageId=namespace,conditionsEnabled=()=>true,environmentEnabled=()=>true}={}) {
   if (!globalThis.libWrapper) throw new Error('Enable libWrapper to apply cover regions to native attack rolls');
   // The native character Strike installs its ammo consumption in a callback.
   // A failed flat check must spend that ammo without invoking hit/damage macros.
   if (globalThis.CONFIG?.PF2E?.Actor?.documentClasses?.character?.prototype?.consumeAmmo) {
-    libWrapper.register(namespace, 'CONFIG.PF2E.Actor.documentClasses.character.prototype.consumeAmmo', function (wrapped, weapon, options) {
+    libWrapper.register(packageId, 'CONFIG.PF2E.Actor.documentClasses.character.prototype.consumeAmmo', function (wrapped, weapon, options) {
       const previous = options.callback, result = wrapped(weapon, options);
       if (result && weapon.ammo && typeof options.callback === 'function' && options.callback !== previous) {
         ammoCallbacks.set(options.callback, { weapon, spent: false });
@@ -77,22 +78,22 @@ export function installEnvironmentRolls({playerStealth=null}={}) {
   // Both the concealment gate and player Stealth handling can intentionally
   // suppress the native check. MIXED permits those returns without libWrapper
   // unregistering this hook after a failed flat check/cancelled action.
-  libWrapper.register(namespace, 'game.pf2e.Check.roll', function (wrapped, ...args) {
-    const restriction=checkRestriction(args[0],args[1]);
+  libWrapper.register(packageId, 'game.pf2e.Check.roll', function (wrapped, ...args) {
+    const restriction=conditionsEnabled()&&checkRestriction(args[0],args[1]);
     if(restriction){const context=args[1];notifyRestriction(context?.actor??context?.origin?.token?.actor??context?.origin?.token?.object?.actor,restriction);return null;}
     const terrainRoll = async (check, context, ...rest) => {
-    const restriction=checkRestriction(check,context);
+    const restriction=conditionsEnabled()&&checkRestriction(check,context);
     if(restriction){notifyRestriction(context?.actor??context?.origin?.token?.actor??context?.origin?.token?.object?.actor,restriction);return null;}
-    const environment = applyEnvironmentCover(context);
+    const environment = environmentEnabled()?applyEnvironmentCover(context):null;
     const options = context?.options ?? [];
     const isManaged = hasOption(options, managed);
     const observer = (context?.origin?.token ?? context?.token)?.object, target = context?.target?.token?.object;
-    if(!isManaged&&context?.type==='skill-check'&&context.action&&observer&&
+    if(conditionsEnabled()&&!isManaged&&context?.type==='skill-check'&&context.action&&observer&&
       !await resolveConditionChecks(observer.actor,nativeRuleAction(context.item,{kind:context.action,
         traits:(context.traits??[]).map(t=>typeof t==='string'?t:t.name)}),{token:observer,manual:true}))return null;
     const attackSkill = context?.type === 'skill-check' && (hasOption(options, 'attack') ||
       context.traits?.some(trait => (typeof trait === 'string' ? trait : trait.name) === 'attack'));
-    if (!isManaged && !context?.isReroll && context?.createMessage !== false && observer && target &&
+    if (environmentEnabled()&&!isManaged && !context?.isReroll && context?.createMessage !== false && observer && target &&
       (context.type === 'attack-roll' || attackSkill) && !hasOption(options, `${namespace}:ignore-concealment`)) {
       const current = environment ?? environmentBetween(observer, target), dc = concealmentDC(observer, target, current);
       if (dc) {
@@ -109,7 +110,7 @@ export function installEnvironmentRolls({playerStealth=null}={}) {
           if (item?.isOfType?.('weapon') && item.traits.has('consumable') && item.actor.items.has(item.id) && item.quantity > 0) {
             await item.update({ 'system.quantity': item.quantity - 1 });
           }
-          const stealth = game.modules?.get?.(namespace)?.api?.stealth;
+          const stealth = rulesAPI()?.stealth;
           if (stealth?.player?.supports(observer)) await (stealth.revealAction??stealth.reveal)(observer);
           ui.notifications.info('Concealment flat check failed: the action has no effect. The action and attack MAP still count; spell slots and other resources follow their normal controls.');
           return null;
@@ -122,6 +123,6 @@ export function installEnvironmentRolls({playerStealth=null}={}) {
     // player action stage first so Hide adds its native roll metadata, other
     // actions reveal before terrain checks, and Strikes reveal after rolling.
     const actionRoll=(...input)=>playerStealth?playerStealth.wrapRoll(terrainRoll,...input):terrainRoll(...input);
-    return wrapConditionSave(actionRoll,...args);
+    return conditionsEnabled()?wrapConditionSave(actionRoll,...args):actionRoll(...args);
   }, 'MIXED');
 }

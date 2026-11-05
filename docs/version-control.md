@@ -8,6 +8,8 @@ Release tags include **`v0.29.0`** (background flight worker), **`v0.30.0`** (sc
 
 **`v0.31.1`** fixes threatened melee flyers hovering instead of escaping and adds explicit air-to-air combat regression coverage.
 
+**`v0.36.0`** separates manual rules from Creature AI into five packages. The complete release is `releases/pf2e-tactical-suite-0.36.0.zip`. The immediately preceding monolithic checkpoint is **`v0.35.0`** (`428b64f`). The suite installer also archives existing module folders under `.scratch/suite-install-backup-<timestamp>/` before replacing them. To restore a monolithic release, disable the four Tactical Rules modules, restore the earlier AI package and restart Foundry; do not run the older all-in-one AI alongside the new manual modules.
+
 To review or restore the baseline without deleting later history, first commit any work you want to retain, then create a separate branch:
 
 ```powershell

@@ -1,11 +1,16 @@
 {
   "id": "foundry-creature-ai",
   "title": "Foundry Creature AI",
-  "description": "PF2e creature automation with shared tactical plans and behavior components, taught creature kits, a basic NPC fallback, native rules and reaction prompts.",
-  "version": "0.35.0",
+  "description": "NPC tactics, creature profiles and automatic turns using the independent PF2e Tactical Rules modules.",
+  "version": "0.36.0",
   "compatibility": { "minimum": "14.361", "verified": "14.369", "maximum": "14" },
   "relationships": { "systems": [{ "id": "pf2e", "type": "system", "compatibility": { "minimum": "8.6.1", "maximum": "8.6.1" } }],
-    "requires": [{ "id": "lib-wrapper", "type": "module", "reason": "Apply contextual cover and stealth visibility through native Foundry/PF2e methods" }] },
+    "requires": [
+      {"id":"pf2e-tactical-core","type":"module","compatibility":{"minimum":"0.36.0"}},
+      {"id":"pf2e-tactical-environment","type":"module","compatibility":{"minimum":"0.36.0"}},
+      {"id":"pf2e-tactical-conditions","type":"module","compatibility":{"minimum":"0.36.0"}},
+      {"id":"pf2e-tactical-movement","type":"module","compatibility":{"minimum":"0.36.0"}}
+    ] },
   "esmodules": ["src/foundry/main.mjs"],
   "styles": ["styles/creature-ai.css"]
 }

@@ -1,12 +1,12 @@
 {
   "name": "foundry-creature-ai",
-  "version": "0.35.0",
+  "version": "0.36.0",
   "private": true,
   "type": "module",
   "description": "PF2e creature AI with shared tactical plans, behavior components, native rules and a basic NPC fallback",
   "scripts": {
-    "test": "node tools/run-tests.mjs",
-    "test:serial": "node tools/run-tests.mjs --jobs 1",
+    "test": "node tools/build-module.mjs && node tools/run-tests.mjs",
+    "test:serial": "node tools/build-module.mjs && node tools/run-tests.mjs --jobs 1",
     "demo": "node examples/decide.mjs",
     "build": "node tools/build-module.mjs"
   },

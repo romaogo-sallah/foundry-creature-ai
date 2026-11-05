@@ -78,8 +78,8 @@ export function hazardousMovementPath(document,waypoints,options={}){
   return changed?path:null;
 }
 
-export function installHazardMovement(){
-  libWrapper.register(namespace,'CONFIG.Token.documentClass.prototype._preUpdate',function(wrapped,changed,options,user){
+export function installHazardMovement({packageId=namespace}={}){
+  libWrapper.register(packageId,'CONFIG.Token.documentClass.prototype._preUpdate',function(wrapped,changed,options,user){
     const instruction=options.movement?.[this.id];
     let points=instruction?.waypoints??(('x' in changed||'y' in changed)?[{...changed}]:null);
     if(points){

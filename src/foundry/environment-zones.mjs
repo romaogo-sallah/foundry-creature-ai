@@ -1,6 +1,7 @@
 import { tokenRayPoint } from './attack-path.mjs';
 import { terrainBehavior, environmentBehavior } from './terrain-contract.mjs';
 
+import {rulesAPI} from './rules-api.mjs';
 const namespace = 'foundry-creature-ai';
 export const COVER_BONUS = Object.freeze({ none: 0, lesser: 1, standard: 2, greater: 4 });
 export const DEFAULT_FIRING_RADIUS = 10;
@@ -98,7 +99,7 @@ export async function configureZone(region, config) {
   if(owned)await owned.update({disabled:!value.enabled,[`flags.${namespace}.environment`]:value});
   else if(region.createEmbeddedDocuments)await region.createEmbeddedDocuments('RegionBehavior',[environmentBehavior(value)]);
   await region.setFlag(namespace, 'environment', value);
-  game.modules?.get?.(namespace)?.api?.zones?.refresh?.();
+  rulesAPI()?.zones?.refresh?.();
   return value;
 }
 

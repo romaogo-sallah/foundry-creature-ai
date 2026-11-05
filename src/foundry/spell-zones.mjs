@@ -3,7 +3,8 @@ import { inSpellArea } from './spell-areas.mjs';
 import { environmentBetween } from './environment-zones.mjs';
 
 const ns = 'foundry-creature-ai';
-export const GREASE_SCRIPT = "await game.modules.get('foundry-creature-ai')?.api?.spells?.refresh?.();";
+export const GREASE_SCRIPT = "await game.modules.get('pf2e-tactical-core')?.api?.rules?.spells?.refresh?.();";
+export const LEGACY_GREASE_SCRIPT = "await game.modules.get('foundry-creature-ai')?.api?.spells?.refresh?.();";
 const owned = region => region.flags?.[ns]?.spellZone?.slug === 'grease';
 const movementModes=new Map();
 const movementKey=token=>(token?.document??token)?.uuid;
@@ -16,9 +17,9 @@ export function withGreaseMode(token,mode,operation){
   const restore=()=>{if(previous===undefined)movementModes.delete(key);else movementModes.set(key,previous);};
   try{const value=operation();if(value?.then)return value.finally(restore);restore();return value;}catch(error){restore();throw error;}
 }
-export function installGreaseTerrain(){
+export function installGreaseTerrain({packageId=ns}={}){
   if(terrainInstalled||!globalThis.CONFIG?.RegionBehavior?.dataModels?.modifyMovementCost)return;
-  libWrapper.register(ns,'CONFIG.RegionBehavior.dataModels.modifyMovementCost.prototype._getTerrainEffects',function(wrapped,token,...args){
+  libWrapper.register(packageId,'CONFIG.RegionBehavior.dataModels.modifyMovementCost.prototype._getTerrainEffects',function(wrapped,token,...args){
     const effects=wrapped(token,...args);
     // Foundry's terrain pipeline passes a TokenDocument, while our movement
     // callers usually have a Token placeable. Unrelated terrain needs no token

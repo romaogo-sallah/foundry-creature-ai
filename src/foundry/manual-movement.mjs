@@ -1,4 +1,4 @@
-import { MODULE_ID } from './pf2e-adapter.mjs';
+import { MODULE_ID } from './rules-context.mjs';
 import { combatStamp } from './reaction-prompts.mjs';
 import { MANAGED_MOVEMENT, REQUESTED_MOVEMENT, inheritManagedMovement } from './movement-options.mjs';
 import { requestedMovementPath } from './movement-request.mjs';

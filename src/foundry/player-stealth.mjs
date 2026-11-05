@@ -159,13 +159,13 @@ export class PlayerStealth {
   install(){
     CONFIG.queries??={};CONFIG.queries[PLAYER_STEALTH_QUERY]=(data,{user})=>this.receive(data,user);
   }
-  installRolls(){
+  installRolls({packageId=ns}={}){
     const controller=this;
     // Damage is often rolled after the Strike has already revealed its attacker.
     // Preserve only that Strike's saved off-guard option for native precision
     // damage; never put an Off-Guard condition on the target's actor.
     if(globalThis.CONFIG?.PF2E?.Actor?.documentClasses?.character?.prototype?.prepareStrike){
-      libWrapper.register(ns,'CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareStrike',function(wrapped,...args){
+      libWrapper.register(packageId,'CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareStrike',function(wrapped,...args){
         const strike=wrapped(...args);controller.prepareDamage(strike);return strike;
       },'WRAPPER');
       for(const token of canvas.tokens.placeables)if(controller.supports(token))for(const strike of token.actor.system.actions??[])controller.prepareDamage(strike);

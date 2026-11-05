@@ -32,22 +32,10 @@ import { executeSeek, seekScope } from './npc-perception.mjs';
 import { detectionFor } from './stealth-awareness.mjs';
 import { hazardousAt, terrainRiskForPath, beginTerrainAction, endTerrainAction } from './hazardous-terrain.mjs';
 
-export const MODULE_ID = 'foundry-creature-ai';
-export const MANAGED_OPTION = 'foundry-creature-ai:managed';
-export const MANAGED_TRIP_OPTION = 'foundry-creature-ai:trip';
-// PF2e Automations 1.4.9 honors this per-message option in HandleRuleMessage.
-// This adapter owns AI Trip outcomes, including Prone and critical Trip damage.
-export const SKIP_RULE_AUTOMATION = 'skip-handling-message';
+import {MODULE_ID,MANAGED_OPTION,MANAGED_TRIP_OPTION,SKIP_RULE_AUTOMATION,rollEvent,escapeHTML} from './rules-context.mjs';
+export {MODULE_ID,MANAGED_OPTION,MANAGED_TRIP_OPTION,SKIP_RULE_AUTOMATION,rollEvent,escapeHTML};
 const blocked = ['unconscious', 'dying', 'dead', 'paralyzed', 'petrified', 'controlled', 'confused', 'fleeing', 'stunned'];
 const sizeOrder = ['tiny', 'sm', 'med', 'lg', 'huge', 'grg'];
-
-export function rollEvent(type) {
-  return { shiftKey: Boolean(game.user.settings[type === 'damage' ? 'showDamageDialogs' : 'showCheckDialogs']), ctrlKey: false, metaKey: false };
-}
-
-export function escapeHTML(value) {
-  return String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
 
 export function renderDecisionExplanation(record, nameOf = id => canvas.tokens.get(id)?.name ?? id) {
   const number = value => Number.isFinite(value) ? Number(value.toFixed(2)) : '?';

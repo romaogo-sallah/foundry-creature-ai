@@ -1,0 +1,134 @@
+{
+  "date": "2026-11-06",
+  "version": "0.36.0",
+  "foundry": "14.369",
+  "system": "pf2e 8.6.1",
+  "tests": {
+    "pass": 945,
+    "fail": 0,
+    "workers": 11,
+    "durationSeconds": 16.9
+  },
+  "installed": {
+    "version": "0.36.0",
+    "packages": 5,
+    "filesVerified": 208,
+    "archiveSHA256": "c7f5ee475426efe9eb2ee6e0697bf6424cea09c5c8dfa67444c31e855ec7c368"
+  },
+  "native": {
+    "manualOnly": {
+      "version": "0.36.0",
+      "runtimeStable": true,
+      "modes": [
+        {
+          "id": "step",
+          "label": "Step",
+          "normalized": true,
+          "difficulty": 2
+        },
+        {
+          "id": "sneak",
+          "label": "Sneak",
+          "normalized": true,
+          "difficulty": 2
+        }
+      ],
+      "controls": true,
+      "costs": {
+        "up": 10,
+        "upDiagonal": 20,
+        "down": 2.5,
+        "downDiagonal": 5,
+        "level": 5
+      },
+      "owners": {
+        "manualFlatChecks": "pf2e-tactical-core",
+        "managedFlatChecks": "pf2e-tactical-core",
+        "frightened": "pf2e-automations",
+        "duplicateFrightened": false,
+        "stunned": "xdy-pf2e-workbench",
+        "persistentDamage": "xdy-pf2e-workbench"
+      },
+      "features": [
+        "environment",
+        "conditions",
+        "movement"
+      ],
+      "aiActive": false,
+      "aiAPI": false,
+      "sharedReactions": null,
+      "legacyFlagScope": true,
+      "bootstrapCount": 1,
+      "regions": 18,
+      "combat": {
+        "id": "FLkab2aTQ1SoRyYI",
+        "round": 2,
+        "turn": 8
+      },
+      "aiSourceRequests": 0,
+      "actorCountBefore": 159,
+      "actorCountAfter": 159,
+      "newActors": 0,
+      "moduleErrors": [],
+      "valid": true
+    },
+    "withAI": {
+      "version": "0.36.0",
+      "runtimeStable": true,
+      "modes": [
+        {
+          "id": "step",
+          "label": "Step",
+          "normalized": true,
+          "difficulty": 2
+        },
+        {
+          "id": "sneak",
+          "label": "Sneak",
+          "normalized": true,
+          "difficulty": 2
+        }
+      ],
+      "controls": true,
+      "costs": {
+        "up": 10,
+        "upDiagonal": 20,
+        "down": 2.5,
+        "downDiagonal": 5,
+        "level": 5
+      },
+      "owners": {
+        "manualFlatChecks": "pf2e-tactical-core",
+        "managedFlatChecks": "pf2e-tactical-core",
+        "frightened": "pf2e-automations",
+        "duplicateFrightened": false,
+        "stunned": "xdy-pf2e-workbench",
+        "persistentDamage": "xdy-pf2e-workbench"
+      },
+      "features": [
+        "environment",
+        "conditions",
+        "movement"
+      ],
+      "aiActive": true,
+      "aiAPI": true,
+      "sharedReactions": true,
+      "legacyFlagScope": true,
+      "bootstrapCount": 1,
+      "regions": 18,
+      "combat": {
+        "id": "FLkab2aTQ1SoRyYI",
+        "round": 2,
+        "turn": 8
+      },
+      "aiSourceRequests": 79,
+      "actorCountBefore": 159,
+      "actorCountAfter": 159,
+      "newActors": 0,
+      "moduleErrors": [],
+      "valid": true
+    }
+  },
+  "method": "Isolated authenticated browser; client-only package metadata and entry-script injection avoids restarting the live world. Native wrappers, movement normalization, condition dialog and module APIs exercised without actor creation, rolls, damage or token movement.",
+  "activation": "Five package folders installed. Server discovery/restart and permanent world dependency activation remain pending."
+}

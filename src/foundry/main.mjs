@@ -4,75 +4,36 @@ import { resolveProfile } from '../decision-engine.mjs';
 import { TurnRunner } from '../framework/turn-runner.mjs';
 import { MODULE_ID, MANAGED_OPTION, escapeHTML, renderDecisionExplanation } from './pf2e-adapter.mjs';
 import { decisionExplanation } from '../wolf/decision-explanation.mjs';
-import { ReactionEngine, REACTION_OPTION, REACTION_AUTO_DAMAGE } from './reactions.mjs';
+import { REACTION_OPTION, REACTION_AUTO_DAMAGE } from './reactions.mjs';
 import { allianceSide, canAssignTarget, targetingMode, targetRoster } from './targeting.mjs';
 import { configureEscapes } from './escape.mjs';
-import { ManualMovement } from './manual-movement.mjs';
 import { rememberTargets, movementKnowledge } from './target-memory.mjs';
 import { RUNTIME_VERSION } from './runtime-version.mjs';
 import {planningWorker} from './planning-worker.mjs';
-import {installPoisonHooks,advancePoisons,expirePoisons} from './poison-effects.mjs';
-import { installGreaseLandingHooks } from './grease-landing.mjs';
 import { behaviorAPI, behaviorConfiguration, behaviorCatalog, configureBehaviors } from './behavior-runtime.mjs';
-import { configureZone, environmentBetween, openZones } from './environment-zones.mjs';
-import { installEnvironmentRolls } from './environment-rolls.mjs';
-import { installStealthVisibility, refreshStealthVisibility, openStealthControls, detectionFor } from './stealth-awareness.mjs';
-import { createHazardHandler, installHazardMovement } from './hazardous-terrain.mjs';
-import { applySceneSetup } from './scene-setup.mjs';
-import { ZoneConcealment } from './zone-concealment.mjs';
-import { EnvironmentAwareness, TOKEN_GEOMETRY_FIELDS } from './environment-awareness.mjs';
-import { PlayerStealth } from './player-stealth.mjs';
 import { AIPresentation, registerPresentationSettings, applyAIRollPrivacy, applyAIDiceSuppression } from './ai-presentation.mjs';
 import { registerPerceptionSettings } from './npc-perception.mjs';
 import {renderTacticalMap} from './tactical-map-view.mjs';
 import { creatureControlsLayout, ensureCreatureControlsStyles } from './controls-layout.mjs';
 import { resetActorsToPrototype } from './actor-reset.mjs';
-import { refreshSpellZones, expireSpellZones, installGreaseTerrain } from './spell-zones.mjs';
+import { expireSpellZones } from './spell-zones.mjs';
 import { GoblinScuttle } from './goblin-scuttle.mjs';
-import {installFlightCosts} from './flight-costs.mjs';
-import {registerMovementModes} from './native-movement-modes.mjs';
-import {openConditionActions,installConditionActions} from './manual-condition-actions.mjs';
-import {setSneakMode} from './sneak-mode.mjs';
-import {installFascination} from './fascination.mjs';
-import {registerConditionCompatibility,applyConditionCompatibility,conditionAutomationOwners} from './condition-compatibility.mjs';
-import {installFlightFalls} from './flight-falling.mjs';
-import {actionRestriction,reactionRestriction,installActionRestrictions,installRestrictionMovement} from './action-restrictions.mjs';
-import {openOngoingSpells,installOngoingSpells,advanceOngoingSpells,ongoingCasts,sustainCast,endSustainedCast,resetOngoingSpells} from './ongoing-spells.mjs';
-import {installManualConditionSpells} from './manual-condition-spells.mjs';
+import {resetOngoingSpells} from './ongoing-spells.mjs';
 import {enableSelectedFullAuto} from './bulk-controls.mjs';
-
+import {getRulesRuntime} from '../modules/runtime.mjs';
 let profile;
 const aiPresentation=new AIPresentation();
-const reactions = new ReactionEngine({ presentation:aiPresentation,onPause: () => stop(), automaticReactiveStrike: token => {
-  if (resettingActors) return false;
-  const config = token.document.getFlag?.(MODULE_ID, 'config');
-  if (token.actor?.type !== 'npc' || !config?.enabled || config.autoReactions === false) return false;
-  try { return creatureProfile(token.actor).id === 'ogre-boss'; } catch { return false; }
-} });
-const playerStealth = new PlayerStealth({ enabled: () => game.settings?.get(MODULE_ID, 'playerStealth') ?? true, onError: showError });
-const goblinScuttle = new GoblinScuttle(reactions,{presentation:aiPresentation});
-reactions.afterMoveAction = (...args)=>goblinScuttle.afterMove(...args);
-const manualMovement = new ManualMovement(reactions, {
-  playerStealth,
-  onMoveAction:(...args)=>goblinScuttle.afterMove(...args),
-  enabled: () => !resettingActors && game.settings.get(MODULE_ID, 'manualMovementReactions'), onError: showError,
-});
-const onHazardMove=createHazardHandler({resolve:operation=>reactions.resolve(operation),onPause:()=>stop()});
-const zoneConcealment = new ZoneConcealment();
-const environmentAwareness = new EnvironmentAwareness({ enabled: () => game.settings.get(MODULE_ID, 'directionalZoneIndicators') });
-const refreshConcealment = () => zoneConcealment.refresh().catch(showError);
-const refreshEnvironmentView = id => environmentAwareness.schedule(id).catch(showError);
-const refreshPlayerStealth = () => playerStealth.refresh().catch(showError);
-function refreshActorCaptions(actor) {
-  if (!canvas.ready || !actor) return;
-  for (const token of canvas.tokens.placeables) if (token.actor === actor || actor.uuid && token.actor?.uuid === actor.uuid) void refreshEnvironmentView(token.id);
-}
-function refreshTerrain(){
-  if(!canvas.ready)return;
-  refreshStealthVisibility();
-  canvas.tokens.recalculatePlannedMovementPaths?.();
-  return Promise.all([refreshConcealment(), refreshEnvironmentView(), refreshPlayerStealth(),refreshSpellZones()]);
-}
+const rulesRuntime=getRulesRuntime();
+const {reactions,manualMovement}=rulesRuntime;
+const goblinScuttle=new GoblinScuttle(reactions,{presentation:aiPresentation});
+rulesRuntime.attachAI({presentation:aiPresentation,onPause:()=>stop(),blocked:()=>resettingActors,
+  afterMove:(...args)=>goblinScuttle.afterMove(...args),automaticReactiveStrike:token=>{
+    if(resettingActors)return false;
+    const config=token.document.getFlag?.(MODULE_ID,'config');
+    if(token.actor?.type!=='npc'||!config?.enabled||config.autoReactions===false)return false;
+    try{return creatureProfile(token.actor).id==='ogre-boss';}catch{return false;}
+  }});
+const refreshTerrain=()=>rulesRuntime.refresh();
 let automaticStartsPaused = false;
 let resettingActors = false;
 const runners = new Map();
@@ -363,32 +324,11 @@ export async function tacticalMap(token=selected()){
 }
 
 Hooks.once('init', () => {
-  registerMovementModes();
-  registerConditionCompatibility();
-  game.settings.register(MODULE_ID,'conditionRestrictions',{name:'Enforce action and reaction restrictions',scope:'world',config:true,type:Boolean,default:true,
-    hint:'Honor PF2e and PF2e Automations No Actions/No Reactions effects for AI, manual action rolls, spell casting, voluntary movement and Shield Block. Saving throws and forced movement remain available.'});
-  installRestrictionMovement();
   game.settings.register(MODULE_ID,'flightPlanningBackend',{name:'Flight planning engine',scope:'world',config:true,type:String,default:'worker',
     choices:{worker:'Background Web Worker',native:'Native planner (compatibility fallback)'},
     hint:'The worker proposes routes and Dive setups; Foundry validates native geometry and costs. Unsupported or failed workers fall back automatically.'});
   registerPresentationSettings();
   registerPerceptionSettings();
-  reactions.install();
-  game.settings.register(MODULE_ID, 'playerStealth', {
-    name: 'Player Hide and Sneak', scope: 'world', config: true, type: Boolean, default: true,
-    hint: 'Resolve character Hide checks per enemy. Select Sneak or Step in the native movement menu; an active GM resolves secret checks and reactions. Player action counts remain manual.',
-  });
-  playerStealth.install();
-  game.settings.register(MODULE_ID, 'directionalZoneIndicators', {
-    name: 'Show directional zone defenses', scope: 'client', config: true, type: Boolean, default: true,
-    hint: 'Show cover and concealment above tokens relative to your single selected token (or assigned character). Updates on movement and selection, not each frame.',
-    onChange: () => { void refreshEnvironmentView(); },
-  });
-  game.settings.register(MODULE_ID, 'manualMovementReactions', {
-    name: 'Manual movement reactions', scope: 'world', config: true, type: Boolean, default: true,
-    hint: 'Pause threatened ground movement during the mover’s turn to choose Stride or Step, then resolve taught NPC Reactive Strikes before each departure. Manual action counts remain the player’s responsibility.',
-  });
-  manualMovement.install();
   game.keybindings.register(MODULE_ID, 'controls', {
     name: 'Creature AI controls', hint: 'Select a taught NPC token, then open its automation controls.',
     restricted: true, editable: [{ key: 'KeyW', modifiers: ['Alt'] }],
@@ -402,29 +342,12 @@ Hooks.once('init', () => {
 
 Hooks.on('getSceneControlButtons', controls => {
   if (!controls.tokens?.tools) return;
-  controls.tokens.tools.conditionActions={name:'conditionActions',title:'Condition actions / sources',icon:'fa-solid fa-heart-pulse',order:106,
-    button:true,control:true,onChange:()=>{openConditionActions().catch(showError);}};
-  controls.tokens.tools.playerStealth = { name: 'playerStealth', title: 'Player Hide / Sneak', icon: 'fa-solid fa-user-secret', order: 104,
-    button: true, control: true, onChange: () => { playerStealth.open().catch(showError); } };
-  controls.tokens.tools.ongoingSpells={name:'ongoingSpells',title:'Ongoing spells / Sustain',icon:'fa-solid fa-wand-sparkles',order:105,
-    button:true,control:true,onChange:()=>{openOngoingSpells().catch(showError);}};
   if (!game.user?.isGM) return;
   controls.tokens.tools.wolfAI = {
     name: 'wolfAI', title: 'Creature AI controls', icon: 'fa-solid fa-paw', order: 100,
     button: true, control: true,
     onChange: () => { openControls().catch(showError); },
   };
-  controls.tokens.tools.reactionControls = {
-    name: 'reactionControls', title: 'Reaction controls', icon: 'fa-solid fa-shield-halved', order: 101,
-    button: true, control: true,
-    onChange: () => { reactions.openControls().catch(showError); },
-  };
-  controls.tokens.tools.environmentZones = {
-    name: 'environmentZones', title: 'Cover / concealment zones', icon: 'fa-solid fa-cloud', order: 102,
-    button: true, control: true, onChange: () => { openZones().catch(showError); },
-  };
-  controls.tokens.tools.stealthControls = { name:'stealthControls',title:'Detection controls',icon:'fa-solid fa-eye',order:103,
-    button:true,control:true,onChange:()=>{openStealthControls().catch(showError);} };
 });
 
 // Mark only AI-managed messages. Workbench 7.7.5 honors this flag, preventing a second damage roll.
@@ -445,38 +368,13 @@ Hooks.on('preCreateChatMessage', message => {
 
 Hooks.once('ready', async () => {
   if (game.system.id !== 'pf2e' || Number(game.release.generation) !== 14) return;
-  await applyConditionCompatibility();
-  installOngoingSpells({reactions,onError:showError});
-  installConditionActions({reactions});
-  installFascination({reactions,onError:showError});
-  installManualConditionSpells({reactions});
-  installPoisonHooks({reactions,onError:showError,onPause:stop});
-  game.modules.get(MODULE_ID).api = { version: RUNTIME_VERSION, planning:{status:()=>planningWorker.status()}, open: openControls, preview, explainLast, runTurn, stop, resetActors, enableFullAuto, correctLedger, tacticalMap, reactions, manualMovement,
-    zones: { open: openZones, configure: configureZone, between: environmentBetween, refresh:refreshTerrain,
-      view: () => ({ observerId: environmentAwareness.observer?.id ?? null, defenses: [...environmentAwareness.entries].map(([tokenId, entry]) => ({ tokenId, ...entry.environment, detection: entry.detection })) }) },
-    terrain:{onHazardMove,applySetup:applySceneSetup},supportedProfiles, registerCreatureProfile };
-  game.modules.get(MODULE_ID).api.stealth = { open: openStealthControls, detection: detectionFor, player: playerStealth,
-    hide: token => playerStealth.request('hide', token), sneak: token => playerStealth.request('arm-sneak', token),
-    stopSneak: token => playerStealth.request('stop-sneak', token), revealAction: token => playerStealth.request('reveal-action', token),
-    reveal: token => playerStealth.request('reveal', token) };
-  game.modules.get(MODULE_ID).api.spells = { refresh: refreshSpellZones, expire: expireSpellZones,openOngoing:openOngoingSpells,
-    ongoing:ongoingCasts,advance:advanceOngoingSpells,sustain:sustainCast,end:endSustainedCast };
-  game.modules.get(MODULE_ID).api.conditions={open:openConditionActions,owners:conditionAutomationOwners,inspect:(actor=canvas.tokens.controlled[0]?.actor)=>({actions:actionRestriction(actor),reactions:reactionRestriction(actor)})};
-  game.modules.get(MODULE_ID).api.poisons={advance:token=>reactions.resolve(()=>advancePoisons(token)),expire:expirePoisons};
+  await rulesRuntime.start();
+  game.modules.get(MODULE_ID).api = {...rulesRuntime.rules,version:RUNTIME_VERSION,planning:{status:()=>planningWorker.status()},
+    open:openControls,preview,explainLast,runTurn,stop,resetActors,enableFullAuto,correctLedger,tacticalMap,supportedProfiles,registerCreatureProfile};
   game.modules.get(MODULE_ID).api.behaviors = {...behaviorAPI,open:openBehaviorControls,
     inspect:(token=selected())=>({configuration:behaviorConfiguration(createCreatureAdapter(token,profile,{reactions})),
       lastPlan:token.document.getFlag(MODULE_ID,'behaviorState')??null})};
   try {
-    installActionRestrictions();
-    installEnvironmentRolls({playerStealth});
-    installHazardMovement();
-    installGreaseTerrain();
-    installFlightCosts();
-    installFlightFalls({reactions,onError:showError});
-    installGreaseLandingHooks({onError:showError});
-    environmentAwareness.install();
-    installStealthVisibility();
-    playerStealth.installRolls();
     const response = await fetch(new URL('../../profiles/creatures.json', import.meta.url), { cache: 'no-store' });
     if (!response.ok) throw new Error('Could not load Creature AI profiles');
     profile = resolveProfile(await response.json(), 'wolf');
@@ -490,11 +388,6 @@ Hooks.once('ready', async () => {
 // Observe completed movement on the active GM, including movement between an
 // NPC's turns. Zone icons update separately; automatic Seek spends a turn action.
 Hooks.on('moveToken', (document, movement, operation) => {
-  refreshStealthVisibility();
-  void refreshConcealment();
-  void refreshEnvironmentView(document.id);
-  void refreshPlayerStealth();
-  void refreshSpellZones().catch(showError);
   if (!profile || !canvas.ready || !game.combat?.started || game.users.activeGM?.id !== game.user.id) return;
   const combatId = game.combat.id, sceneId = canvas.scene.id;
   const knownMovement = movementKnowledge(document, movement, operation);
@@ -508,42 +401,6 @@ Hooks.on('moveToken', (document, movement, operation) => {
     } catch { /* Untaught actors do not gain an automatic perception policy. */ }
   }
 });
-Hooks.on('updateToken', (document, changed = {}) => {
-  if(Object.hasOwn(changed,'movementAction')&&document.actor?.isOfType?.('character')&&game.users.activeGM?.id===game.user.id){
-    const token=document.object??canvas.tokens.get(document.id);
-    if(token)void setSneakMode(token,changed.movementAction==='sneak').catch(showError);
-  }
-  if (TOKEN_GEOMETRY_FIELDS.some(key => Object.hasOwn(changed, key))) {
-    refreshStealthVisibility(); void refreshConcealment(); void refreshEnvironmentView(document.id);
-    void refreshPlayerStealth();
-  } else if (['stealth', '-=stealth'].some(key => Object.hasOwn(changed.flags?.[MODULE_ID] ?? {}, key)) ||
-    Object.keys(changed).some(key => key.startsWith(`flags.${MODULE_ID}.stealth`) || key.startsWith(`flags.${MODULE_ID}.-=stealth`))) {
-    refreshStealthVisibility(); void refreshEnvironmentView(document.id);
-    void refreshPlayerStealth();
-  }
-});
-Hooks.on('controlToken', () => { void refreshEnvironmentView(); });
-Hooks.on('targetToken', user => { if (user.id === game.user.id) void refreshEnvironmentView(); });
-Hooks.on('drawToken', token => { void refreshEnvironmentView(token.id); });
-Hooks.on('createToken', () => refreshTerrain());
-Hooks.on('deleteToken', () => refreshTerrain());
-Hooks.on('createRegion', () => refreshTerrain());
-Hooks.on('deleteRegion', () => refreshTerrain());
-Hooks.on('updateRegion', () => refreshTerrain());
-Hooks.on('createRegionBehavior', () => refreshTerrain());
-Hooks.on('deleteRegionBehavior', () => refreshTerrain());
-Hooks.on('updateRegionBehavior', () => refreshTerrain());
-Hooks.on('canvasReady', () => refreshTerrain());
-for (const hook of ['createItem', 'updateItem', 'deleteItem']) Hooks.on(hook, item => {
-  if (item.type === 'condition' && item.slug === 'concealed') void refreshConcealment();
-  if (['condition', 'effect'].includes(item.type)) { refreshStealthVisibility(); refreshActorCaptions(item.actor); void refreshPlayerStealth(); }
-});
-for (const hook of ['createWall', 'updateWall', 'deleteWall']) Hooks.on(hook, () => {
-  refreshStealthVisibility(); void refreshEnvironmentView();
-  void refreshPlayerStealth();
-});
-Hooks.on('updateUser', () => { void refreshConcealment(); void refreshEnvironmentView(); });
-
 // PF2e emits this after its start-of-turn effect processing has completed.
 Hooks.on('pf2e.startTurn', (combatant) => {
   if (!profile || automaticStartsPaused || game.users.activeGM?.id !== game.user.id || !canvas.ready) return;
@@ -552,13 +409,10 @@ Hooks.on('pf2e.startTurn', (combatant) => {
     automatic: true, expectedTurn: `${game.combat.id}:${game.combat.round}:${combatant.id}`,
   }).catch(showError);
 });
-Hooks.on('canvasTearDown', () => { stop(); planningWorker.close('Scene changed'); runners.clear(); environmentAwareness.clear(); });
-Hooks.on('deleteCombat', combat => { stop(); expireCommands({ combat, removeAll: true }).catch(showError); void expireSpellZones({combat,removeAll:true}).catch(showError); void refreshEnvironmentView(); });
+Hooks.on('canvasTearDown', () => { stop(); planningWorker.close('Scene changed'); runners.clear(); });
+Hooks.on('deleteCombat', combat => { stop(); expireCommands({ combat, removeAll: true }).catch(showError); });
 Hooks.on('pf2e.endTurn', (combatant, combat) => { expireCommands({ combat, endedTokenId: combatant.tokenId,
   endedRound: combatant.flags?.pf2e?.roundOfLastTurnEnd ?? combat.round }).catch(showError); });
 Hooks.on('updateCombat', (combat, changed = {}) => {
-  void expireSpellZones({combat}).catch(showError);
   expireCommands({ combat }).catch(showError);
-  if (['round', 'active'].some(key => Object.hasOwn(changed, key))) void refreshEnvironmentView();
 });
-Hooks.on('updateWorldTime',()=>{void expireSpellZones().catch(showError);});
