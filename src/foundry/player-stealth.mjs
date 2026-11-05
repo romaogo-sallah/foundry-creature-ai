@@ -2,6 +2,7 @@ import { stealthObservers, stealthRecord, stealthContext, detectionFor, hidingFr
 import { coverAlongPath } from './environment-zones.mjs';
 import { combatStamp } from './reaction-prompts.mjs';
 import { sneakMode, setSneakMode } from './sneak-mode.mjs';
+import {actionRestriction} from './action-restrictions.mjs';
 
 const ns='foundry-creature-ai';
 export const PLAYER_STEALTH_QUERY=`${ns}.playerStealth`;
@@ -104,6 +105,7 @@ export class PlayerStealth {
       else if(data.action==='reveal'){await this.clear(token);await setSneakMode(token,false);}
       else if(data.action==='reveal-action')await this.clear(token);
       else if(['hide','resolve-hide-roll'].includes(data.action)){
+        const restriction=actionRestriction(token.actor);if(restriction)throw new Error(restriction.reason);
         let providedRoll,circumstanceBonus;
         if(data.action==='resolve-hide-roll'){
           const message=game.messages.get(data.messageId),options=message?.flags.pf2e?.context?.options??[];

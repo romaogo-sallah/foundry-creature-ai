@@ -1,5 +1,6 @@
 import { checkProbabilities, expectedDamage } from './math.mjs';
 import { controlRelevance, spellReserveCost } from './caster-tactics.mjs';
+import {conditionCastingCandidates} from './condition-spells.mjs';
 
 // Native adapters establish geometry and available resources. Evaluation uses
 // the encounter benchmark, never a target's hidden saves, AC or secret rolls.
@@ -54,7 +55,7 @@ export function spellAreaValue(state, spell, area) {
 
 export function castingCandidates(state, { showcase = true } = {}) {
   if (state.self.unable || state.self.restrained || state.retreatComplete || state.morale?.broken) return [];
-  return state.spells.flatMap(spell => {
+  return [...conditionCastingCandidates({...state,spells:state.spells.filter(s=>s.kind==='condition-save')}),...state.spells.flatMap(spell => {
     if (spell.actionCost > state.actionsRemaining || !spell.available) return [];
     const reserve = spellReserveCost(state, spell);
     const show = showcase && state.style?.enabled && !state.shownSpells?.[spell.slug]
@@ -85,5 +86,5 @@ export function castingCandidates(state, { showcase = true } = {}) {
           { label: 'Save limited spell slots', contribution: -reserve }, { label: 'Show this spell once', contribution: show }] });
     }
     return result;
-  });
+  })];
 }

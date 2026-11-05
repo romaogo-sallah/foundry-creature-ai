@@ -12,7 +12,9 @@ export function actionIntent({profileId,choice,state={}}){
     }
     case 'eagleDive':return 'Wings fold; the eagle dives with talons extended.';
     case 'spikeVolley':return choice.mode==='split'?'The manticore whips its tail, scattering spikes at the clustered prey.':'The manticore aims two spikes to pin its prey in place.';
-    case 'castSpell':return choice.features?.preparation?'Come closer, longshanks. Watch your feet!':choice.spellSlug==='breathe-fire'?'All together? Good. More things to burn!':choice.spellSlug==='grease'?'Try running over this, longshanks!':choice.spellSlug==='tangle-vine'?'Stay there. The vines have you!':'Burn, burn, burn!';
+    case 'sustainSpell':return 'Keep laughing. I am not finished with you.';
+    case 'gaze':return 'Look at me. Let the blue light fill your mind.';
+    case 'castSpell':return choice.spellSlug==='laughing-fit'?'Laugh for me. Let your guard slip.':choice.spellSlug==='stupefy'?'Let us quiet those clever thoughts.':choice.spellSlug==='blindness'?'Find your way through the dark.':choice.spellSlug==='void-warp'?'Feel your strength ebb away.':choice.features?.preparation?'Come closer, longshanks. Watch your feet!':choice.spellSlug==='breathe-fire'?'All together? Good. More things to burn!':choice.spellSlug==='grease'?'Try running over this, longshanks!':choice.spellSlug==='tangle-vine'?'Stay there. The vines have you!':'Burn, burn, burn!';
     case 'goblinScuttle':return 'Make room! I have a better spot!';
     case 'strike':
       if(profileId.startsWith('manticore-'))return choice.features?.ranged?'The manticore launches a spike from above.':'The manticore lashes out, keeping its wings ready to pull away.';

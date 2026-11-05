@@ -7,6 +7,7 @@ import { clearAttackPath, clearSightPath } from './attack-path.mjs';
 import { concealmentCheck } from './environment-rolls.mjs';
 import { detectionFor } from './stealth-awareness.mjs';
 import {sharesVerticalSpace} from './vertical-space.mjs';
+import {reactionRestriction} from './action-restrictions.mjs';
 
 export const REACTION_OPTION = `${MODULE_ID}:reaction`;
 export const REACTION_AUTO_DAMAGE = `${MODULE_ID}:reaction-auto-damage`;
@@ -27,7 +28,7 @@ function ability(actor, slugs) {
   });
 }
 export function canReact(actor) {
-  return actor?.hitPoints?.value > 0 && !actor.hasCondition(...incapacitated) && !(actor.system.traits?.value ?? []).includes('minion');
+  return actor?.hitPoints?.value > 0 && !actor.hasCondition(...incapacitated) && !reactionRestriction(actor)&&!(actor.system.traits?.value ?? []).includes('minion');
 }
 export function reactionCycle(token) {
   const combat = game.combat;
@@ -45,7 +46,7 @@ export function shieldBlockEligible(token, damage) {
 function shieldBlockReadiness(token, damage) {
   const actor = token?.actor, shield = actor?.attributes.shield;
   const checks = [
-    [canReact(actor), 'The creature cannot currently take reactions.'],
+    [canReact(actor), reactionRestriction(actor)?.reason??'The creature cannot currently take reactions.'],
     [actor && ability(actor, ['shield-block']), 'Shield Block ability was not found.'],
     [Boolean(shield?.itemId), 'No equipped physical shield was found.'],
     [Boolean(shield?.raised), 'The equipped shield is not raised.'],
@@ -107,7 +108,7 @@ export class ReactionEngine {
     const reactionAvailable = this.available(token), abilityFound = ability(token.actor, ['reactive-strike', 'attack-of-opportunity']);
     const options = this.meleeOptions(token), ready = options.filter(option => !option.reason);
     const reason = !reactionCycle(token) ? 'The creature is not an undefeated combatant in the active combat.' :
-      !canReact(token.actor) ? 'The creature cannot currently take reactions.' : !reactionAvailable ? 'The ordinary reaction is already spent until this creature’s next turn.' :
+      !canReact(token.actor) ? reactionRestriction(token.actor)?.reason??'The creature cannot currently take reactions.' : !reactionAvailable ? 'The ordinary reaction is already spent until this creature’s next turn.' :
         !abilityFound ? 'Reactive Strike ability was not found.' : !ready.length ? options.map(option => option.reason).join(' ') || 'No ready melee Strike was found.' : null;
     return { eligible: !reason, reactionAvailable, abilityFound, reason: reason ?? 'Ready; a visible enemy must trigger within melee reach.',
       readyWeapons: ready.map(option => option.strike.label ?? option.strike.item.name) };

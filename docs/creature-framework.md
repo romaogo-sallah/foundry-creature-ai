@@ -29,6 +29,8 @@ flowchart TD
 | `framework/caster-defense.mjs` / `foundry/caster-stealth.mjs` | Protected casting positions, secret-result-independent Hide beliefs, bounded preparation/waiting and ranged-opponent exceptions. |
 | `framework/caster-tactics.mjs` / `foundry/caster-target-knowledge.mjs` | Bounded melee pressure, role-aware movement control, own-HP slot conservation and combat-scoped visible-weapon memory. |
 | `framework/spell-evaluation.mjs` | Spell attack/save/control estimates from encounter benchmarks, action budgets, limited slots, redundancy and friendly fire. |
+| `framework/condition-spells.mjs` / `foundry/dero-magister-adapter.mjs` | Condition-caster estimates, native Dero spell/slot bindings, once-per-round gaze and complete-turn Sustain forecasts. |
+| `foundry/action-restrictions.mjs` / `foundry/ongoing-spells.mjs` / `foundry/manual-condition-spells.mjs` | Shared reaction/action denial, source-owned native conditions, spell lifecycle, authenticated player Sustain and manual native save integration. |
 | `profiles/goblin-pyro.mjs` / `foundry/goblin-pyro-adapter.mjs` | The first caster profile, torch fallback, casting positions and legal end-of-turn handling. |
 | `foundry/spellcasting.mjs` / `foundry/spell-checks.mjs` | Native consumption, spell messages, spell attacks, defense rolls, damage and reaction interruptions. |
 | `foundry/spell-areas.mjs` / `foundry/spell-zones.mjs` | Native Region geometry, bounded cone/Grease aiming, persistent slippery ground, spell effects and cleanup. |

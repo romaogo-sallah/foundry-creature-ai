@@ -1,7 +1,7 @@
 const namespace = 'foundry-creature-ai';
 const transientFlags = [
   'ledger', 'scoutGear', 'ogreGear', 'ogreAttacks', 'scoutActions', 'scoutShown', 'pyroShown', 'pyroActions','flight','eagleShown','aerialPlan','manticoreHunts','quillShown',
-  'scoutThreats', 'casterTargets', 'behaviorState', 'behaviorActions', 'scoutFocus', 'scoutMotion', 'targetMemory', 'stealth',
+  'scoutThreats', 'casterTargets', 'behaviorState', 'behaviorActions', 'conditionCaster', 'scoutFocus', 'scoutMotion', 'targetMemory', 'stealth',
   'stealthBelief', 'perception', 'playState', 'retreated', 'scampering', 'sneakNextMove',
 ];
 
@@ -36,7 +36,7 @@ export async function resetActorsToPrototype({ tokens = canvas.tokens.controlled
         // re-prepares data and does not reset saved resources.
         await document.delta.restore();
         const restored = document.actor;
-        if (restored.getFlag(namespace, 'reaction') !== undefined) await restored.unsetFlag(namespace, 'reaction');
+        for(const key of ['reaction','ongoingCasts'])if(restored.getFlag(namespace,key)!==undefined)await restored.unsetFlag(namespace,key);
         const changes = {};
         for (const key of transientFlags) if (document.getFlag(namespace, key) !== undefined)
           changes[`flags.${namespace}.-=${key}`] = null;

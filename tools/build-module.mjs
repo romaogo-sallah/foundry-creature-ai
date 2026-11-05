@@ -32,6 +32,8 @@ await cp(new URL('docs/eagle-flight.md', root), new URL('eagle-flight.md', outpu
 await cp(new URL('docs/aerial-combat.md', root), new URL('aerial-combat.md', output));
 await cp(new URL('docs/manticore-scorpion.md', root), new URL('manticore-scorpion.md', output));
 await cp(new URL('docs/manticore-quill.md', root), new URL('manticore-quill.md', output));
+await cp(new URL('docs/dero-magister.md',root),new URL('dero-magister.md',output));
+await cp(new URL('docs/condition-handling.md',root),new URL('condition-handling.md',output));
 await cp(new URL('docs/kobold-scout-foundry.md', root), new URL('kobold-scout-foundry.md', output));
 await cp(new URL('docs/goblin-pyro-foundry.md', root), new URL('goblin-pyro-foundry.md', output));
 await cp(new URL('docs/reactions-foundry.md', root), new URL('reactions-foundry.md', output));

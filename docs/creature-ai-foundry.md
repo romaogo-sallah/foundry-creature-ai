@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.32.0
+# Foundry Creature AI — version 0.33.0
+
+Version **0.33.0** adds the supplied [Dero Magister](dero-magister.md) with a first condition-caster combat kit: Laughing Fit, Stupefy, Blindness, Void Warp, Cytillesh Stare and Sustain. [Shared condition enforcement](condition-handling.md) applies No Actions/No Reactions restrictions to AI and supported manual PC actions. Supported manual spell saves use the same source-tracked effect resolver. The wand toolbar button opens **Ongoing spells / Sustain** for players. Other Dero spells and medicine remain manual; Confused and Blinded NPC turns require GM adjudication. Reload all clients with **Ctrl+F5** and confirm **Running code 0.33.0**.
 
 Version **0.32.0** separates [air-to-air tactics](aerial-combat.md) from hunting ground prey. Faster Eagles can prepare a fixed, speed-aware altitude advantage for at most three Fly actions, then engage with a complete Dive and withdrawal. Slower melee flyers can descend to cover, land and Hide when a high opponent cannot be reached efficiently. Quill Manticores can answer with ranged attacks instead of chasing altitude. Physical surfaces, native movement costs, observer-relative stealth and awaited reactions remain authoritative. Reload all clients with **Ctrl+F5** and confirm **Running code 0.32.0**.
 

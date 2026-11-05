@@ -2,6 +2,8 @@ import { environmentBetween } from './environment-zones.mjs';
 import { detectionFor } from './stealth-awareness.mjs';
 import { hasUnmanagedConcealment } from './zone-concealment.mjs';
 import { tokenRayPoint } from './attack-path.mjs';
+import {checkRestriction,notifyRestriction} from './action-restrictions.mjs';
+import {wrapConditionSave} from './manual-condition-spells.mjs';
 
 const namespace = 'foundry-creature-ai';
 const managed = `${namespace}:managed`;
@@ -10,8 +12,9 @@ const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', 
 const hasOption = (options, option) => options?.has?.(option) ?? options?.includes?.(option) ?? false;
 
 export function concealmentDC(observer, target, environment = environmentBetween(observer, target)) {
+  if(observer.actor?.hasCondition('blinded'))return 11;
   if (detectionFor(observer, target).state === 'hidden') return 11;
-  return environment.concealed || target.actor && hasUnmanagedConcealment(target.actor) ? 5 : null;
+  return observer.actor?.hasCondition('dazzled')||environment.concealed || target.actor && hasUnmanagedConcealment(target.actor) ? 5 : null;
 }
 
 // The caller already reserved the triggering action (and MAP). Failure spends
@@ -75,7 +78,11 @@ export function installEnvironmentRolls({playerStealth=null}={}) {
   // suppress the native check. MIXED permits those returns without libWrapper
   // unregistering this hook after a failed flat check/cancelled action.
   libWrapper.register(namespace, 'game.pf2e.Check.roll', function (wrapped, ...args) {
+    const restriction=checkRestriction(args[0],args[1]);
+    if(restriction){const context=args[1];notifyRestriction(context?.actor??context?.origin?.token?.actor??context?.origin?.token?.object?.actor,restriction);return null;}
     const terrainRoll = async (check, context, ...rest) => {
+    const restriction=checkRestriction(check,context);
+    if(restriction){notifyRestriction(context?.actor??context?.origin?.token?.actor??context?.origin?.token?.object?.actor,restriction);return null;}
     const environment = applyEnvironmentCover(context);
     const options = context?.options ?? [];
     const isManaged = hasOption(options, managed);
@@ -111,6 +118,7 @@ export function installEnvironmentRolls({playerStealth=null}={}) {
     // libWrapper permits only one registration per package and target. Run the
     // player action stage first so Hide adds its native roll metadata, other
     // actions reveal before terrain checks, and Strikes reveal after rolling.
-    return playerStealth ? playerStealth.wrapRoll(terrainRoll, ...args) : terrainRoll(...args);
+    const actionRoll=(...input)=>playerStealth?playerStealth.wrapRoll(terrainRoll,...input):terrainRoll(...input);
+    return wrapConditionSave(actionRoll,...args);
   }, 'MIXED');
 }

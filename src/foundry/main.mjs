@@ -31,6 +31,9 @@ import { refreshSpellZones, expireSpellZones, installGreaseTerrain } from './spe
 import { GoblinScuttle } from './goblin-scuttle.mjs';
 import {installFlightCosts} from './flight-costs.mjs';
 import {installFlightFalls} from './flight-falling.mjs';
+import {actionRestriction,reactionRestriction,installActionRestrictions,installRestrictionMovement} from './action-restrictions.mjs';
+import {openOngoingSpells,installOngoingSpells,advanceOngoingSpells,ongoingCasts,sustainCast,endSustainedCast,resetOngoingSpells} from './ongoing-spells.mjs';
+import {installManualConditionSpells} from './manual-condition-spells.mjs';
 
 let profile;
 const aiPresentation=new AIPresentation();
@@ -204,6 +207,7 @@ export async function openControls(token = selected()) {
       ${taught.id === 'ogre' ? `<div class="form-group"><label>Refuse remaining (including any held piece)</label><input name="refuseCount" type="number" min="0" max="999" step="1" value="${escapeHTML(config.refuseCount ?? 0)}"></div><p>Refuse uses a limited supply. Picking up a piece costs one Interact action; throwing it costs a Strike action and consumes one piece. Zero disables this attack. This ogre has no boss command, Sweeping Hook reaction, or Reactive Strike.</p>` : ''}
       ${taught.id === 'kobold-scout' ? `<div class="form-group"><label>Crossbow currently loaded</label><input name="crossbowLoaded" type="checkbox" ${adapter.loaded ? 'checked' : ''}></div><p>Reload costs one Interact; each shot consumes one bolt. Hide and Sneak use scene cover/concealment zones and separate checks against each observer's Perception DC. Use the cloud toolbar button to configure zones and the eye button to inspect or correct detection. Construct Trap remains manual. Darkness, special senses and visual cover from walls alone need GM adjudication.</p>` : ''}
       ${taught.id === 'eagle' ? '<p>The Eagle gains a safe hunting altitude, approaches from above and commits only when an attack and escape fit the remaining actions. Upward flight adds difficult-terrain cost; straight downward flight costs half. Eagle Dive costs two actions, descends at least 10 feet in a straight line, then makes one native Talon Strike. Its return climb needs another Fly action.</p>' : ''}
+      ${taught.id === 'dero-magister' ? '<p>This Dero uses Laughing Fit, Stupefy, Blindness, Void Warp, Cytillesh Stare and native staff Strikes. Ongoing effects and Sustain are tracked automatically. Other spells and Dero Medicine remain manual. The wand toolbar button opens ongoing spells for PC casters too. Confused or Blinded NPC turns still need manual adjudication.</p>' : ''}
       ${taught.id === 'manticore-scorpion' ? '<p>This scorpion-tail Manticore uses Fly 40 ft, reach-10 Stinger with DC 22 venom, Jaws and agile Claw. It plans an approach, Strike and escape. Venom stages, poison damage and stage Enfeebled resolve automatically using native saves and effects; ongoing saves occur at the poisoned creature’s turn end. This variant has no ranged spikes.</p>' : ''}
       ${taught.id === 'manticore-quill' ? `<div class="form-group"><label>Spikes remaining (12 per 24 hours)</label><input name="quillsRemaining" type="number" min="0" max="12" step="1" value="${adapter.spikesRemaining}"></div><p>Fly 40 ft; Spike range increment 40 ft. Spike Volley costs one action and two spikes: attack two foes within 20 ft of each other at the same MAP, or attack one foe and pin it on a hit (Escape or Force Open DC 23). It shoots from safer altitude and uses melee when its spikes run out. Each spent spike regrows after 24 hours of world time.</p>` : ''}
       ${abilities.unsupported?.length ? `<p>Additional abilities need manual handling: ${abilities.unsupported.map(escapeHTML).join(', ')}.</p>` : ''}
@@ -329,6 +333,7 @@ export async function resetActors(options = {}) {
       afterReset: async report => {
         for (const entry of [...report.restored, ...report.errors]) runners.delete(entry.id);
         await expireSpellZones({tokenIds:report.restored.map(entry=>entry.id)});
+        await resetOngoingSpells(report.restored.map(entry=>entry.id));
         announcedOutcomes.clear();
         await refreshTerrain();
       },
@@ -346,6 +351,9 @@ export async function tacticalMap(token=selected()){
 }
 
 Hooks.once('init', () => {
+  game.settings.register(MODULE_ID,'conditionRestrictions',{name:'Enforce action and reaction restrictions',scope:'world',config:true,type:Boolean,default:true,
+    hint:'Honor PF2e and PF2e Automations No Actions/No Reactions effects for AI, manual action rolls, spell casting, voluntary movement and Shield Block. Saving throws and forced movement remain available.'});
+  installRestrictionMovement();
   game.settings.register(MODULE_ID,'flightPlanningBackend',{name:'Flight planning engine',scope:'world',config:true,type:String,default:'worker',
     choices:{worker:'Background Web Worker',native:'Native planner (compatibility fallback)'},
     hint:'The worker proposes routes and Dive setups; Foundry validates native geometry and costs. Unsupported or failed workers fall back automatically.'});
@@ -382,6 +390,8 @@ Hooks.on('getSceneControlButtons', controls => {
   if (!controls.tokens?.tools) return;
   controls.tokens.tools.playerStealth = { name: 'playerStealth', title: 'Player Hide / Sneak', icon: 'fa-solid fa-user-secret', order: 104,
     button: true, control: true, onChange: () => { playerStealth.open().catch(showError); } };
+  controls.tokens.tools.ongoingSpells={name:'ongoingSpells',title:'Ongoing spells / Sustain',icon:'fa-solid fa-wand-sparkles',order:105,
+    button:true,control:true,onChange:()=>{openOngoingSpells().catch(showError);}};
   if (!game.user?.isGM) return;
   controls.tokens.tools.wolfAI = {
     name: 'wolfAI', title: 'Creature AI controls', icon: 'fa-solid fa-paw', order: 100,
@@ -419,6 +429,8 @@ Hooks.on('preCreateChatMessage', message => {
 
 Hooks.once('ready', async () => {
   if (game.system.id !== 'pf2e' || Number(game.release.generation) !== 14) return;
+  installOngoingSpells({reactions,onError:showError});
+  installManualConditionSpells({reactions});
   installPoisonHooks({reactions,onError:showError,onPause:stop});
   game.modules.get(MODULE_ID).api = { version: RUNTIME_VERSION, planning:{status:()=>planningWorker.status()}, open: openControls, preview, explainLast, runTurn, stop, resetActors, correctLedger, tacticalMap, reactions, manualMovement,
     zones: { open: openZones, configure: configureZone, between: environmentBetween, refresh:refreshTerrain,
@@ -428,12 +440,15 @@ Hooks.once('ready', async () => {
     hide: token => playerStealth.request('hide', token), sneak: token => playerStealth.request('arm-sneak', token),
     stopSneak: token => playerStealth.request('stop-sneak', token), revealAction: token => playerStealth.request('reveal-action', token),
     reveal: token => playerStealth.request('reveal', token) };
-  game.modules.get(MODULE_ID).api.spells = { refresh: refreshSpellZones, expire: expireSpellZones };
+  game.modules.get(MODULE_ID).api.spells = { refresh: refreshSpellZones, expire: expireSpellZones,openOngoing:openOngoingSpells,
+    ongoing:ongoingCasts,advance:advanceOngoingSpells,sustain:sustainCast,end:endSustainedCast };
+  game.modules.get(MODULE_ID).api.conditions={inspect:(actor=canvas.tokens.controlled[0]?.actor)=>({actions:actionRestriction(actor),reactions:reactionRestriction(actor)})};
   game.modules.get(MODULE_ID).api.poisons={advance:token=>reactions.resolve(()=>advancePoisons(token)),expire:expirePoisons};
   game.modules.get(MODULE_ID).api.behaviors = {...behaviorAPI,open:openBehaviorControls,
     inspect:(token=selected())=>({configuration:behaviorConfiguration(createCreatureAdapter(token,profile,{reactions})),
       lastPlan:token.document.getFlag(MODULE_ID,'behaviorState')??null})};
   try {
+    installActionRestrictions();
     installEnvironmentRolls({playerStealth});
     installHazardMovement();
     installGreaseTerrain();

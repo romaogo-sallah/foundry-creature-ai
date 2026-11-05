@@ -9,7 +9,7 @@ export const tacticalBehaviors = new BehaviorSystem();
 for (const [id,label,actionKinds,core] of [
   ['recovery','Recovery',['endTurn','stand','escape'],true],['perception','Perception',['seek'],true],
   ['movement','Movement',['stride','step','crawl','escapeStride','scamper'],true],['strikes','Strikes',['strike'],true],
-  ['control','Combat control',['trip','knockdown','sweepingHook']],['spellcasting','Spellcasting',['castSpell']],
+  ['control','Combat control',['trip','knockdown','sweepingHook','gaze']],['spellcasting','Spellcasting',['castSpell','sustainSpell']],
   ['stealth','Stealth',['hide','sneak']],['equipment','Equipment',['reload','regrip','drawMelee','drawJavelin','drawRefuse','drawSword','stow','stowSword','gripBow']],
   ['leadership','Leadership',['bellow']],['pack','Pack coordination',[]],
   ['flight','Flight',['fly']],['diving','Dive attacks',['eagleDive']],
@@ -107,7 +107,7 @@ for(const [id,mode,label]of [['aerial-engage',null,'Aerial engagement'],['aerial
 export const defaultBehaviorConfiguration = profileId => ({
   components:['recovery','perception','movement','strikes','control','stealth','equipment',
     ...(profileId==='manticore-quill'?['volleys']:[]),
-    ...(['goblin-pyro','generic'].includes(profileId)?['spellcasting']:[]),...(['ogre-boss','generic'].includes(profileId)?['leadership']:[]),
+    ...(['goblin-pyro','dero-magister','generic'].includes(profileId)?['spellcasting']:[]),...(['ogre-boss','generic'].includes(profileId)?['leadership']:[]),
     ...['wolf','kobold-scout'].includes(profileId)?['pack']:[],
     'pressure','advance','protection','distance','surround','assist','withdraw'],
   plans:['aggressive','defensive','avoiding','hiding','lay-low','charge','kiting','swarming','supporting'],

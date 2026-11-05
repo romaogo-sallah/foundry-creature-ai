@@ -7,6 +7,7 @@ function afterAction(state, action) {
   const spell = state.spells.find(spell => spell.id === action.spellId);
   const spellSlots = state.spellSlots - (spell && !spell.cantrip ? 1 : 0);
   return { ...state, actionsRemaining: state.actionsRemaining - action.actionCost,
+    plannedCapabilities:[...(state.plannedCapabilities??[]),...(action.features?.onceKey?[action.features.onceKey]:[]),...(action.features?.blocksForecast??[])],
     casterDefense: { ...state.casterDefense, hideAttempted: state.casterDefense?.hideAttempted || action.kind === 'hide',
       preparedGrease: state.casterDefense?.preparedGrease || spell?.kind === 'ground-control' },
     enemies: state.enemies.map(enemy => ({ ...enemy, stealthChance: action.kind === 'hide' ?

@@ -4,6 +4,7 @@ import { reachableCells, enemyDistances } from '../framework/navigation.mjs';
 import { standardArmorClass } from '../dawnsbury/chooser.mjs';
 import { canAssignTarget, combatantSceneId, targetingMode, targetRoster } from './targeting.mjs';
 import { incapacitationReason, encounterOutcome, occupiesMovementSpace } from './combat-state.mjs';
+import {actionRestriction} from './action-restrictions.mjs';
 import { clearAttackPath, clearSightPath } from './attack-path.mjs';
 import {sharesVerticalSpace} from './vertical-space.mjs';
 import { unsupportedMovementRegions, terrainMovementPath } from './movement-regions.mjs';
@@ -31,7 +32,7 @@ export const MANAGED_TRIP_OPTION = 'foundry-creature-ai:trip';
 // PF2e Automations 1.4.9 honors this per-message option in HandleRuleMessage.
 // This adapter owns AI Trip outcomes, including Prone and critical Trip damage.
 export const SKIP_RULE_AUTOMATION = 'skip-handling-message';
-const blocked = ['unconscious', 'dying', 'dead', 'paralyzed', 'petrified', 'controlled', 'confused', 'fleeing', 'stunned', 'blinded', 'dazzled'];
+const blocked = ['unconscious', 'dying', 'dead', 'paralyzed', 'petrified', 'controlled', 'confused', 'fleeing', 'stunned', 'blinded'];
 const sizeOrder = ['tiny', 'sm', 'med', 'lg', 'huge', 'grg'];
 
 export function rollEvent(type) {
@@ -99,7 +100,7 @@ export class PF2eCreatureAdapter {
     const { width, height } = this.token.document;
     if (!Number.isInteger(width) || width < 1 || width > 4 || height !== width) throw new Error('Creature AI supports square footprints from 1 to 4 grid cells');
   }
-  turnEndReason() { return incapacitationReason(this.token); }
+  turnEndReason() { return incapacitationReason(this.token)??(actionRestriction(this.actor)?.kind==='noActions'?'actions denied by an active effect':null); }
   encounterOutcome() { return encounterOutcome(); }
   get targetMode() { return targetingMode(this.actor, this.config); }
   targetIds() { return targetRoster(this.token, this.config); }

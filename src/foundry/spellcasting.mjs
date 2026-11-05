@@ -5,6 +5,8 @@ import { spellDefenseCheck, SPELL_OPTIONS } from './spell-checks.mjs';
 import { inSpellArea, sameSpellLevel, spellRegion } from './spell-areas.mjs';
 import { createGreaseZone, applyTangleVine } from './spell-zones.mjs';
 import {waitForPresentation} from './ai-presentation.mjs';
+import {applyConditionSpell,beginSustainedCast} from './ongoing-spells.mjs';
+import {conditionSpells} from '../framework/condition-spells.mjs';
 
 const ns = 'foundry-creature-ai';
 const outcomes = ['criticalFailure','failure','success','criticalSuccess'];
@@ -70,6 +72,25 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
       flags: { pf2e: { context: { options: SPELL_OPTIONS } } } });
     if (!valid()) throw new Error('Casting stopped during the grabbed flat check');
     if (flat.total < check.dc) return { resolved: true, note: `${check.label} flat check failed; spell actions and resources remain spent.` };
+  }
+  if(choice.features?.conditionSpell){
+    if(!valid()||adapter.liveTarget(choice.targetId)!==target)return {resolved:true,note:'The spell lost its target; its action and slot remain spent.'};
+    if(!await concealmentCheck(adapter.token,target,{valid}))return {resolved:true,note:'Spell targeting flat check failed; actions and slot remain spent.'};
+    const source={actor:adapter.actor,token:adapter.token};
+    const commitment=spell.slug==='laughing-fit'?await beginSustainedCast(source,spell,target):null;
+    if(target.actor.isImmuneTo?.(spell)||['laughing-fit','void-warp'].includes(spell.slug)&&target.actor.modeOfBeing&&target.actor.modeOfBeing!=='living')
+      return {resolved:true,note:'This spell cannot affect the target.'};
+    const spec=conditionSpells[spell.slug];if(!spec)throw new Error('Unsupported condition spell');
+    const degree=await spellDefenseCheck(target,{dc:parts.entry.statistic.dc.value,statistic:spec.save,origin:adapter.token,spell,label:spell.name});
+    if(!valid())throw new Error('Combat changed during the spell save');
+    if(spec.damage&&degree<3){
+      const damage=await spellDamage(spell,adapter.token,{target,autoApply:Boolean(adapter.config.applyDamage)});
+      const scaled=degree===2?damage.alter(0.5,0):degree===0?damage.alter(2,0):damage;
+      if(adapter.config.applyDamage)await adapter.applyDamage(target,scaled,spell,outcomes[degree],{valid});
+    }
+    await applyConditionSpell({source,target,spell,degree,castId:commitment?.id});
+    return {resolved:true,lastAction:{kind:'castSpell',spellId:spell.id,targetId:target.id},pause:Boolean(spec.damage&&!adapter.config.applyDamage&&degree<3),
+      note:`${spell.name}: native ${spec.save} save resolved; ongoing conditions track their source and duration.`};
   }
   if (!choice.area) {
     if (adapter.liveTarget(choice.targetId) !== target) return { resolved: true, note: 'The spell lost its target after a reaction. Its actions and resources remain spent.' };
