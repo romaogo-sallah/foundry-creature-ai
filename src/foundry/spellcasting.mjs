@@ -5,7 +5,7 @@ import { spellDefenseCheck, SPELL_OPTIONS } from './spell-checks.mjs';
 import { inSpellArea, sameSpellLevel, spellRegion } from './spell-areas.mjs';
 import { createGreaseZone, applyTangleVine } from './spell-zones.mjs';
 import {waitForPresentation} from './ai-presentation.mjs';
-import {applyConditionSpell,beginSustainedCast} from './ongoing-spells.mjs';
+import {applyConditionSpell,beginSustainedCast,grantVampiricTempHP} from './ongoing-spells.mjs';
 import {conditionSpells} from '../framework/condition-spells.mjs';
 import {nativeRuleAction,resolveConditionChecks,automationOwnsFlatChecks} from './condition-actions.mjs';
 
@@ -49,6 +49,8 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
   if (!original) return { skipped: true, skipReason: 'The spell is no longer available' };
   const target = choice.area ? null : adapter.liveTarget(choice.targetId);
   if (!choice.area && (!target || !clearAttackPath(adapter.token,target))) return { skipped: true, skipReason: 'Spell target or attack path changed' };
+  if(choice.spellSlug==='vampiric-feast'&&adapter.targetAt(adapter.originCell(),target,[],origin).distance>5)
+    return {skipped:true,skipReason:'Vampiric Feast target left touch range'};
   let spell = original;
   if (choice.melee) {
     const overlay = original.overlays?.contents?.find(entry => entry.system?.range?.value === 'touch');
@@ -69,22 +71,29 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
     return {resolved:true,note:'Condition flat check failed; spell actions and resources remain spent.'};
   if(choice.features?.conditionSpell){
     if(!valid()||adapter.liveTarget(choice.targetId)!==target)return {resolved:true,note:'The spell lost its target; its action and slot remain spent.'};
+    const spec=conditionSpells[spell.slug];if(!spec)throw new Error('Unsupported condition spell');
+    if(spec.drain&&adapter.targetAt(adapter.originCell(),target,[],adapter.actualWaypoint()).distance>5)
+      return {resolved:true,note:'The target left touch range during the reaction; actions and slot remain spent.'};
     if(!await concealmentCheck(adapter.token,target,{valid}))return {resolved:true,note:'Spell targeting flat check failed; actions and slot remain spent.'};
     const source={actor:adapter.actor,token:adapter.token};
     const commitment=spell.slug==='laughing-fit'?await beginSustainedCast(source,spell,target):null;
-    if(target.actor.isImmuneTo?.(spell)||['laughing-fit','void-warp'].includes(spell.slug)&&target.actor.modeOfBeing&&target.actor.modeOfBeing!=='living')
+    if(target.actor.isImmuneTo?.(spell)||['laughing-fit','void-warp','vampiric-feast'].includes(spell.slug)&&target.actor.modeOfBeing&&target.actor.modeOfBeing!=='living')
       return {resolved:true,note:'This spell cannot affect the target.'};
-    const spec=conditionSpells[spell.slug];if(!spec)throw new Error('Unsupported condition spell');
     const degree=await spellDefenseCheck(target,{dc:parts.entry.statistic.dc.value,statistic:spec.save,origin:adapter.token,spell,label:spell.name});
     if(!valid())throw new Error('Combat changed during the spell save');
+    let drain=null;
     if(spec.damage&&degree<3){
       const damage=await spellDamage(spell,adapter.token,{target,autoApply:Boolean(adapter.config.applyDamage)});
       const scaled=degree===2?damage.alter(0.5,0):degree===0?damage.alter(2,0):damage;
-      if(adapter.config.applyDamage)await adapter.applyDamage(target,scaled,spell,outcomes[degree],{valid});
+      if(adapter.config.applyDamage){
+        const applied=await adapter.applyDamage(target,scaled,spell,outcomes[degree],{valid,captureDamage:Boolean(spec.drain)});
+        if(spec.drain&&valid())drain=await grantVampiricTempHP(source,spell,applied.damageTaken);
+      }
     }
-    await applyConditionSpell({source,target,spell,degree,castId:commitment?.id});
+    if(!spec.drain)await applyConditionSpell({source,target,spell,degree,castId:commitment?.id});
     return {resolved:true,lastAction:{kind:'castSpell',spellId:spell.id,targetId:target.id},pause:Boolean(spec.damage&&!adapter.config.applyDamage&&degree<3),
-      note:`${spell.name}: native ${spec.save} save resolved; ongoing conditions track their source and duration.`};
+      note:spec.drain?`${spell.name}: native Fortitude save resolved. ${drain?`Temporary HP pool: ${drain.temporaryHP}; expires after 1 minute.`:adapter.config.applyDamage?'No temporary HP gained.':'Resolve temporary HP from half the damage actually taken after applying damage.'}`:
+        `${spell.name}: native ${spec.save} save resolved; ongoing conditions track their source and duration.`};
   }
   if (!choice.area) {
     if (adapter.liveTarget(choice.targetId) !== target) return { resolved: true, note: 'The spell lost its target after a reaction. Its actions and resources remain spent.' };

@@ -3,11 +3,12 @@ export const conditionSpells={
  'laughing-fit':{save:'will',range:30,sustained:true},
  stupefy:{save:'will',range:30},blindness:{save:'fortitude',range:30},
  'void-warp':{save:'fortitude',range:30,damage:true},
+ 'vampiric-feast':{save:'fortitude',range:5,damage:true,drain:true},
 };
 export function conditionSpellValue(state,spell,enemy){
  if(enemy.lineOfSight===false||enemy.lineOfEffect===false||enemy.distance>spell.range||
   enemy.awareness?.searchRequired&&!enemy.awareness.allowAttackEstimate&&!enemy.awareness.attackOnSight)return 0;
- if(state.spellAttempts?.some(a=>a.targetId===enemy.id&&a.slug===spell.slug&&a.untilRound>=state.round))return 0;
+ if(!spell.damage&&state.spellAttempts?.some(a=>a.targetId===enemy.id&&a.slug===spell.slug&&a.untilRound>=state.round))return 0;
  if(spell.sustained&&state.activeSustained?.some(c=>c.slug===spell.slug&&c.targetId===enemy.id))return 0;
  const p=checkProbabilities(state.self.referenceAC-10,spell.dc),role=enemy.tactics?.role;
  const flat=enemy.concealmentDC?(21-enemy.concealmentDC)/20:1;
@@ -18,7 +19,9 @@ export function conditionSpellValue(state,spell,enemy){
  // Lasting denial can affect more than the present exchange. Use a bounded
  // two-turn estimate, rather than comparing its first round to all damage
  // from an immediate cantrip. No actual opposing save or outcome is read.
- return denial*flat*(spell.slug==='void-warp'?1:1.7);
+ const damageSpell=Number(spell.damage)>0;
+ const tempHP=spell.drain?Math.max(0,denial*flat/2-(state.self.tempHP??0))*(0.55+0.35*(1-(state.self.hpFraction??1))):0;
+ return denial*flat*(damageSpell?1:1.7)+tempHP;
 }
 export function conditionCastingCandidates(state){
  if(state.self.unable||state.self.restrained||state.morale?.broken)return [];
@@ -27,7 +30,7 @@ export function conditionCastingCandidates(state){
   if(value<=reserve)return [];
   return [{id:`condition-spell:${spell.id}:${enemy.id}`,kind:'castSpell',spellId:spell.id,spellSlug:spell.slug,spellName:spell.name,
    targetId:enemy.id,actionCost:spell.actionCost,mapIncreases:0,legal:true,provokes:true,
-   features:{spell:true,conditionSpell:true,blocksForecast:spell.slug==='blindness'?[`gaze:${enemy.id}`]:[]},assessment:{value:value-reserve},
+   features:{spell:true,conditionSpell:true,spellRole:spell.drain?'drain':Number(spell.damage)>0?'damage':'control',blocksForecast:spell.slug==='blindness'?[`gaze:${enemy.id}`]:[]},assessment:{value:value-reserve},
    scoringTerms:[{label:'Estimated condition or damage benefit using benchmark saves',contribution:value},{label:'Conserve native spell slots',contribution:-reserve}]}];
  }):[]);
 }

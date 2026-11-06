@@ -14,12 +14,12 @@ const source=f=>({actor:f.actor,token:f.boss});
 test('the supplied Dero export has a taught caster profile and complete native slot availability',async()=>{
  const f=caster(),s=await snapshot(f.adapter);
  assert.equal(creatureProfile(f.actor).id,'dero-magister');
- assert.deepEqual(s.spells.map(s=>s.slug).sort(),['blindness','laughing-fit','stupefy','void-warp']);
+ assert.deepEqual(s.spells.map(s=>s.slug).sort(),['blindness','laughing-fit','stupefy','vampiric-feast','void-warp']);
  assert.equal(s.spellSlots,11);assert.ok(s.spells.every(s=>s.available));
  assert.ok(f.adapter.parts().unsupported.includes('Phantom Pain'),'untaught spells must be reported explicitly');
 });
 test('a complete Dero turn casts a native two-action spell and uses its once-per-round gaze',async()=>{
- const f=caster(),result=await new TurnRunner(f.adapter).run();
+ const f=caster();f.player.document.x=300;const result=await new TurnRunner(f.adapter).run();
  assert.equal(result.uncertain,false);assert.equal(result.actionsRemaining,0);
  assert.equal(f.calls.filter(c=>c[0]==='consume-spell').length,1);
  assert.equal(f.calls.filter(c=>c[0]==='spell-save').length,2);
@@ -80,7 +80,7 @@ test('Blindness grants its temporary immunity on a critical success without appl
  game.time.worldTime=61;await advanceOngoingSpells();assert.equal(f.player.actor.itemTypes.effect.length,0);
 });
 test('a Dero can select Sustain plus a new two-action spell without assuming the previous save failed',async()=>{
- const f=caster(),s=spell(f,'laughing-fit');await beginSustainedCast(source(f),s,f.player);
+ const f=caster(),s=spell(f,'laughing-fit');f.player.document.x=300;await beginSustainedCast(source(f),s,f.player);
  game.combat.round=2;const state=await snapshot(f.adapter),candidates=f.adapter.candidates(state);
  assert.ok(candidates.some(c=>c.kind==='sustainSpell'));
  const decision=f.adapter.decide(state);assert.ok(decision.chosen.features.turnPlan.some(step=>step.kind==='sustainSpell'));

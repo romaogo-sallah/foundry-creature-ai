@@ -1,0 +1,170 @@
+{
+  "date": "2026-11-06",
+  "version": "0.38.0",
+  "battle": {
+    "combat": {
+      "id": "FLkab2aTQ1SoRyYI",
+      "round": 19,
+      "turn": 5
+    },
+    "decisions": 302,
+    "casts": {
+      "blindness": 5,
+      "laughing-fit": 4,
+      "void-warp": 1
+    },
+    "evidence": [
+      {
+        "id": "7Xjk1rzOUhXqTyKB",
+        "turn": "FLkab2aTQ1SoRyYI:2:ad9zpHv7YDHAmbLp",
+        "choice": "condition-spell:9e83JGqtlV9gW82I:UE82hzk11XooAYSm",
+        "feastWasUnsupported": true,
+        "knownDistances": [
+          70,
+          60,
+          40,
+          30
+        ]
+      },
+      {
+        "id": "5ybAU1q0Hgwyn4tJ",
+        "turn": "FLkab2aTQ1SoRyYI:2:SqJv1aSQRMJ4Eupi",
+        "choice": "condition-spell:9e83JGqtlV9gW82I:dQ8LHewTN13w59gF",
+        "feastWasUnsupported": true,
+        "knownDistances": [
+          20,
+          80,
+          65,
+          70
+        ]
+      },
+      {
+        "id": "QKtLU0VN8FjXt1y1",
+        "turn": "FLkab2aTQ1SoRyYI:3:ad9zpHv7YDHAmbLp",
+        "choice": "condition-spell:9e83JGqtlV9gW82I:dQ8LHewTN13w59gF",
+        "feastWasUnsupported": true,
+        "knownDistances": [
+          30,
+          10,
+          40,
+          25
+        ]
+      },
+      {
+        "id": "OyQeYRLryqUFWPxX",
+        "turn": "FLkab2aTQ1SoRyYI:3:SqJv1aSQRMJ4Eupi",
+        "choice": "condition-spell:9e83JGqtlV9gW82I:IRK4wtZfeY46WJCM",
+        "feastWasUnsupported": true,
+        "knownDistances": [
+          30,
+          30,
+          55,
+          50
+        ]
+      },
+      {
+        "id": "c3Mil1dXqSbs1kIO",
+        "turn": "FLkab2aTQ1SoRyYI:4:ad9zpHv7YDHAmbLp",
+        "choice": "condition-spell:YjZKrM6UqE6SGsLw:IRK4wtZfeY46WJCM",
+        "feastWasUnsupported": true,
+        "knownDistances": [
+          35,
+          15,
+          40,
+          15
+        ]
+      },
+      {
+        "id": "zLrRYFoj43JR2LlD",
+        "turn": "FLkab2aTQ1SoRyYI:4:SqJv1aSQRMJ4Eupi",
+        "choice": "condition-spell:YjZKrM6UqE6SGsLw:dQ8LHewTN13w59gF",
+        "feastWasUnsupported": true,
+        "knownDistances": [
+          5,
+          15,
+          55,
+          40
+        ]
+      },
+      {
+        "id": "LiSl4ss3vMiWizli",
+        "turn": "FLkab2aTQ1SoRyYI:5:ad9zpHv7YDHAmbLp",
+        "choice": "condition-spell:YjZKrM6UqE6SGsLw:JePpAvO4isZE65jr",
+        "feastWasUnsupported": true,
+        "knownDistances": [
+          30,
+          20
+        ]
+      },
+      {
+        "id": "hTOYBvAWKr8BtacW",
+        "turn": "FLkab2aTQ1SoRyYI:5:SqJv1aSQRMJ4Eupi",
+        "choice": "condition-spell:9e83JGqtlV9gW82I:UE82hzk11XooAYSm",
+        "feastWasUnsupported": true,
+        "knownDistances": [
+          60,
+          30
+        ]
+      }
+    ],
+    "findings": [
+      "Vampiric Feast was omitted by the taught-spell whitelist.",
+      "Damage cantrips incorrectly shared the two-round control retry suppression.",
+      "Move-and-cast forecasts did not carry a fresh reaction-risk estimate at the destination."
+    ]
+  },
+  "changes": [
+    "Native Vampiric Feast execution and source-owned temporary HP.",
+    "Shared control, damage and life-drain caster plans.",
+    "Damage casts may repeat; control attempt memory and hidden-result independence remain intact."
+  ],
+  "tests": {
+    "pass": 1008,
+    "fail": 0,
+    "workers": 11,
+    "durationSeconds": 20.2
+  },
+  "native": {
+    "version": "0.38.0",
+    "near": {
+      "spell": "vampiric-feast",
+      "plan": "spell-drain",
+      "actionCost": 2,
+      "map": 0,
+      "expectedDamage": 21,
+      "distance": 5
+    },
+    "far": {
+      "plan": "spell-control",
+      "spell": "laughing-fit",
+      "distance": 30
+    },
+    "temporaryHP": {
+      "postResistanceDamage": 14,
+      "awarded": 7,
+      "nativeRuleGrant": 7,
+      "duration": 60,
+      "rule": {
+        "key": "TempHP",
+        "value": 7
+      }
+    },
+    "combat": {
+      "id": "FLkab2aTQ1SoRyYI",
+      "round": 19,
+      "turn": 5
+    },
+    "actorCountBefore": 159,
+    "actorCountAfter": 159,
+    "newActors": 0,
+    "moduleErrors": [],
+    "valid": true
+  },
+  "installed": {
+    "filesVerified": 225,
+    "archiveSHA256": "3985029521de0b63de8fd2692b4387b4c947b28e0086c4c702a7569494fac65e"
+  },
+  "serverRestarted": false,
+  "activation": "Refresh every client with Ctrl+F5.",
+  "method": "Read-only battle/chat inspection; guarded detached actor/token decision previews and native TempHP preparation/onCreate with persistent actor methods blocked and diagnostic broadcast suppressed. No world actors, slots, damage or combat state were changed."
+}

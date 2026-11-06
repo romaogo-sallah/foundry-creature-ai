@@ -5,6 +5,7 @@ import { standardArmorClass } from '../dawnsbury/chooser.mjs';
 import { canAssignTarget, combatantSceneId, targetingMode, targetRoster } from './targeting.mjs';
 import { incapacitationReason, encounterOutcome, occupiesMovementSpace } from './combat-state.mjs';
 import {actionRestriction} from './action-restrictions.mjs';
+import {captureAppliedDamage} from './resolved-damage.mjs';
 import { clearAttackPath, clearSightPath } from './attack-path.mjs';
 import {sharesVerticalSpace} from './vertical-space.mjs';
 import { unsupportedMovementRegions, terrainMovementPath } from './movement-regions.mjs';
@@ -417,10 +418,12 @@ export class PF2eCreatureAdapter {
       for (const cell of cells) {
         if (!cell.cost) continue;
         const reactors = new Set(cell.risk.reactionIds);
+        const destinationThreats=at(cell).length;
         const move = { ...cell, kind: self.prone ? 'crawl' : freeStride ? 'escapeStride' : 'stride',
           retreatDistance: exitDistances?.get(`${cell.x},${cell.y}`),
           nearestEnemy: approach.distanceAt(cell),
-          provokes: reactors.size > 0, reactionRisk: reactors.size * averageDamage, destinationThreatened: at(cell).length > 0,
+          provokes: reactors.size > 0, reactionRisk: reactors.size * averageDamage, destinationThreatened: destinationThreats > 0,
+          destinationReactionRisk: destinationThreats * averageDamage,
           terrainRisk: terrainRiskForPath(this.token,cell.path,node=>this.waypoint(node)),
           targets: Object.fromEntries(targets.map(t => [t.id, this.targetAt(cell, t, allyMap.get(t.id))])) };
         moves.push(move);
@@ -633,13 +636,13 @@ export class PF2eCreatureAdapter {
   async executeProfileAction(choice) { throw new Error(`Unsupported capability action: ${choice.kind}`); }
   async recordOutcome() {}
 
-  async applyDamage(target, damage, item, outcome, { valid = () => true } = {}) {
-    const apply = () => this.applyResolvedDamage(target, damage, item, outcome, { valid });
+  async applyDamage(target, damage, item, outcome, { valid = () => true, captureDamage = false } = {}) {
+    const apply = () => this.applyResolvedDamage(target, damage, item, outcome, { valid, captureDamage });
     // Keep the shared barrier through native HP/shield updates and confirmation,
     // rather than releasing it as soon as the owner clicks a dialog button.
     return this.config.pauseForReactions !== false && this.reactions ? this.reactions.resolve(apply) : apply();
   }
-  async applyResolvedDamage(target, damage, item, outcome, { valid }) {
+  async applyResolvedDamage(target, damage, item, outcome, { valid, captureDamage = false }) {
     const relationship = this.actor.isAllyOf(target.actor) ? 'origin:ally' : this.actor.isEnemyOf(target.actor) ? 'origin:enemy' : 'origin:neutral';
     const flags = [...this.actor.getSelfRollOptions('origin'), ...target.actor.getSelfRollOptions(), relationship,
       ...this.actor.getRollOptions(['all', 'damage']).filter(option => !/^(self|target):/.test(option)),
@@ -648,8 +651,10 @@ export class PF2eCreatureAdapter {
     const block = this.config.pauseForReactions !== false && this.reactions
       ? await this.reactions.shieldBlock({ origin: this.token, target, damage, valid: damageValid }) : false;
     if (!damageValid()) throw new Error('Automation stopped before damage application. Resolve the rolled damage and correct action counts before resuming.');
-    await target.actor.applyDamage({ damage, token: target.document, item, rollOptions: new Set(flags), outcome, shieldBlockRequest: Boolean(block) });
+    const apply=()=>target.actor.applyDamage({ damage, token: target.document, item, rollOptions: new Set(flags), outcome, shieldBlockRequest: Boolean(block) });
+    const result=captureDamage?await captureAppliedDamage(target.actor,apply):await apply();
     if (block) await this.reactions.confirm(block.token, block.reservation);
+    return result;
   }
   async report(decision, ledger, result = {}) {
     const choice = decision.chosen;

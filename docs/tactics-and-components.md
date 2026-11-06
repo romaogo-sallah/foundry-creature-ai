@@ -95,6 +95,8 @@ ai.behaviors.catalog();      // Registered component and plan identifiers.
 
 ## Adding behavior once
 
+Version **0.38.0** adds caster plans **Spell control**, **Spell assault** and **Life drain**. They rank currently supported spells at the current position and after one affordable move, including known casting reactions at the destination. Their goals identify a spell/target opening, and policy bonuses stay bounded; recovery, legal action costs and immediate survival retain their existing gates. The plans use benchmark saves and the caster's own HP, temporary HP and resources. They do not read opposing HP or secret save results, and they do not infer that a previously cast control spell succeeded.
+
 Patch **0.37.3** fixes a withdrawal stall observed in the Arena Ogre/Kobold battle: a wounded Ogre Boss selected Avoiding, but rounds 18 and 19 ended with all three actions because the old withdrawal provider considered 30 feet sufficient despite two known archers still firing. Withdrawal now compares current and reachable positions using remembered visible weapon roles/range increments, physical firing paths, cover/concealment and movement risk. Breaking firing lines may justify moving somewhat closer; a longer exposed retreat is not automatically better. The bounded safety distances are tactical heuristics, not a rule that ranged attacks become impossible beyond them.
 
 When useful retreat movement exists, preparing a weapon without an immediate attack no longer displaces that movement. A trapped actor may still prepare a counterattack; a genuinely protected position may hold. Restricted Step/Stride-only actions retain their restriction. These estimates do not inspect opposing HP, remaining ammunition, saves or secret Stealth outcomes.

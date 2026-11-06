@@ -21,7 +21,8 @@ function afterAction(state, action) {
 
 function moveState(state, move) {
   return { ...state, actionsRemaining: state.actionsRemaining - 1,
-    self: { ...state.self, cell: { x: move.x, y: move.y }, threatened: Boolean(move.destinationThreatened) },
+    self: { ...state.self, cell: { x: move.x, y: move.y }, threatened: Boolean(move.destinationThreatened),
+      reactionRisk:move.destinationReactionRisk??(move.destinationThreatened?state.self.reactionRisk??move.reactionRisk??0:0) },
     nearestEnemy: move.nearestEnemy, spells: (move.spells ?? state.spells).map(spell => ({ ...spell,
       available: spell.available && (spell.cantrip || state.spellSlots > 0) })),
     enemies: state.enemies.map(enemy => ({ ...enemy, ...move.targets[enemy.id],

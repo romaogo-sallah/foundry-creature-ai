@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.38.0:** teaches the Dero Magister Vampiric Feast with native Fortitude saves, void damage and source-tracked one-minute temporary HP based on actual post-resistance damage. Casters compare Spell control, Spell assault and Life drain opportunities, including affordable approaches and known casting reactions at the destination. Damage spells no longer inherit the control-spell retry cooldown. Reload every client with **Ctrl+F5**.
+
 **Patch 0.37.3:** fixes wounded NPCs holding still under ranged fire because their retreat stopped at 30 feet. Avoiding now weighs known weapon range, blocked firing lines, cover and movement risk, and prioritizes an available safer retreat over unnecessary weapon preparation. Tactical captions have their own cached text object beside the native elevation tooltip, eliminating competing text writes with Global Auto Level Change. Reload every client with **Ctrl+F5**.
 
 **Patch 0.37.2:** restores stealth, cover and concealment captions when Global Auto Level Change overwrites token tooltip text. A batched post-refresh repair preserves the module's elevation display and appends cached observer-relative captions without additional geometry or render loops. Select one observer token and reload every client with **Ctrl+F5**.

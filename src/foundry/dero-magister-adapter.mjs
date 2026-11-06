@@ -30,6 +30,7 @@ export class PF2eDeroMagisterAdapter extends PF2eBasicNPCAdapter{
   const attempts=this.token.document.getFlag(ns,'conditionCaster');
   state.round=game.combat.round;state.spellAttempts=attempts?.combatId===game.combat.id?attempts.attempts??[]:[];
   state.self.hpFraction=this.actor.hitPoints.value/Math.max(1,this.actor.hitPoints.max);
+  state.self.tempHP=this.actor.hitPoints.temp??this.actor.system.attributes.hp.temp??0;
   state.spells=parts.spells.map(spell=>{
    const rank=spell.rank,spec=conditionSpells[spell.slug],available=spell.isCantrip||parts.entry.system.slots[`slot${rank}`]?.value>0;
    const base=spell.system.level.value,interval=spell.system.heightening?.interval??1;
@@ -82,7 +83,7 @@ export class PF2eDeroMagisterAdapter extends PF2eBasicNPCAdapter{
  async recordOutcome(choice,ledger,result={}){
   if(result.skipped)return;const old=this.token.document.getFlag(ns,'conditionCaster'),previous=old?.combatId===game.combat.id?old:{};
   const attempts=(previous.attempts??[]).filter(a=>a.untilRound>=game.combat.round);
-  if(choice.kind==='castSpell'&&result.lastAction?.kind==='castSpell')attempts.push({slug:choice.spellSlug,targetId:choice.targetId,untilRound:game.combat.round+(choice.spellSlug==='blindness'?10:2)});
+  if(choice.kind==='castSpell'&&result.lastAction?.kind==='castSpell'&&!conditionSpells[choice.spellSlug]?.damage)attempts.push({slug:choice.spellSlug,targetId:choice.targetId,untilRound:game.combat.round+(choice.spellSlug==='blindness'?10:2)});
   await this.token.document.setFlag(ns,'conditionCaster',{...previous,combatId:game.combat.id,attempts,...choice.kind==='gaze'?{stareRound:game.combat.round}:{}});
  }
 }

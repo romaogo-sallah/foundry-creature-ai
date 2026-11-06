@@ -3,6 +3,7 @@ import { castingCandidates } from '../framework/spell-evaluation.mjs';
 import { casterStealthKnowledge } from './caster-stealth.mjs';
 import { casterTargetKnowledge } from './caster-target-knowledge.mjs';
 import {withdrawalPosition} from '../framework/withdrawal.mjs';
+import {casterScenarios} from '../framework/caster-scenarios.mjs';
 import { clearSightPath } from './attack-path.mjs';
 import { reveal, detectionFor, STEALTH_MOVEMENT } from './stealth-awareness.mjs';
 import { executeSharedHide, executeSharedSneak, sneakSpeed, retainStepStealth, stealthAdapter } from './shared-stealth.mjs';
@@ -140,12 +141,13 @@ async function enrichState(adapter,state) {
   for(const id of configuration.components) if(tacticalBehaviors.components.get(id).enrich)
     state=await tacticalBehaviors.components.get(id).enrich(state,adapter,configuration.parameters[id]??{})??state;
   state.behavior.context=battleContext(adapter,state);
+  state.casterScenarios=casterScenarios(state);
   state.behavior.selection=tacticalBehaviors.select(state);
   if(state.behavior.selection.planId==='lay-low')state.diagnostics.noActionReason='Known enemies are above available attack reach. Hold protection and estimated stealth until an attack becomes possible; Hide still requires cover or concealment.';
   // A chosen tactic can activate a creature's existing forecast modules too;
   // aggressive casters no longer inherit the defensive waiting posture.
   if(state.casterDefense)state.casterDefense={...state.casterDefense,
-    enabled:['defensive','hiding','avoiding','kiting'].includes(state.behavior.selection.planId)};
+    enabled:['defensive','hiding','avoiding','kiting','spell-control'].includes(state.behavior.selection.planId)};
   return state;
 }
 

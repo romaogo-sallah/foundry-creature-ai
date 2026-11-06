@@ -6,6 +6,9 @@ export function fixture({saveDegree=1,size=14}={}){
  const f=baseFixture({npcData:deroData,Adapter:PF2eDeroMagisterAdapter,footprint:1,size});f.saveDegree=saveDegree;let sequence=0;
  globalThis.foundry={utils:{randomID:()=>`test${++sequence}`}};
  globalThis.ui={notifications:{warn:()=>{},info:()=>{},error:()=>{}}};game.time={worldTime:0};game.modules=new Map();
+ const hooks=new Map();globalThis.Hooks={on:(name,fn)=>hooks.set(name,[...hooks.get(name)??[],fn]),
+  off:(name,fn)=>hooks.set(name,(hooks.get(name)??[]).filter(callback=>callback!==fn)),
+  callAll:(name,...args)=>{for(const fn of hooks.get(name)??[])fn(...args);}};f.hooks=hooks;
  f.player.actor.level=5;
  class DamageRoll{
   constructor(formula){this.formula=formula;this.total=10;this.instances=[{type:'void',total:10}];}
@@ -16,6 +19,13 @@ export function fixture({saveDegree=1,size=14}={}){
  globalThis.CONFIG={Dice:{rolls:[DamageRoll]}};
  globalThis.Roll=class {async evaluate(){return {total:20,toMessage:async data=>f.calls.push(['flat-message',data])};}};
  for(const actor of [f.actor,f.player.actor]){
+  actor.hitPoints.temp=0;
+  const nativeDamage=actor.applyDamage;
+  actor.applyDamage=async options=>{
+   const amount=f.damageAfterIWR??Math.floor(options.damage.total);
+   await nativeDamage({...options,damage:{...options.damage,total:amount}});
+   Hooks.callAll('updateActor',actor,{}, {damageTaken:amount});
+  };
   actor.flags={pf2e:{}};const values=new Map(),previous=new Set(),create=actor.createEmbeddedDocuments,remove=actor.deleteEmbeddedDocuments,getCondition=actor.getCondition;
   const rebuild=()=>{
    for(const slug of previous)actor.conditionsSet.delete(slug);previous.clear();values.clear();actor.flags.pf2e={};
@@ -30,8 +40,12 @@ export function fixture({saveDegree=1,size=14}={}){
    return options?.all?c.map(e=>({...e,value:values.get(slug),inMemoryOnly:true})):{...c,value:values.get(slug),inMemoryOnly:true};};
   actor.createEmbeddedDocuments=async(...args)=>{const effects=await create(...args);
    for(const effect of effects){const update=effect.update;effect.update=async changes=>{await update(changes);rebuild();};}
+   for(const effect of effects)for(const rule of effect.system.rules??[])if(rule.key==='TempHP'&&rule.value>actor.hitPoints.temp){
+    actor.hitPoints.temp=rule.value;actor.system.attributes.hp.tempSource=effect.id;}
    rebuild();return effects;};
-  actor.deleteEmbeddedDocuments=async(...args)=>{await remove(...args);rebuild();};
+  actor.deleteEmbeddedDocuments=async(...args)=>{if(args[1].includes(actor.system.attributes.hp.tempSource)){
+   actor.hitPoints.temp=0;delete actor.system.attributes.hp.tempSource;}
+   await remove(...args);rebuild();};
   const get=actor.getStatistic;actor.getStatistic=slug=>{const stat=get(slug);
    if(['will','fortitude','reflex'].includes(slug))stat.check.roll=async options=>{
     f.calls.push(['spell-save',actor.id,slug,options]);return {degreeOfSuccess:f.saveDegree};};

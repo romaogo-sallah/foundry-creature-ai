@@ -24,6 +24,7 @@ export const applyConditionSpell=(...args)=>serialize(()=>applySpell(...args));
 export const sustainCast=(...args)=>serialize(()=>sustain(...args));
 export const endSustainedCast=(...args)=>serialize(()=>endCast(...args));
 export const resetOngoingSpells=(...args)=>serialize(()=>resetSpells(...args));
+export const grantVampiricTempHP=(...args)=>serialize(()=>grantTempHP(...args));
 export function advanceOngoingSpells({token,phase='time',round=game.combat?.round,combat=game.combat}={}){
  return serialize(()=>advanceSpells({token,phase,round,combat}));
 }
@@ -32,6 +33,19 @@ const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 function nextStart(token){
  const combat=game.combat,index=(combat?.turns??combat?.combatants??[]).findIndex(c=>c.tokenId===token?.id);
  return index<0||!combat?.started?null:{tokenId:token.id,round:combat.round+Number(index<=combat.turn)};
+}
+async function grantTempHP(source,spell,damageTaken){
+ if(!Number.isFinite(damageTaken)||damageTaken<0)throw new Error('Vampiric Feast needs resolved post-resistance damage');
+ const amount=Math.floor(damageTaken/2),current=source.actor.hitPoints.temp??source.actor.system.attributes.hp.temp??0;
+ if(amount<=current)return {amount:0,temporaryHP:current};
+ const data={slug:'vampiric-feast',sourceActor:source.actor.uuid,sourceTokenId:source.token.id,targetId:source.token.id,
+  combatId:game.combat?.id??null,expiresAt:now()+60,startDeadline:null,phaseDeadline:null};
+ await source.actor.createEmbeddedDocuments('Item',[{name:'Vampiric Feast — temporary HP',type:'effect',img:spell.img??'icons/svg/blood.svg',
+  system:{slug:'creature-ai-vampiric-feast',duration:{unit:'unlimited',value:-1,expiry:null,sustained:false},
+   level:{value:spell.rank},tokenIcon:{show:true},rules:[{key:'TempHP',value:amount}],
+   context:{origin:{actor:source.actor.uuid,token:source.token.document.uuid,item:spell.uuid,spellcasting:null,rollOptions:[]}}},
+  flags:{[ns]:{ongoingSpell:data}}}]);
+ return {amount:amount-current,temporaryHP:amount};
 }
 export function conditionSpellRules(slug,degree){
  if(slug==='laughing-fit')return [flag('noUseReactions'),...(degree===0?[flag('noActions')]:degree===1?[condition('slowed')]:[])];

@@ -3,6 +3,7 @@ import { recoveryCandidates } from './recovery.mjs';
 import { seekCandidates } from './perception.mjs';
 import { preparedStrikeCandidates } from './strike-capability.mjs';
 import {withdrawalCandidates} from './withdrawal.mjs';
+import {scenarioBonus} from './caster-scenarios.mjs';
 
 const movement = candidate => candidate.assessment?.movement;
 const attack = candidate => ['strike','eagleDive','spikeVolley','castSpell','trip','knockdown','sweepingHook'].includes(candidate.kind);
@@ -43,6 +44,15 @@ tacticalBehaviors.registerComponent({id:'assist',label:'Enable allies',kind:'pol
   adjust:candidate=>candidate.kind==='bellow'?0.75:['trip','knockdown'].includes(candidate.kind)?0.3:0});
 tacticalBehaviors.registerComponent({id:'withdraw',label:'Avoid immediate danger',kind:'policy',
   candidates:withdrawalCandidates});
+
+for(const [role,label]of [['control','Control an open threat'],['damage','Exploit a damage opening'],['drain','Damage while building a temporary HP buffer']]){
+  tacticalBehaviors.registerComponent({id:`spell-${role}`,label,kind:'policy',adjust:(candidate,state)=>scenarioBonus(role,candidate,state)});
+  tacticalBehaviors.registerPlan({id:`spell-${role}`,label:role==='control'?'Spell control':role==='damage'?'Spell assault':'Life drain',
+    requires:['spellcasting'],components:[`spell-${role}`,...role==='control'?['protection']:['pressure']],
+    score:(_context,state)=>state.casterScenarios?.[role]?{value:6+Math.min(6,state.casterScenarios[role].value*0.25),
+      reason:role==='control'?'A supported control spell has the best local opening':role==='damage'?'An affordable damage spell can exploit the current position':'Touch damage and additional temporary HP are worth the approach risk'}:null,
+    objective:(_context,state)=>({kind:`spell-${role}`,label,...state.casterScenarios[role]})});
+}
 
 function objective(id,context,state,previous){
   if(['aerial-engage','aerial-disengage'].includes(id))return {kind:id,...state.flight.airCombat};
@@ -96,8 +106,10 @@ export const defaultBehaviorConfiguration = profileId => ({
     ...(profileId==='manticore-quill'?['volleys']:[]),
     ...(['goblin-pyro','dero-magister','generic'].includes(profileId)?['spellcasting']:[]),...(['ogre-boss','generic'].includes(profileId)?['leadership']:[]),
     ...['wolf','kobold-scout'].includes(profileId)?['pack']:[],
-    'pressure','advance','protection','distance','surround','assist','withdraw'],
-  plans:['aggressive','defensive','avoiding','hiding','lay-low','charge','kiting','swarming','supporting'],
+    'pressure','advance','protection','distance','surround','assist','withdraw',
+    ...['goblin-pyro','dero-magister','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain']:[]],
+  plans:['aggressive','defensive','avoiding','hiding','lay-low','charge','kiting','swarming','supporting',
+    ...['goblin-pyro','dero-magister','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain']:[]],
 });
 
 export const chooseTacticalAction = (candidates,state,options) => chooseBehaviorAction(tacticalBehaviors,candidates,state,options);
