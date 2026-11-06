@@ -1,6 +1,7 @@
 import {actionRestriction} from './action-restrictions.mjs';
 import {manualConditionViolation,resolveConditionChecks} from './condition-actions.mjs';
 import {cleanupDefinedSpells} from './defined-spell-effects.mjs';
+import {observeSustain} from './spell-observations.mjs';
 const ns='foundry-creature-ai',query=`${ns}.ongoingSpell`;
 const statuses={slowed:'xYTAsEpcJE1Ccni3',stupefied:'e1XGnhKNSQIm5IXg',blinded:'XgEqL1kFApUbl5Z2',enfeebled:'MIRkyAjyBeXivMa7',dazzled:'TkIyaNPgTZFBCCuh',confused:'yblD8fOR1J8rDwEQ'};
 const condition=(slug,value=1)=>({key:'GrantItem',uuid:`Compendium.pf2e.conditionitems.Item.${statuses[slug]}`,inMemoryOnly:true,
@@ -66,7 +67,7 @@ async function applySpell({source,target,spell,degree,castId}){
  if(['laughing-fit','void-warp'].includes(spell.slug)&&target.actor.modeOfBeing&&target.actor.modeOfBeing!=='living')return null;
  if(degree===3&&!['cytillesh-stare','blindness'].includes(spell.slug))return null;
  if(spell.slug==='void-warp'&&degree!==0)return null;
- if(spell.slug==='blindness'&&owned(target.actor).some(e=>e.flags[ns].ongoingSpell.slug==='blindness-immunity'&&e.flags[ns].ongoingSpell.expiresAt>now()))return null;
+ if(temporarySpellImmunity(target.actor,spell.slug))return null;
  const data={slug:spell.slug,sourceActor:source.actor.uuid,sourceTokenId:source.token?.id,targetId:target.id,combatId:game.combat?.id??null,
   castRound:game.combat?.round??0,castId:castId??null,expiresAt:null,startDeadline:null,phaseDeadline:null};
  if(spell.slug==='laughing-fit'){
@@ -103,8 +104,10 @@ async function sustain(actor,castId){
  if(!await resolveConditionChecks(actor,{kind:'sustainSpell',targetId:cast.targetId},{token,valid:()=>game.combat?.combatant?.id===current.id}))
   return {resolved:true,note:'Condition flat check failed; Sustain action spent without extending the spell.'};
  await actor.setFlag(ns,'ongoingCasts',casts.map(c=>c.id===castId?{...c,lastRound:game.combat.round,lastTime:now()}:c));
+ await observeSustain(token,cast);
  return {resolved:true,note:'Sustain: the spell continues until the end of the caster’s next turn.'};
 }
+export const temporarySpellImmunity=(actor,slug)=>slug==='blindness'&&owned(actor).some(e=>e.flags[ns].ongoingSpell.slug==='blindness-immunity'&&e.flags[ns].ongoingSpell.expiresAt>now());
 async function endCast(actor,castId){
  await cleanupDefinedSpells({castIds:[castId]});
  await actor.setFlag(ns,'ongoingCasts',casterCasts(actor).filter(c=>c.id!==castId));

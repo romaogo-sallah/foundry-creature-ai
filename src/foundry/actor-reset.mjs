@@ -1,7 +1,7 @@
 const namespace = 'foundry-creature-ai';
 const transientFlags = [
   'ledger', 'scoutGear', 'ogreGear', 'ogreAttacks', 'scoutActions', 'scoutShown', 'pyroShown', 'pyroActions','flight','eagleShown','aerialPlan','manticoreHunts','quillShown',
-  'scoutThreats', 'casterTargets', 'behaviorState', 'behaviorActions', 'conditionCaster', 'scoutFocus', 'scoutMotion', 'targetMemory', 'stealth',
+  'scoutThreats', 'casterTargets', 'spellObservations', 'behaviorState', 'behaviorActions', 'conditionCaster', 'scoutFocus', 'scoutMotion', 'targetMemory', 'stealth',
   'stealthBelief', 'perception', 'playState', 'retreated', 'scampering', 'sneakNextMove',
 ];
 
@@ -77,6 +77,11 @@ async function forgetResetActors(ids) {
   for (const token of canvas.tokens.placeables) {
     if (ids.has(token.id)) continue;
     const document = token.document;
+    const spells=document.getFlag(namespace,'spellObservations');
+    if(spells){const entries=(spells.entries??[]).filter(e=>!ids.has(e.targetId)&&!ids.has(e.sourceTokenId)),
+      threats=Object.fromEntries(Object.entries(spells.threats??{}).filter(([id])=>!ids.has(id)));
+      if(entries.length!==(spells.entries??[]).length||Object.keys(threats).length!==Object.keys(spells.threats??{}).length)
+        await document.setFlag(namespace,'spellObservations',{...spells,entries,threats});}
     for (const [key, idKey] of [['targetMemory', 'id'], ['perception', 'subjectId'],
       ['stealth', 'observerId'], ['stealthBelief', 'observerId']]) {
       const saved = document.getFlag(namespace, key);

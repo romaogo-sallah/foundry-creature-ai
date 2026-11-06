@@ -6,6 +6,7 @@ import {spellRegion,inSpellArea,sameSpellLevel} from './spell-areas.mjs';
 import {clearAttackPath} from './attack-path.mjs';
 import {environmentBetween} from './environment-zones.mjs';
 import {beginSustainedCast} from './ongoing-spells.mjs';
+import {observeSpellCast} from './spell-observations.mjs';
 const outcomes=['criticalFailure','failure','success','criticalSuccess'];
 export async function executeSpellOutcomes(adapter,spell,entry,choice,definition,{valid,attackNumber=1}){
  const healing=definition.kind==='heal',support=healing||definition.kind==='ward',target=choice.area?null:support?adapter.liveSpellTarget?.(choice.targetId):adapter.liveTarget(choice.targetId);
@@ -41,7 +42,10 @@ export async function executeSpellOutcomes(adapter,spell,entry,choice,definition
   }
   const cover=choice.area&&definition.save==='reflex'?environmentBetween(adapter.token,subject).coverBonus:0;
   let degree=1;
-  if(definition.kind==='save')degree=await spellDefenseCheck(subject,{dc:entry.statistic.dc.value,statistic:definition.save,origin:adapter.token,spell,label:spell.name,cover:cover>=2?cover:0});
+  if(definition.kind==='save'){
+   await observeSpellCast({source:{actor:adapter.actor,token:adapter.token},target:subject,spell,dc:entry.statistic.dc.value,castId:commitment?.id});
+   degree=await spellDefenseCheck(subject,{dc:entry.statistic.dc.value,statistic:definition.save,origin:adapter.token,spell,label:spell.name,cover:cover>=2?cover:0});
+  }
   else if(definition.kind==='attack'){const roll=await spell.rollAttack(null,Math.min(3,attackNumber),{target:subject.actor,token:adapter.token.document,skipDialog:true,extraRollOptions:SPELL_OPTIONS});
    if(!Number.isInteger(roll?.degreeOfSuccess))throw new Error('Spell attack was unresolved');degree=roll.degreeOfSuccess;}
   if(!valid())throw new Error('Casting changed during a spell defense');affected.push({subject,degree});
@@ -58,7 +62,7 @@ export async function executeSpellOutcomes(adapter,spell,entry,choice,definition
    const damage=choice.area?(sharedDamage??=await roll()):await roll();
    const scale=attackCritical?factor/2:factor,scaled=scale===1?damage:damage.alter(scale,0);
    if(adapter.config.applyDamage){
-    if(healing)await subject.actor.applyDamage({damage:scaled,multiplier:-1,token:subject.document,rollOptions:new Set(SPELL_OPTIONS)});
+    if(healing)await applySpellHealing(subject,scaled,spell);
     else {const applied=await adapter.applyDamage(subject,scaled,spell,outcomes[degree],{valid,captureDamage:Boolean(definition.persistent)});postDamage=applied?.damageTaken;}
    }else pause=true;
   }
@@ -68,4 +72,11 @@ export async function executeSpellOutcomes(adapter,spell,entry,choice,definition
  }
  return {resolved:true,pause,lastAction:{kind:'castSpell',spellId:spell.id,targetId:target?.id},
   note:`${spell.name}: ${affected.length} target(s) resolved with native casting resources and source-tracked effects.`};
+}
+// PF2e Actor.applyDamage accepts negative numeric damage for healing. A
+// multiplier is a chat-button option, not an Actor.applyDamage argument.
+export async function applySpellHealing(target,roll,spell){
+ if(!Number.isFinite(roll.total)||roll.total<0)throw new Error('Healing requires a resolved nonnegative total');
+ return target.actor.applyDamage({damage:-roll.total,item:spell,token:target.document,
+  rollOptions:new Set([...SPELL_OPTIONS,...spell.getRollOptions?.('item')??[],...spell.actor?.getSelfRollOptions?.('origin')??[]])});
 }

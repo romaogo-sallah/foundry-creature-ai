@@ -2,6 +2,7 @@ import {applyConditionSpell,beginSustainedCast} from './ongoing-spells.mjs';
 import {restrictionsEnabled} from './action-restrictions.mjs';
 import {spellDefinition} from '../framework/spell-definitions.mjs';
 import {applyDefinedSpellEffects} from './defined-spell-effects.mjs';
+import {observeSpellCast} from './spell-observations.mjs';
 const ns='foundry-creature-ai',query=`${ns}.conditionSpell`,supported=new Set(['laughing-fit','stupefy','blindness']);
 const has=(options,value)=>options?.has?.(value)??options?.includes?.(value)??false;
 const resolved=new Map();let resolver;
@@ -39,6 +40,8 @@ export async function resolveManualSpellSave(data,user){
  let commitment;if(spell.slug==='laughing-fit')commitment=await beginSustainedCast({actor:spell.actor,token:sourceToken},spell,target,`manual-${message.id}`);
  if(target.actor.isImmuneTo?.(spell))return null;
  const definition=spellDefinition(spell);
+ await observeSpellCast({source:{actor:spell.actor,token:sourceToken},target,spell,castId:commitment?.id,observationId:`manual-${message.id}`,
+  dc:spell.spellcasting?.statistic?.dc?.value??spell.actor.itemTypes.spellcastingEntry.find(e=>e.id===spell.system.location.value)?.statistic.dc.value});
  if(definition?.resolver==='outcomes')return applyDefinedSpellEffects({source:{actor:spell.actor,token:sourceToken},target,spell,definition,degree,
   dc:spell.spellcasting?.statistic?.dc?.value??spell.actor.itemTypes.spellcastingEntry.find(e=>e.id===spell.system.location.value)?.statistic.dc.value});
  return applyConditionSpell({source:{actor:spell.actor,token:sourceToken},target,spell,degree,castId:commitment?.id});

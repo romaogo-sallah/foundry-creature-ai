@@ -14,7 +14,7 @@ export function fixture(options={}){
   actor.createEmbeddedDocuments=async(...args)=>{const result=await create(...args);sync();return result;};
   actor.deleteEmbeddedDocuments=async(...args)=>{await remove(...args);sync();};
   actor.decreaseCondition=async condition=>{if(condition.value>1){condition.system.value.value--;condition.value--;}else await actor.deleteEmbeddedDocuments('Item',[condition.id]);sync();};
-  const damage=actor.applyDamage;actor.applyDamage=async options=>{if(options.multiplier===-1){actor.hitPoints.value=Math.min(actor.hitPoints.max,actor.hitPoints.value+options.damage.total);f.calls.push(['healing-applied',actor.id,options.damage.total]);return;}return damage(options);};
+  const damage=actor.applyDamage;actor.applyDamage=async options=>{if(typeof options.damage==='number'&&options.damage<0){actor.hitPoints.value=Math.min(actor.hitPoints.max,actor.hitPoints.value-options.damage);f.calls.push(['healing-applied',actor.id,-options.damage,options]);return;}return damage(options);};
  }
  const BaseRoll=CONFIG.Dice.rolls[0];CONFIG.Dice.rolls=[class DamageRoll extends BaseRoll{constructor(formula){super(formula);f.calls.push(['native-damage-formula',formula]);}}];
  for(const entry of f.actor.itemTypes.spellcastingEntry)entry.consume=async(spell,rank,slotId)=>{

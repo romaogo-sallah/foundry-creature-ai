@@ -2,6 +2,12 @@
 
 NPC spellcasting is a reusable capability rather than a monster-specific spell list. An NPC with native spellcasting entries receives the generic caster fallback when it has no taught creature kit. Existing taught kits also gain the spell capability while retaining their own Strikes, abilities, movement and reactions. The Dero and Goblin Pyro use the same spell library.
 
+Patch **0.40.1** corrects native healing execution and applies tactical score adjustments once. Witnesses remember allied spell attempts, not secret save outcomes. Observed Blindness casts establish a one-minute immunity window; other control casts reduce the estimated incremental value of repeating the same effect. Observed Sustain extends that belief. Memories expire and reset with the encounter or actor reset, including other observers' knowledge of a reset source/target.
+
+Incapacitation valuation mixes normal and improved-save probabilities using an uncertain enemy strength estimate. Witnessed public Strike modifiers supply a rough NPC attack benchmark (modifier minus 10, with two levels of uncertainty); secret/private rolls and actual opposing levels/saves are excluded. Without evidence, the caster's own level supplies the uncertain baseline. This is a tactical heuristic, not Recall Knowledge or guaranteed identification. Native PF2e still resolves actual Incapacitation rules. Brief Blindness success value also considers allied turns before the target's next start and the caster's remaining actions.
+
+Soothe now passes negative damage to native `Actor.applyDamage`, preserving native healing adjustments and the spell origin. The supplied Dero's innate entry explicitly sets auto-heightening to rank 1, so Daze remains rank 1 until the GM changes that native entry setting; its lower rank is not overridden by AI.
+
 Select an unlinked NPC token, open **Alt+W**, save its normal automation preferences and preview/run its turn. No separate caster checkbox is needed for default behavior configurations. If an actor has an explicitly customized component list, enable **Spellcasting** in **Tactics / behaviors**. **Spell AI** opens the shared-definition editor; it is also available on the token toolbar.
 
 ## What the engine evaluates

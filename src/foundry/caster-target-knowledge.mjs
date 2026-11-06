@@ -1,4 +1,5 @@
 import { targetKnowledge } from './target-memory.mjs';
+import {witnessedThreat} from './spell-observations.mjs';
 
 const namespace = 'foundry-creature-ai';
 
@@ -21,7 +22,7 @@ export function casterTargetKnowledge(adapter) {
   const saved = adapter.token.document.getFlag(namespace, 'casterTargets');
   const entries = { ...(saved?.combatId === combatId && saved.sceneId === sceneId ? saved.entries : {}) };
   for (const check of targetKnowledge(adapter).checks) {
-    if (check.awareness?.state === 'observed' && check.target) entries[check.id] = apparentCombatRole(check.target.actor);
+    if (check.awareness?.state === 'observed' && check.target) entries[check.id] = {...apparentCombatRole(check.target.actor),...witnessedThreat(adapter.token,check.id)};
   }
   return { combatId, sceneId, entries };
 }

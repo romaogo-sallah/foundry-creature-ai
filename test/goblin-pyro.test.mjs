@@ -154,5 +154,5 @@ test('Alt+W recognizes the supplied caster, saves its settings and runs its nati
   const ledger=await main.openControls(f.boss);
   assert.equal(typeof game.modules.get(ns).api.behaviors.configure,'function');
   assert.equal(ledger.attacksMade,1);assert.equal(ledger.done,true);assert.equal(f.adapter.config.packMorale,false);
-  assert.equal(game.modules.get(ns).api.version,'0.40.0');
+  assert.equal(game.modules.get(ns).api.version,'0.40.1');
 });

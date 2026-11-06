@@ -1,0 +1,65 @@
+{
+  "date": "2026-11-07",
+  "version": "0.40.1",
+  "method": "Actual PF2e Actor.applyDamage on a detached native actor. Actor updates were intercepted and applied only in memory; diagnostic chat creation was intercepted. No world actor creation or live combat mutation.",
+  "changes": [
+    "Native negative-damage healing with spell origin and healing modifiers",
+    "Observer-scoped cast memory without secret save outcomes; temporary immunity and duplicate-control estimates",
+    "Public witnessed Strike strength estimates, uncertain Incapacitation probabilities and initiative-aware brief Blindness",
+    "Idempotent tactical policy scoring, including changed-plan rescoring",
+    "Actor reset clears own observation memory and other observers records for restored sources and targets"
+  ],
+  "native": {
+    "version": "0.40.1",
+    "foundry": "14.369",
+    "pf2e": "8.6.1",
+    "healing": {
+      "first": {
+        "hp": 40,
+        "tempHP": 10,
+        "healingMessage": true,
+        "hpDelta": -10
+      },
+      "cappedHP": 65,
+      "maxHP": 65,
+      "tempHP": 10,
+      "interceptedActorUpdates": 2,
+      "interceptedChatMessages": 2
+    },
+    "daze": {
+      "rank": 1,
+      "configuredAutoHeightenLevel": 1
+    },
+    "incapacitation": {
+      "criticalFailure": 0,
+      "failure": 0.05,
+      "success": 0.44999999999999996,
+      "criticalSuccess": 0.49999999999999994
+    },
+    "valid": true,
+    "actorCountBefore": 159,
+    "actorCountAfter": 159,
+    "newActors": 0,
+    "moduleErrors": []
+  },
+  "tests": {
+    "passed": 1066,
+    "failed": 0,
+    "workers": 11,
+    "log": ".scratch/release-0.40.1-tests.log",
+    "regressions": "test/caster-battle-fixes.test.mjs; test/actor-reset.test.mjs"
+  },
+  "installation": {
+    "packages": 5,
+    "verifiedFiles": 243
+  },
+  "release": {
+    "file": "releases/pf2e-tactical-suite-0.40.1.zip",
+    "sha256": "edc2d49eb1f2f0dcd7f17e94f79a056cad82cc59c25bbf9abb21999669241fb4"
+  },
+  "limitations": [
+    "The historical combat was neither replayed nor retroactively healed.",
+    "Public attack evidence is a heuristic for relative strength; unknown levels and secret saves remain unavailable to planning.",
+    "Force Barrage split targeting and injury-based overkill optimization remain future work."
+  ]
+}

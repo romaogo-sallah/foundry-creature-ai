@@ -1,11 +1,12 @@
 import {checkProbabilities} from './math.mjs';
 import {spellChoiceFields} from './spell-definitions.mjs';
 import {spellReserveCost} from './caster-tactics.mjs';
-import {estimatedSpellSave} from './spell-knowledge.mjs';
+import {spellSaveProbabilities,witnessedSpellConfidence,knownSpellImmunity} from './spell-knowledge.mjs';
 const conditionValue={stunned:8,slowed:7,blinded:9,sickened:3,frightened:3,enfeebled:2,clumsy:2,stupefied:3,dazzled:2,immobilized:5,prone:5};
 export function outcomeSpellValue(state,spell,target,{area=false}={}){
  if(!area&&(target.lineOfSight===false||target.lineOfEffect===false||target.distance>spell.range||
    target.awareness?.searchRequired&&!target.awareness.allowAttackEstimate&&!target.awareness.attackOnSight))return 0;
+ if(knownSpellImmunity(state,spell,target))return 0;
  const flat=area?1:target.concealmentDC?(21-target.concealmentDC)/20:1;
  if(spell.kind==='maneuver'){
   if(target.prone||target.spellTrippable===false)return 0;
@@ -14,14 +15,15 @@ export function outcomeSpellValue(state,spell,target,{area=false}={}){
  }
  const odds=spell.kind==='auto'?{criticalFailure:0,failure:1,success:0,criticalSuccess:0}:spell.kind==='attack'?
   checkProbabilities(spell.bonus-5*Math.min(2,state.attacksMade),state.self.referenceAC+(target.coverBonus??0)-(target.offGuard||target.prone?2:0)):
-  checkProbabilities(estimatedSpellSave(state,spell,target)+(area&&spell.save==='reflex'?(target.coverBonus??0):0),spell.dc);
+  spellSaveProbabilities(state,spell,target,{cover:area&&spell.save==='reflex'?(target.coverBonus??0):0});
  const probabilities=[odds.criticalFailure,odds.failure,odds.success,odds.criticalSuccess];
  const attempted=state.spellAttempts?.some(a=>a.slug===spell.slug&&a.targetId===target.id&&a.untilRound>=state.round);
+ const fresh=1-witnessedSpellConfidence(state,spell,target);
  return probabilities.reduce((sum,p,index)=>{
   const outcome=spell.outcomes?.[index]??{damage:[2,1,0.5,0][index]};
   const conditions=attempted?0:(outcome.conditions??[]).reduce((n,c)=>n+(target.knownConditions?.includes(c.slug)?0:(conditionValue[c.slug]??2)*(c.value??1)),0);
   const persistent=!attempted&&spell.persistent?.degrees.includes(index)?Math.min(12,spell.castRank*(spell.persistent.type==='mental'?2.5:1))*1.4:0;
-  return sum+p*(spell.damage*(outcome.damage??0)+conditions+persistent+(attempted?0:outcome.noActions?12:outcome.noReactions?4:0)+(!spell.groupOnly||state.enemies.length>1?outcome.utility??0:0));
+  return sum+p*(spell.damage*(outcome.damage??0)+fresh*(conditions+persistent+(attempted?0:outcome.noActions?12:outcome.noReactions?4:0)+(!spell.groupOnly||state.enemies.length>1?outcome.utility??0:0)));
  },0)*flat;
 }
 export function genericCastingCandidates(state){

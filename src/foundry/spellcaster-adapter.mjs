@@ -16,6 +16,7 @@ import {describeSpellAreas} from './spell-areas.mjs';
 import {detectionFor} from './stealth-awareness.mjs';
 import {inGrease} from './spell-zones.mjs';
 import {spellDefinition} from '../framework/spell-definitions.mjs';
+import {witnessedSpellCasts} from './spell-observations.mjs';
 const ns='foundry-creature-ai';
 export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
  get profileId(){return 'spellcaster';}
@@ -36,6 +37,7 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
  async enrichCasterState(state,ledger){
   const parts=this.parts(),knowledge=casterTargetKnowledge(this),attempts=this.token.document.getFlag(ns,'conditionCaster');
   state.round=game.combat.round;state.spellAttempts=attempts?.combatId===game.combat.id?attempts.attempts??[]:[];
+  state.witnessedCasts=witnessedSpellCasts(this.token);state.self.level=this.actor.level;
   state.self.hpFraction=this.actor.hitPoints.value/Math.max(1,this.actor.hitPoints.max);state.self.tempHP=this.actor.hitPoints.temp??0;
   state.resourcePools=Object.fromEntries(parts.descriptors.filter(s=>s.poolId).map(s=>[s.poolId,s.resourceRemaining]));
   state.spellSlots=Object.values(state.resourcePools).reduce((n,v)=>n+v,0);state.maxForecastActions=10;state.maxForecastMoves=20;
@@ -43,6 +45,11 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
   for(const enemy of state.enemies){enemy.tactics=knowledge.entries[enemy.id]??{role:'unknown',reach:5,speed:25};Object.assign(enemy,at[enemy.id]);
    const sizes=['tiny','sm','med','lg','huge','grg'],target=canvas.tokens.get(enemy.id);
    enemy.spellTrippable=enemy.trippable&&sizes.indexOf(target.actor.size)<=sizes.indexOf(this.actor.size)+1;}
+  const turns=Array.from(game.combat.turns??game.combat.combatants),index=game.combat.turn;
+  for(const enemy of state.enemies){const targetIndex=turns.findIndex(c=>c.tokenId===enemy.id),steps=(targetIndex-index+turns.length)%turns.length||turns.length;
+   enemy.alliedTurnsBeforeNextStart=0;
+   for(let step=1;step<steps;step++){const token=canvas.tokens.get(turns[(index+step)%turns.length]?.tokenId);
+    if(token?.actor&&(token===this.token||this.actor.isAllyOf(token.actor)))enemy.alliedTurnsBeforeNextStart++;}}
   const allies=canvas.tokens.placeables.filter(t=>t.actor?.isOfType?.('creature')&&!t.actor.isDead&&!t.actor.hasCondition('dead')&&!t.document.hidden&&(t===this.token||this.actor.isAllyOf(t.actor)&&this.sight(this.token.center,t)&&detectionFor(this.token,t).state==='observed'));
   const support=(token,cell=state.self.cell,position=this.actualWaypoint())=>({id:token.id,self:token===this.token,missingHP:Math.max(0,token.actor.hitPoints.max-token.actor.hitPoints.value),
    hpFraction:token.actor.hitPoints.value/Math.max(1,token.actor.hitPoints.max),...token===this.token?{distance:0,lineOfSight:true,lineOfEffect:true}:this.targetAt(cell,token,[],position)});
@@ -59,7 +66,7 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
   if(ledger.actionsRemaining>=3)for(const move of [...state.moves].sort((a,b)=>(a.nearestEnemy??0)-(b.nearestEnemy??0)).slice(0,12))
    move.spells=decorate(this.topLeft(move),state.enemies.map(e=>({...e,...move.targets[e.id]})));
   state.activeSustained=ongoingCasts(this.actor);state.sustained=state.activeSustained.filter(c=>c.lastRound<game.combat.round);
-  state.diagnostics={...state.diagnostics,manualAbilities:parts.unsupported,castingEntries:parts.entries.map(e=>({id:e.id,name:e.name,mode:e.system.prepared.value})),spellCatalog:parts.descriptors.map(s=>({name:s.name,rank:s.castRank,actions:s.actionCost,available:s.available,pool:s.poolId}))};
+  state.diagnostics={...state.diagnostics,manualAbilities:parts.unsupported,witnessedSpellCasts:state.witnessedCasts.map(c=>({slug:c.slug,targetId:c.targetId,immunity:c.immunity})),castingEntries:parts.entries.map(e=>({id:e.id,name:e.name,mode:e.system.prepared.value})),spellCatalog:parts.descriptors.map(s=>({name:s.name,rank:s.castRank,actions:s.actionCost,available:s.available,pool:s.poolId}))};
   return state;
  }
  casterActions(state){return [...castingCandidates(state),...preparedStrikeCandidates(state),...this.extraCasterActions(state),

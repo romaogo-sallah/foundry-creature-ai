@@ -52,3 +52,9 @@ Phantom Pain, Grim Tendrils, Daze and Forbidding Ward appeared among logged alte
 The Daze catalog also reports rank 1 while Void Warp reports rank 3 on these level-5 casters. Its innate cantrip binding/heightening deserves a separate native audit before judging Daze's competitiveness. The saved catalog establishes the discrepancy, but this review did not execute Daze or establish its underlying cause.
 
 The practical next order is **healing execution and its native test**, **shared immunity/control knowledge**, **Incapacitation and initiative-aware control value**, then **single-application tactical scoring**. After those fixes, another encounter can assess spell diversity and resource allocation. Winning this battle is useful evidence of improved engagement and action planning, but it does not validate every spell component or establish an optimal strategy across different encounters.
+
+## Applied in 0.40.1
+
+The five confirmed defects above are addressed by the [caster framework corrections](spellcaster-framework.md). Native detached-actor execution verifies that Soothe restores HP, respects maximum HP, preserves temporary HP and produces a healing record. Shared cast knowledge retains uncertainty about saves; public witnessed Strikes supply only a heuristic strength estimate. The completed battle has not been replayed or repaired, so these corrections do not establish a counterfactual outcome.
+
+The Daze audit found an explicit rank-1 auto-heightening setting on the supplied innate entry. Native PF2e follows that setting; the AI preserves it. Overkill estimation and splitting Force Barrage among targets remain future work.

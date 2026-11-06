@@ -2,6 +2,7 @@ import { chooseOption } from '../dawnsbury/chooser.mjs';
 import {gateFlightHunt} from './flight-candidates.mjs';
 import {gateActivityGoal} from './activity-plan.mjs';
 import {filterConditionActions} from './condition-rules.mjs';
+const policyBase=Symbol('behavior policy input');
 
 // Components are registered module code. Actor documents store identifiers and
 // data only: neither descriptions nor flags are evaluated as JavaScript.
@@ -68,7 +69,11 @@ export class BehaviorSystem {
     const rejected = [], candidates = [];
     const generated=new Map([...enabled].map(id=>[id,this.components.get(id).candidates?.(state,selection)??[]]));
     const withdrawing=selection.planId==='avoiding'&&(generated.get('withdraw')?.length??0)>0;
-    for (const original of offered) {
+    for (const offeredCandidate of offered) {
+      // Some adapters expose policy-gated candidates for native revalidation
+      // and then pass them through decide. Always rescore their original input,
+      // including after a changed plan, rather than adding policy terms twice.
+      const original=offeredCandidate[policyBase]??offeredCandidate;
       const component = [...this.components.values()].find(component => component.actionKinds?.includes(original.kind));
       if (component && !enabled.has(component.id) && !component.core) {
         rejected.push({id:original.id,kind:original.kind,reason:`Behavior component ${component.id} is not attached`}); continue;
@@ -106,7 +111,7 @@ export class BehaviorSystem {
       if (!terms.length) return candidate;
       const total = terms.reduce((sum,term) => sum+term.contribution,0), bound = Math.min(2,Math.max(0.5,Math.abs(candidate.assessment.value)*0.25));
       const bounded = Math.max(-bound,Math.min(bound,total)), scale = total===0?1:bounded/total;
-      return {...candidate,assessment:{...candidate.assessment,value:candidate.assessment.value+bounded},
+      return {...candidate,[policyBase]:candidate,assessment:{...candidate.assessment,value:candidate.assessment.value+bounded},
         scoringTerms:[...(candidate.scoringTerms??[]),...terms.map(term=>({...term,contribution:term.contribution*scale}))]};
     });
     const flightSafe=filterConditionActions(gateActivityGoal(state,gateFlightHunt(state,adjusted)),state.conditionRules);

@@ -5,11 +5,12 @@ import { spellDefenseCheck, SPELL_OPTIONS } from './spell-checks.mjs';
 import { inSpellArea, sameSpellLevel, spellRegion } from './spell-areas.mjs';
 import { createGreaseZone, applyTangleVine } from './spell-zones.mjs';
 import {waitForPresentation} from './ai-presentation.mjs';
-import {applyConditionSpell,beginSustainedCast,grantVampiricTempHP} from './ongoing-spells.mjs';
+import {applyConditionSpell,beginSustainedCast,grantVampiricTempHP,temporarySpellImmunity} from './ongoing-spells.mjs';
 import {conditionSpells} from '../framework/condition-spells.mjs';
 import {nativeRuleAction,resolveConditionChecks,automationOwnsFlatChecks} from './condition-actions.mjs';
 import {resolveSpellBinding,spellDescriptor} from './spell-catalog.mjs';
 import {executeSpellOutcomes} from './spell-outcomes.mjs';
+import {observeSpellCast,witnessedSpellCasts} from './spell-observations.mjs';
 
 const ns = 'foundry-creature-ai';
 const outcomes = ['criticalFailure','failure','success','criticalSuccess'];
@@ -30,6 +31,8 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
   if(['heal','ward'].includes(definition?.kind)&&(target?.actor.isDead||target?.actor.hasCondition('dead')))
     return {skipped:true,skipReason:'A dead creature cannot receive this healing or ward'};
   if (!choice.area && (!target || !clearAttackPath(adapter.token,target))) return { skipped: true, skipReason: 'Spell target or attack path changed' };
+  if(target&&witnessedSpellCasts(adapter.token).some(c=>c.immunity&&c.slug===choice.spellSlug&&c.targetId===target.id))
+    return {skipped:true,skipReason:'A witnessed casting already established temporary immunity to this spell'};
   if(!choice.area&&binding&&adapter.targetAt(adapter.originCell(),target,[],origin).distance>targetRange)
     return {skipped:true,skipReason:'Spell target left the selected spell range'};
   if(choice.spellSlug==='vampiric-feast'&&adapter.targetAt(adapter.originCell(),target,[],origin).distance>targetRange)
@@ -64,9 +67,12 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
       return {resolved:true,note:'The target left touch range during the reaction; actions and slot remain spent.'};
     if(!await concealmentCheck(adapter.token,target,{valid}))return {resolved:true,note:'Spell targeting flat check failed; actions and slot remain spent.'};
     const source={actor:adapter.actor,token:adapter.token};
-    const commitment=spell.slug==='laughing-fit'?await beginSustainedCast(source,spell,target):null;
+    if(spell.slug==='blindness')await observeSpellCast({source,target,spell,dc:entry.statistic.dc.value});
+    if(temporarySpellImmunity(target.actor,spell.slug))return {resolved:true,note:'Temporary immunity prevented the spell; committed actions and resources remain spent.'};
     if(target.actor.isImmuneTo?.(spell)||['laughing-fit','void-warp','vampiric-feast'].includes(spell.slug)&&target.actor.modeOfBeing&&target.actor.modeOfBeing!=='living')
       return {resolved:true,note:'This spell cannot affect the target.'};
+    const commitment=spell.slug==='laughing-fit'?await beginSustainedCast(source,spell,target):null;
+    if(spell.slug!=='blindness')await observeSpellCast({source,target,spell,dc:entry.statistic.dc.value,castId:commitment?.id});
     const degree=await spellDefenseCheck(target,{dc:entry.statistic.dc.value,statistic:spec.save,origin:adapter.token,spell,label:spell.name});
     if(!valid())throw new Error('Combat changed during the spell save');
     let drain=null;
