@@ -1,4 +1,4 @@
-# PF2e Tactical Rules suite — 0.36.0
+# PF2e Tactical Rules suite — 0.36.1
 
 The release contains five Foundry modules. Manual rules remain available with Creature AI disabled. All packages use one shared reaction barrier and one contextual Check.roll wrapper, and every source module has exactly one installed owner.
 
@@ -34,7 +34,7 @@ Existing `foundry-creature-ai` document flags remain intact. Core registers that
 
 ## Flight and movement
 
-Step, Sneak and Fly costs are installed by Movement. The native ruler, actual movement, AI path validation and worker estimates use the same pure vertical-cost function:
+Step, Sneak, [manual Ramp / stairs behaviors](ramps.md) and Fly costs are installed by Movement. Native Region behavior forms configure ramp elevations and uphill direction. The native ruler, actual movement, AI path validation and worker estimates use the same pure vertical-cost function for flight:
 
 | Grid step | Cost |
 | --- | --- |

@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.36.1:** adds a native **Ramp / stairs** Region behavior and GM helper in the Movement module. Set lower/upper elevation and uphill direction; walking follows the Region shape, including native platforms created manually. Existing scene ramps remain supported. See [manual ramp instructions](docs/ramps.md).
+
 **Version 0.36.0:** the [modular suite](docs/modular-suite.md) separates Core, Environment, Conditions & Spells, Movement and Creature AI. Manual rules work with AI disabled. Movement owns Step, Sneak and flight costs, including doubled upward diagonals and half-cost downward diagonals. Install the complete suite archive, restart Foundry to discover the packages, enable dependencies and reload clients. Existing flags, shared settings and owned Regions migrate without resetting actors.
 
 **Patch 0.31.1:** fixes a threatened melee flyer choosing Hover → End Turn because known reaction risk outweighed every escape climb. Reaching a safe destination now receives its full escape value at the start of the turn as well. Reactive Strike prompts and action costs remain intact. Complete turn tests cover Eagle Dive against an airborne Large target, staging then attacking next turn, scorpion-tail Stinger/venom against a flyer and quill-tail ranged attacks against a flyer. Reload all clients with **Ctrl+F5** and confirm **Running code 0.31.1**.

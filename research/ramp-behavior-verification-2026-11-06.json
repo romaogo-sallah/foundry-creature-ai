@@ -1,0 +1,151 @@
+{
+  "date": "2026-11-06",
+  "version": "0.36.1",
+  "tests": {
+    "pass": 953,
+    "fail": 0,
+    "workers": 11,
+    "durationSeconds": 18.6
+  },
+  "native": {
+    "ramps": {
+      "registered": true,
+      "declared": true,
+      "form": true,
+      "directionOptions": 8,
+      "midpoint": 5,
+      "disabledRamp": true,
+      "walkElevation": 7.5,
+      "regionsUnchanged": true,
+      "helper": true
+    },
+    "version": "0.36.1",
+    "runtimeStable": true,
+    "modes": [
+      {
+        "id": "step",
+        "label": "Step",
+        "normalized": true,
+        "difficulty": 2
+      },
+      {
+        "id": "sneak",
+        "label": "Sneak",
+        "normalized": true,
+        "difficulty": 2
+      }
+    ],
+    "controls": true,
+    "costs": {
+      "up": 10,
+      "upDiagonal": 20,
+      "down": 2.5,
+      "downDiagonal": 5,
+      "level": 5
+    },
+    "owners": {
+      "manualFlatChecks": "pf2e-tactical-core",
+      "managedFlatChecks": "pf2e-tactical-core",
+      "frightened": "pf2e-automations",
+      "duplicateFrightened": false,
+      "stunned": "xdy-pf2e-workbench",
+      "persistentDamage": "xdy-pf2e-workbench"
+    },
+    "features": [
+      "conditions",
+      "environment",
+      "movement"
+    ],
+    "aiActive": true,
+    "aiAPI": true,
+    "sharedReactions": true,
+    "legacyFlagScope": true,
+    "regions": 18,
+    "combat": {
+      "id": "FLkab2aTQ1SoRyYI",
+      "round": 3,
+      "turn": 9
+    },
+    "aiSourceRequests": 79,
+    "actorCountBefore": 159,
+    "actorCountAfter": 159,
+    "newActors": 0,
+    "moduleErrors": [],
+    "valid": true
+  },
+  "state": {
+    "worldId": "arena",
+    "modules": [
+      {
+        "id": "pf2e-tactical-core",
+        "active": true,
+        "version": "0.36.1",
+        "configured": true
+      },
+      {
+        "id": "pf2e-tactical-environment",
+        "active": true,
+        "version": "0.36.1",
+        "configured": true
+      },
+      {
+        "id": "pf2e-tactical-conditions",
+        "active": true,
+        "version": "0.36.1",
+        "configured": true
+      },
+      {
+        "id": "pf2e-tactical-movement",
+        "active": true,
+        "version": "0.36.1",
+        "configured": true
+      },
+      {
+        "id": "foundry-creature-ai",
+        "active": true,
+        "version": "0.36.1",
+        "configured": true
+      }
+    ],
+    "otherModulePreferencesPreserved": true,
+    "actorsBefore": 159,
+    "actorsAfter": 159,
+    "actorsPreserved": true,
+    "beforeCombat": [
+      {
+        "id": "FLkab2aTQ1SoRyYI",
+        "round": 3,
+        "turn": 9,
+        "active": true,
+        "started": true
+      }
+    ],
+    "afterCombat": [
+      {
+        "id": "FLkab2aTQ1SoRyYI",
+        "round": 3,
+        "turn": 9,
+        "active": true,
+        "started": true
+      }
+    ],
+    "combatPreserved": true,
+    "regionsBefore": 18,
+    "regionsAfter": 18,
+    "ownedRegionScripts": 9,
+    "coreRegionScripts": 9,
+    "sharedSettings": [
+      "pf2e-tactical-conditions.conditionRestrictions",
+      "pf2e-tactical-movement.manualMovementReactions",
+      "pf2e-tactical-movement.playerStealth"
+    ],
+    "valid": true
+  },
+  "installed": {
+    "version": "0.36.1",
+    "packages": 5,
+    "filesVerified": 216,
+    "archiveSHA256": "f51b2000da8e06300ef61774e6cdd7d6df78113d9cd337dc418294e2d70cc0fe"
+  },
+  "method": "Real restarted Arena client, no script/metadata injection. Standard native behavior sheet rendered against a detached Region. Persistent mutation methods blocked on diagnostics; no actors or Regions created in the world."
+}

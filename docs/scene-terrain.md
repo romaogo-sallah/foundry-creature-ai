@@ -33,6 +33,8 @@ AI routes include a known-hazard risk state, preserving longer safe alternatives
 
 ## Elevation notes
 
+Version **0.36.1** adds manually creatable **Ramp / stairs** Region behaviors in the Movement module. Draw a Region, add the behavior, and set lower/upper elevations and uphill direction. The **Ramps / stairs** toolbar button offers the same configuration. Ordinary native Define Surface platforms work as adjoining floors without setup flags. See the [manual ramp instructions](ramps.md). Existing Stadium ramps retain their saved geometry until deliberately edited.
+
 Version **0.27.0** interprets the Stadium's wooden artwork and +5/+10 ft notes as two native floor surfaces and three walking ramps. The +5 ft zigzag walkway uses three rectangles following its planks, preserving the open gaps. The western platform has its own +10 ft rectangular deck. The visible approaches connect ground to +5 ft, ground to +10 ft and +5 ft to +10 ft. The GM selected stairs/ramps using ordinary walking, rather than ladders requiring Climb.
 
 Each deck Region has a native **Define Surface**, placed at its bottom elevation, with movement/light/sight restriction, occlusion, no sound restriction, and no exposure/culling. Its flags contain `foundry-creature-ai.platform.elevation`. Each ramp Region stores `foundry-creature-ai.ramp` with `from` and `to` center points/elevations. Region geometry limits the width; the axis defines the slope. Hide an owned Region to disable its interpretation. The existing scene level, artwork, height notes and unrelated terrain stay intact. Pit depth/falling automation remains separate.

@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.36.0
+# Foundry Creature AI — version 0.36.1
+
+**Version 0.36.1:** adds a native **Ramp / stairs** Region behavior and GM helper in the Movement module. Set lower/upper elevation and uphill direction; walking follows the Region shape, including native platforms created manually. Existing scene ramps remain supported. See [manual ramp instructions](ramps.md).
 
 Version **0.36.0** separates the release into five modules: Core, Environment, Conditions & Spells, Movement, and Creature AI. The four manual-play packages work with AI disabled, share one rule pipeline and reaction engine, and preserve existing flags, settings and scene Regions. Movement owns native Step/Sneak and Fly costs: all upward movement, including diagonals, costs twice the measured distance; all downward movement costs half. Restart Foundry to discover the new packages, enable their dependencies and reload clients. See [module architecture and installation](modular-suite.md).
 

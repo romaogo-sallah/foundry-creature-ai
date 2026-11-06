@@ -1,8 +1,8 @@
-import {surfaceContains,rampElevation} from './surface-terrain.mjs';
+import {surfaceContains,rampElevation,platformElevations} from './surface-terrain.mjs';
 import {tokenHeight} from './vertical-geometry.mjs';
 import {sceneLevels} from './vertical-space.mjs';
 import {flySpeed} from './flight-costs.mjs';
-const ns='foundry-creature-ai';
+import {rampConfig} from './ramp-geometry.mjs';
 export function flightBounds(token){
   const ranges=sceneLevels(token.document.parent,token.document.level).map(l=>l.elevation??{});
   return {bottom:Math.min(0,token.document.elevation,...ranges.map(r=>r.bottom).filter(Number.isFinite)),
@@ -27,14 +27,8 @@ export function floorBelow(token,position=token.document._source??token.document
   let floor=flightBounds(token).bottom;
   for(const region of token.document.parent.regions?.contents??[]){
     if(region.hidden||!surfaceContains(region,point))continue;
-    const data=region.flags?.[ns]??{};
-    const elevations=[];
-    if(data.platform)elevations.push(data.platform.elevation);
-    if(data.ramp)elevations.push(rampElevation(data.ramp,point));
-    for(const behavior of region.behaviors?.contents??[])if(behavior.type==='defineSurface'&&!behavior.disabled&&behavior.system.move){
-      if(behavior.system.placement!=='top')elevations.push(region.elevation.bottom);
-      if(behavior.system.placement!=='bottom')elevations.push(region.elevation.top);
-    }
+    const elevations=platformElevations(region);
+    const ramp=rampConfig(region);if(ramp)elevations.push(rampElevation(ramp,point));
     for(const elevation of elevations)if(Number.isFinite(elevation)&&elevation<=position.elevation+0.01)floor=Math.max(floor,elevation);
   }
   return floor;

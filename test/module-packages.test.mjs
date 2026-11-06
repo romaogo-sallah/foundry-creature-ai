@@ -14,7 +14,8 @@ test('each source has one owner; manual closures exclude AI; generated imports r
    assert.ok(targetOwner===owner||DEPENDENCIES[owner].includes(targetOwner));
   }
  }
- for(const id of PACKAGE_IDS){const manifest=packageManifest(id,'0.36.0');assert.deepEqual(manifest.esmodules,[ENTRIES[id]]);
+ for(const id of PACKAGE_IDS){const manifest=packageManifest(id,'0.36.1');assert.deepEqual(manifest.esmodules,[ENTRIES[id]]);
+  if(id==='pf2e-tactical-movement')assert.deepEqual(manifest.documentTypes,{RegionBehavior:{ramp:{}}});
   if(id!=='foundry-creature-ai')assert.equal(manifest.relationships.requires.some(d=>d.id==='foundry-creature-ai'),false);
  }
 });
@@ -24,7 +25,7 @@ test('built manual packages start without AI; AI consumes the same services with
  const add=(map,name,fn)=>map.set(name,[...map.get(name)??[],fn]);
  globalThis.Hooks={once:(name,fn)=>add(once,name,fn),on:(name,fn)=>add(events,name,fn),off:()=>{}};
  const run=async name=>{const callbacks=once.get(name)??[];once.delete(name);await Promise.all(callbacks.map(fn=>fn()));};
- game.modules=new Map(PACKAGE_IDS.filter(id=>id!=='foundry-creature-ai').map(id=>[id,{active:true,version:'0.36.0'}]));
+ game.modules=new Map(PACKAGE_IDS.filter(id=>id!=='foundry-creature-ai').map(id=>[id,{active:true,version:'0.36.1'}]));
  game.settings={settings:registry,storage:new Map([...storage].map(([scope,data])=>[scope,scope==='world'?{getSetting:(key,fallback)=>data.get(key)??fallback}:{getItem:key=>data.get(key)??null}])),
   register:(namespace,key,data)=>registry.set(`${namespace}.${key}`,data),
   get:(namespace,key)=>{const id=`${namespace}.${key}`,meta=registry.get(id);if(!meta)return undefined;const raw=storage.get(meta.scope??'client').get(id);return raw===undefined?meta.default:JSON.parse(raw);},
@@ -52,12 +53,13 @@ test('built manual packages start without AI; AI consumes the same services with
  assert.equal(storage.get('world').get('pf2e-tactical-movement.playerStealth'),'false');
  await game.settings.set('pf2e-tactical-movement','playerStealth',true);assert.equal(core.rules.stealth.player.enabled(),true);
  assert.equal(typeof core.rules.conditions.open,'function');assert.equal(typeof CONFIG.Token.movement.actions.step.canSelect,'function');
+ assert.equal(typeof core.rules.ramps.configure,'function');assert.equal(typeof game.modules.get('pf2e-tactical-movement').api.ramps.open,'function');
  assert.equal(core.rules.conditions.owners().managedFlatChecks,'pf2e-tactical-core');
  assert.equal(game.modules.get('pf2e-tactical-environment').api.stealth.hide,undefined,'Environment does not expose Movement-only controls');
  assert.equal(wrappers.get('CONFIG.Token.objectClass.prototype._getMovementCostFunction').id,'pf2e-tactical-core');
  assert.equal(wrappers.get('game.pf2e.Check.roll').id,'pf2e-tactical-core');
  const buttons={tokens:{tools:{}}};for(const hook of events.get('getSceneControlButtons')??[])hook(buttons);
- assert.ok(buttons.tokens.tools.conditionActions&&buttons.tokens.tools.environmentZones&&buttons.tokens.tools.playerStealth);
+ assert.ok(buttons.tokens.tools.conditionActions&&buttons.tokens.tools.environmentZones&&buttons.tokens.tools.playerStealth&&buttons.tokens.tools.rampControls);
  assert.equal(buttons.tokens.tools.wolfAI,undefined);assert.equal(game.modules.has('foundry-creature-ai'),false);
  let pathRefreshes=0;const recalculate=canvas.tokens.recalculatePlannedMovementPaths;
  canvas.tokens.recalculatePlannedMovementPaths=()=>pathRefreshes++;

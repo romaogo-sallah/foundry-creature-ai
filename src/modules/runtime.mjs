@@ -64,11 +64,11 @@ export class RulesRuntime {
     const active={reactions:this.reactions};
     if(this.has('environment'))Object.assign(active,{zones:this.rules.zones,terrain:this.rules.terrain,stealth:{open:openStealthControls,detection:detectionFor}});
     if(this.has('conditions'))Object.assign(active,{conditions:this.rules.conditions,spells:this.rules.spells,poisons:this.rules.poisons});
-    if(this.has('movement'))Object.assign(active,{manualMovement:this.manualMovement,stealth:this.rules.stealth});
+    if(this.has('movement'))Object.assign(active,{manualMovement:this.manualMovement,stealth:this.rules.stealth,ramps:this.rules.ramps});
     const core=game.modules?.get?.(CORE_ID);if(core)core.api={version:RUNTIME_VERSION,apiVersion:1,rules:active,runtime:this};
     for(const [feature,id,api]of [['environment',ENVIRONMENT_ID,{zones:this.rules.zones,terrain:this.rules.terrain,stealth:{open:openStealthControls,detection:detectionFor}}],
       ['conditions',CONDITIONS_ID,{conditions:this.rules.conditions,spells:this.rules.spells,poisons:this.rules.poisons}],
-      ['movement',MOVEMENT_ID,{movement:this.manualMovement,stealth:this.rules.stealth}]]){
+      ['movement',MOVEMENT_ID,{movement:this.manualMovement,stealth:this.rules.stealth,ramps:this.rules.ramps}]]){
       const module=game.modules?.get?.(id);if(module&&this.has(feature))module.api={version:RUNTIME_VERSION,apiVersion:1,...api};
     }
   }

@@ -54,5 +54,5 @@ export function packageManifest(id,version){
   relationships:{systems:[{id:'pf2e',type:'system',compatibility:{minimum:'8.6.1',maximum:'8.6.1'}}],
    requires:[...DEPENDENCIES[id].map(dependency=>({id:dependency,type:'module',compatibility:{minimum:version},reason:'Use shared Tactical Rules services and their public API'})),
     ...id==='pf2e-tactical-core'?[{id:'lib-wrapper',type:'module',reason:'Install each native rule wrapper once'}]:[]]},
-  esmodules:[ENTRIES[id]],...id==='foundry-creature-ai'?{styles:['styles/creature-ai.css']}:{}};
+  esmodules:[ENTRIES[id]],...id==='pf2e-tactical-movement'?{documentTypes:{RegionBehavior:{ramp:{}}}}:{},...id==='foundry-creature-ai'?{styles:['styles/creature-ai.css']}:{}};
 }
