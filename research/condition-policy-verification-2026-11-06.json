@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-06",
+  "version": "0.39.0",
+  "method": "Detached native actor/token constructors and read-only AI preview; source edits were applied to diagnostic source data and freshly prepared, never persisted.",
+  "matrix": [
+    {
+      "conditions": [
+        "controlled"
+      ],
+      "directive": "controlled",
+      "reaction": null,
+      "manualFleeing": false
+    },
+    {
+      "conditions": [
+        "controlled",
+        "confused"
+      ],
+      "directive": "confused",
+      "reaction": "confused",
+      "manualFleeing": false
+    },
+    {
+      "conditions": [
+        "controlled",
+        "confused",
+        "fleeing"
+      ],
+      "directive": "fleeing",
+      "reaction": "confused",
+      "manualFleeing": true
+    }
+  ],
+  "fascination": {
+    "before": 2,
+    "after": 1,
+    "oldGrantIgnored": true,
+    "oldParentPreserved": true,
+    "otherRulePreserved": true,
+    "activeSource": true
+  },
+  "ai": {
+    "policy": "fleeing",
+    "choice": "endTurn"
+  },
+  "nativeConditionIdentity": {
+    "id": null,
+    "sourceId": "Compendium.pf2e.conditionitems.Item.AdPVz7rbaVSRxHFg"
+  },
+  "combat": {
+    "id": "FLkab2aTQ1SoRyYI",
+    "round": 19,
+    "turn": 5
+  },
+  "actorCountBefore": 159,
+  "actorCountAfter": 159,
+  "newActors": 0,
+  "moduleErrors": [],
+  "valid": true,
+  "tests": {
+    "passed": 1026,
+    "failed": 0,
+    "workers": 11,
+    "log": ".scratch/release-0.39.0-tests.log"
+  },
+  "installation": {
+    "packages": 5,
+    "verifiedFiles": 230
+  },
+  "release": {
+    "file": "releases/pf2e-tactical-suite-0.39.0.zip",
+    "sha256": "60365567a966dafd93d0418bf8d16834d43580faf440fda8b6f6e188c4d54460"
+  }
+}

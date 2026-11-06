@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.39.0:** applies the table's [condition precedence](docs/condition-precedence.md): Fleeing overrides Confused, which overrides Controlled. A shared escape driver uses ground movement or flight; lower conditions retain their other effects. New Fascinated sources replace older fascination while preserving unrelated source effects. Reload every client with **Ctrl+F5**.
+
 **Version 0.38.0:** teaches the Dero Magister Vampiric Feast with native Fortitude saves, void damage and source-tracked one-minute temporary HP based on actual post-resistance damage. Casters compare Spell control, Spell assault and Life drain opportunities, including affordable approaches and known casting reactions at the destination. Damage spells no longer inherit the control-spell retry cooldown. Reload every client with **Ctrl+F5**.
 
 **Patch 0.37.3:** fixes wounded NPCs holding still under ranged fire because their retreat stopped at 30 feet. Avoiding now weighs known weapon range, blocked firing lines, cover and movement risk, and prioritizes an available safer retreat over unnecessary weapon preparation. Tactical captions have their own cached text object beside the native elevation tooltip, eliminating competing text writes with Global Auto Level Change. Reload every client with **Ctrl+F5**.

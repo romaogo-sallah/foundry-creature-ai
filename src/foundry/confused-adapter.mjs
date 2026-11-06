@@ -15,6 +15,7 @@ import {manualConditionViolation} from './condition-actions.mjs';
 import {reveal} from './stealth-awareness.mjs';
 import {conditionSpells} from '../framework/condition-spells.mjs';
 import {executeSpell} from './spellcasting.mjs';
+import {conditionDirective} from '../framework/condition-directives.mjs';
 const ns='foundry-creature-ai',attached=new WeakSet();
 const average=strike=>Object.values(strike.item.system.damageRolls??{}).filter(p=>!p.category).reduce((sum,p)=>sum+averageFormula(p.damage),0);
 const attackKinds=['strike','castSpell'];
@@ -137,7 +138,7 @@ export class PF2eConfusedAdapter extends PF2eCreatureAdapter{
 }
 export function attachConfusionSystem(adapter,options){
   if(attached.has(adapter))return adapter;attached.add(adapter);
-  const driver=new PF2eConfusedAdapter(adapter,options),active=()=>Boolean(adapter.actor?.hasCondition?.('confused'));
+  const driver=new PF2eConfusedAdapter(adapter,options),active=()=>conditionDirective(adapter.actor)==='confused';
   driver.nativeExecute=adapter.execute.bind(adapter);
   for(const name of ['prepareTurn','assertReady','snapshot','candidates','decide','liveTarget','allies']){
     const original=adapter[name].bind(adapter);adapter[name]=(...args)=>active()?driver[name](...args):original(...args);

@@ -1,5 +1,7 @@
 # Confused AI — 0.37.0
 
+From **0.39.0**, the [table's precedence policy](condition-precedence.md) lets Confused override Controlled, while Fleeing overrides the Confused attack strategy. Lower conditions remain present, including Confused's reaction denial. New fascination also replaces older sources under that policy. The historical manual-precedence limitation below applies to earlier releases.
+
 Confused automatically overrides the ordinary creature profile's decision strategy. No separate checkbox, custom target roster or behavior configuration is needed. Removing Confused restores normal tactics with the actions and MAP already spent.
 
 The override treats other creature combatants as potential enemies regardless of alliance, including allies and neutrals. It selects randomly among located targets. The target stays fixed while the creature approaches, draws/regrips a weapon or reloads; another random selection happens after an attack attempt, or when the target becomes unavailable. Merely previewing/revalidating an action does not replace an existing selection. Actual alliances and other creatures' attitudes are unchanged.

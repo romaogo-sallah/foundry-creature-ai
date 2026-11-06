@@ -1,18 +1,19 @@
 import {conditionViolation,conditionFlatChecks,ruleAction} from '../framework/condition-rules.mjs';
 import {rulesSetting} from './rules-settings.mjs';
+import {conditionDirective} from '../framework/condition-directives.mjs';
 const ns='foundry-creature-ai';
 export function conditionFacts(actor){
   const condition=slug=>Boolean(actor?.hasCondition?.(slug));
   return {restrained:condition('restrained'),grabbed:condition('grabbed')&&!condition('restrained'),
     immobilized:condition('immobilized')||condition('grabbed')||condition('restrained'),prone:condition('prone'),
-    fascinated:condition('fascinated'),sickened:condition('sickened'),deafened:condition('deafened'),
+    fascinated:condition('fascinated')&&!conditionDirective(actor),fleeing:conditionDirective(actor)==='fleeing',sickened:condition('sickened'),deafened:condition('deafened'),
     stupefied:condition('stupefied')?actor.getCondition('stupefied')?.value??1:0,
     synesthesia:(actor?.itemTypes?.effect??[]).some(effect=>!effect.isExpired&&effect.slug==='spell-effect-synesthesia'),
     fascinationSubjects:actor?.getFlag?.(ns,'conditionContext')?.fascinationSubjects??[]};
 }
 export function nativeRuleAction(item,extra={}){
   const traits=[...(item?.traits??item?.system?.traits?.value??[])];
-  return ruleAction({kind:item?.type==='spell'?'castSpell':item?.slug??'item',traits,
+  return ruleAction({kind:item?.type==='spell'?'castSpell':item?.slug??'item',traits,reaction:item?.actionCost?.type==='reaction',
     ingest:item?.type==='consumable'&&['potion','elixir','drug','food','beverage'].includes(item.system?.category),...extra});
 }
 export function manualConditionViolation(actor,action){return conditionViolation(conditionFacts(actor),action);}

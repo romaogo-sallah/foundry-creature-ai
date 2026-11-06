@@ -40,7 +40,8 @@ async function receive(data,user){
     const source=actor.getCondition('sickened');
     if(source&&data.dc!==null){if(!Number.isFinite(data.dc)||data.dc<=0||data.dc>100)throw new Error('Enter a valid source DC.');await source.setFlag(ns,'dc',data.dc);}
     if(data.subjectId&&!canvas.tokens.get(data.subjectId))throw new Error('The fascination subject is unavailable.');
-    await actor.setFlag(ns,'conditionContext',{fascinationSubjects:data.subjectId?[data.subjectId]:[]});return;
+    if(data.fleeingSourceId&&!canvas.tokens.get(data.fleeingSourceId))throw new Error('The fleeing source is unavailable.');
+    await actor.setFlag(ns,'conditionContext',{...actor.getFlag(ns,'conditionContext'),fascinationSubjects:data.subjectId?[data.subjectId]:[],fleeingSourceId:data.fleeingSourceId??null});return;
   }
   if(game.combat?.started&&game.combat.combatant?.tokenId!==token.id)throw new Error('Use this action on your creature’s turn.');
   if(data.action==='retch')return executeRetch(token,{valid:()=>combatStamp()===data.stamp&&canvas.tokens.get(token.id)===token});
@@ -52,14 +53,15 @@ export function installConditionActions({reactions}){
 }
 export async function openConditionActions(token=canvas.tokens.controlled[0]){
   if(!token?.actor||!game.user.isGM&&!token.actor.testUserPermission(game.user,'OWNER'))throw new Error('Select a creature you own.');
-  const actor=token.actor,source=retchSource(actor),subject=actor.getFlag(ns,'conditionContext')?.fascinationSubjects?.[0];
+  const actor=token.actor,source=retchSource(actor),context=actor.getFlag(ns,'conditionContext')??{},subject=context.fascinationSubjects?.[0];
   const stamp=combatStamp(),sceneId=canvas.scene.id;
   const answer=await foundry.applications.api.DialogV2.wait({window:{title:`Condition actions — ${token.name}`},
     content:`<p>Retch costs one action and uses your Fortitude save. Stunned resolution uses the actions left after your current activity finishes. Manual action counts remain yours to track.</p>
     ${game.user.isGM?`<label>Sickened source DC <input name="dc" type="number" min="1" max="100" value="${Number.isFinite(source?.dc)?source.dc:''}"></label>
-    <label>Subject of fascination <select name="subject"><option value="">Unknown / adjudicate</option>${canvas.tokens.placeables.filter(t=>t!==token&&t.actor).map(t=>`<option value="${t.id}" ${t.id===subject?'selected':''}>${escape(t.name)}</option>`).join('')}</select></label>`:`<p>Sickened source DC: ${source?.dc??'ask the GM to configure it'}.</p>`}
+    <label>Subject of fascination <select name="subject"><option value="">Unknown / adjudicate</option>${canvas.tokens.placeables.filter(t=>t!==token&&t.actor).map(t=>`<option value="${t.id}" ${t.id===subject?'selected':''}>${escape(t.name)}</option>`).join('')}</select></label>
+    <label>Fleeing source <select name="fleeingSource"><option value="">Automatic: effect origin, then known opponents</option>${canvas.tokens.placeables.filter(t=>t!==token&&t.actor).map(t=>`<option value="${t.id}" ${t.id===context.fleeingSourceId?'selected':''}>${escape(t.name)}</option>`).join('')}</select></label>`:`<p>Sickened source DC: ${source?.dc??'ask the GM to configure it'}.</p>`}
     <label>Remaining actions for Stunned <input name="remaining" type="number" min="0" max="4" value="3"></label>`,
-    buttons:[...game.user.isGM?[{action:'configure',label:'Save source / DC',callback:(_event,button)=>({action:'configure',dc:button.form.elements.dc.value?button.form.elements.dc.valueAsNumber:null,subjectId:button.form.elements.subject.value})}]:[],
+    buttons:[...game.user.isGM?[{action:'configure',label:'Save source / DC',callback:(_event,button)=>({action:'configure',dc:button.form.elements.dc.value?button.form.elements.dc.valueAsNumber:null,subjectId:button.form.elements.subject.value,fleeingSourceId:button.form.elements.fleeingSource.value})}]:[],
       {action:'retch',label:'Retch',disabled:!source?.available},{action:'stunned',label:'Resolve Stunned',disabled:!valuedStunned(actor),callback:(_event,button)=>({action:'stunned',remaining:button.form.elements.remaining.valueAsNumber})}],rejectClose:false});
   if(!answer)return;const data={...typeof answer==='string'?{action:answer}:answer,tokenId:token.id,sceneId,stamp};
   const gm=game.users.activeGM;if(!gm)throw new Error('An active GM is required.');

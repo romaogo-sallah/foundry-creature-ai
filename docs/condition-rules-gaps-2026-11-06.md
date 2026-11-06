@@ -2,6 +2,8 @@
 
 This is a rules and source-code audit of version **0.38.0**, commit `b0cfb86`. It informs the shared spell-component work; it does not change runtime behavior. Archives of Nethys pages were checked on 6 November 2026. No live encounter was advanced, rolled for, moved or modified during this audit.
 
+Follow-up **0.39.0** implements the GM's [compulsion and fascination policy](condition-precedence.md): Fleeing > Confused > Controlled, and newest fascination replaces older sources. The implementation findings below remain a historical audit of 0.38.0.
+
 “Confirmed gap” means the local implementation omits or contradicts a rule. “Partial” means some paths work but the general case remains unsupported. “Verify owner” means native PF2e or another module may resolve the event: source inspection alone does not establish end-to-end behavior. “Adjudication” means the rules actually leave a decision to the GM.
 
 ## Priority findings

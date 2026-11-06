@@ -27,6 +27,7 @@ import {withConditionActivity} from './condition-activity.mjs';
 import {retchSource,executeRetch} from './manual-condition-actions.mjs';
 import {breakFascination} from './fascination.mjs';
 import { RUNTIME_VERSION } from './runtime-version.mjs';
+import {directiveOverrides} from '../framework/condition-directives.mjs';
 import { environmentBetween } from './environment-zones.mjs';
 import { concealmentCheck, concealmentDC } from './environment-rolls.mjs';
 import { executeSeek, seekScope } from './npc-perception.mjs';
@@ -162,7 +163,8 @@ export class PF2eCreatureAdapter {
     if (this.token.document.locked || this.token.document.hidden) throw new Error('Unlock and reveal the wolf before running it');
     if (this.token.document.actorLink) throw new Error('Use an unlinked wolf token so each wolf has its own actor state');
     if (this.targetMode === 'manual' && !this.config.targetIds?.length) throw new Error('Assign known enemy targets in the Wolf AI controls for manual targeting');
-    const condition = blocked.find(c => this.actor.hasCondition(c)&&!(c==='stunned'&&valuedStunned(this.actor))&&!(c==='confused'&&this.handlesConfusion));
+    const condition = blocked.find(c => this.actor.hasCondition(c)&&!directiveOverrides(this.actor,c)&&
+      !(c==='stunned'&&valuedStunned(this.actor))&&!(c==='confused'&&this.handlesConfusion)&&!(c==='fleeing'&&this.handlesFleeing));
     if (condition || this.actor.hitPoints.value <= 0) throw new Error(`Wolf requires manual handling: ${condition ?? '0 HP'}`);
     if (this.actor.hasCondition('slowed') && !Number.isFinite(this.actor.getCondition('slowed')?.value)) throw new Error('Cannot determine slowed action loss');
     this.parts();
@@ -300,7 +302,7 @@ export class PF2eCreatureAdapter {
       !token.actor.hasCondition('hidden', 'undetected', 'unnoticed', 'invisible'));
   }
 
-  async snapshot(ledger, { movement = true } = {}) {
+  async snapshot(ledger, { movement = true, movementRequired = false } = {}) {
     await this.waitForMovement();
     const { strike, remaster, averageDamage, pack, knockdown } = this.parts(), origin = this.originCell();
     const roster = this.targetIds();
@@ -348,7 +350,7 @@ export class PF2eCreatureAdapter {
     const freeStride = ledger.freeEscapeStride && !self.prone;
     const budget = self.prone || freeStride ? 5 : speed;
     const activeRegions = this.activeMovementRegions();
-    let movementBlocked = !movement ? 'movement was not requested' : self.immobile ? 'the wolf is immobilized' : !movementGoals.length && !morale.broken ? targets.length ? 'investigate the remembered area with Seek' : 'no known eligible enemies in the target roster' :
+    let movementBlocked = !movement ? 'movement was not requested' : self.immobile ? 'the wolf is immobilized' : !movementGoals.length && !morale.broken && !movementRequired ? targets.length ? 'investigate the remembered area with Seek' : 'no known eligible enemies in the target roster' :
       activeRegions.length ? `Region behaviors require manual movement: ${activeRegions.map(region => region.name).join(', ')}` :
       !Number.isFinite(speed) || speed <= 0 || speed > 100 ? 'ground Speed is unavailable or outside the supported range' : null;
     // Empty Regions have no movement effects. Active Region behaviors still need explicit handlers.

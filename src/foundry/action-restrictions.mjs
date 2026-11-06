@@ -56,7 +56,7 @@ export function checkRestriction(check,context={}){
   const traits=[...(context.traits??[])].map(t=>typeof t==='string'?t:t.name);
   const kind=context.action??(context.type==='attack-roll'?'strike':null);
   const target=context.target?.token?.id;
-  const reason=manualConditionViolation(actor,nativeRuleAction(item,{kind,traits:[...new Set([...traits,...item?.traits??[]])],targetId:target}));
+  const reason=manualConditionViolation(actor,nativeRuleAction(item,{kind,traits:[...new Set([...traits,...item?.traits??[]])],targetId:target,reaction:explicitReaction}));
   return reason?{kind:'condition-rule',reason}:null;
 }
 export function notifyRestriction(actor,restriction){

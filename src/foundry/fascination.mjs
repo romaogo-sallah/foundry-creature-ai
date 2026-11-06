@@ -1,4 +1,5 @@
 const ns='foundry-creature-ai';
+import {installFascinationSources} from './fascination-sources.mjs';
 export async function breakFascination(victim){
   if(game.users.activeGM?.id!==game.user.id||!victim)return [];
   const actors=new Set((canvas.tokens?.placeables??[]).map(token=>token.actor).filter(actor=>actor&&
@@ -12,6 +13,7 @@ export async function breakFascination(victim){
   return removed;
 }
 export function installFascination({reactions,onError}){
+  installFascinationSources({reactions,onError});
   Hooks.on('createChatMessage',message=>{
     if(game.users.activeGM?.id!==game.user.id||message.flags?.pf2e?.context?.type!=='attack-roll'||message.isReroll)return;
     const target=message.target?.actor,uuid=message.flags.pf2e.context.target?.token;
