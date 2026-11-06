@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.37.0:** Confused NPCs use a random-target attack override: allies and neutrals become potential targets, with ordinary Strikes, taught offensive cantrips and simple attack preparation/movement. Normal tactics, stealth, special abilities, complex aerial plans and slot spells are excluded. See [Confused AI](docs/confused-ai.md). Reload every client with **Ctrl+F5**.
+
 **Version 0.36.2:** fixes Sneak missing from NPC movement menus. Manual Hide/Sneak now supports creature tokens, including NPCs, with the same secret checks, movement budget, removable effect and observer rules. Managed AI actions keep their existing lifecycle. Reload clients with **Ctrl+F5**.
 
 **Version 0.36.1:** adds a native **Ramp / stairs** Region behavior and GM helper in the Movement module. Set lower/upper elevation and uphill direction; walking follows the Region shape, including native platforms created manually. Existing scene ramps remain supported. See [manual ramp instructions](docs/ramps.md).

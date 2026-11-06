@@ -35,6 +35,7 @@ export function encounterOutcome({ combat = game.combat, scene = canvas.scene, t
   // An unresolved document is not evidence of defeat.
   if (entries.some(e => !e.token?.actor)) return null;
   const hostile = (a, b) => {
+    if(a.actor?.isOfType?.('creature')&&b.actor?.isOfType?.('creature')&&(a.actor.hasCondition('confused')||b.actor.hasCondition('confused')))return true;
     if (!canAssignTarget(a.actor, b.actor)) return false;
     const sideA = allianceSide(a.actor), sideB = allianceSide(b.actor);
     if (sideA && sideB && sideA !== sideB) return true;

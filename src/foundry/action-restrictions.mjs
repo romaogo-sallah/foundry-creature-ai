@@ -34,6 +34,7 @@ export function actionRestriction(actor,{purelyMental=false}={}){
   return condition?{kind:condition,reason:`Cannot act while ${condition}.`}:effectRestriction(actor,'noActions');
 }
 export function reactionRestriction(actor){
+  if(restrictionsEnabled()&&actor?.hasCondition?.('confused'))return {kind:'confused',reason:'Cannot use reactions while confused.'};
   if(restrictionsEnabled()&&actor?.hasCondition?.('stunned'))return {kind:'stunned',reason:'Cannot use reactions while stunned.'};
   return actionRestriction(actor)??(restrictionsEnabled()?effectRestriction(actor,'noUseReactions'):null);
 }

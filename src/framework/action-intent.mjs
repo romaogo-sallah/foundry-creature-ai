@@ -2,6 +2,7 @@
 // target statistics. These are presentation templates, not additional AI rules.
 export function actionIntent({profileId,choice,state={}}){
   if(!choice||choice.kind==='endTurn')return null;
+  if(choice.features?.confused)return ['strike','castSpell'].includes(choice.kind)?'Get away from me!':choice.kind==='hover'?'The confused creature beats its wings to stay aloft.':'The confused creature blunders toward its chosen target, readying an attack.';
   const animal=profileId==='wolf',enemy=state.enemies?.find(enemy=>enemy.id===choice.targetId);
   const retreat=choice.intent==='retreat'||choice.features?.retreat,again=(state.attacksMade??0)%2===1;
   if(retreat)return animal?'A frightened whine; the wolf looks for a way out.':'This fight is lost. Get out while we can!';

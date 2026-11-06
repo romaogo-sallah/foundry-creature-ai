@@ -1,0 +1,195 @@
+{
+  "date": "2026-11-06",
+  "version": "0.37.0",
+  "tests": {
+    "pass": 974,
+    "fail": 0,
+    "workers": 11,
+    "durationSeconds": 19.3
+  },
+  "native": {
+    "confused": {
+      "cases": [
+        {
+          "profile": "ogre-boss",
+          "confused": true,
+          "offGuard": true,
+          "reactionDenied": true,
+          "policy": "confused-simple",
+          "kind": "drawWeapon",
+          "offered": [
+            "drawWeapon"
+          ],
+          "rosterSize": 9,
+          "normalRoster": 9,
+          "slotSpells": 0,
+          "behaviorPlan": false,
+          "aerialHunt": false,
+          "persistedActor": false
+        },
+        {
+          "profile": "kobold-scout",
+          "confused": true,
+          "offGuard": true,
+          "reactionDenied": true,
+          "policy": "confused-simple",
+          "kind": "strike",
+          "offered": [
+            "strike"
+          ],
+          "rosterSize": 9,
+          "normalRoster": 9,
+          "slotSpells": 0,
+          "behaviorPlan": false,
+          "aerialHunt": false,
+          "persistedActor": false
+        },
+        {
+          "profile": "goblin-pyro",
+          "confused": true,
+          "offGuard": true,
+          "reactionDenied": true,
+          "policy": "confused-simple",
+          "kind": "endTurn",
+          "offered": [],
+          "rosterSize": 9,
+          "normalRoster": 9,
+          "slotSpells": 0,
+          "behaviorPlan": false,
+          "aerialHunt": false,
+          "persistedActor": false
+        },
+        {
+          "profile": "dero-magister",
+          "confused": true,
+          "offGuard": true,
+          "reactionDenied": true,
+          "policy": "confused-simple",
+          "kind": "castSpell",
+          "offered": [
+            "castSpell"
+          ],
+          "rosterSize": 9,
+          "normalRoster": 9,
+          "slotSpells": 0,
+          "behaviorPlan": false,
+          "aerialHunt": false,
+          "persistedActor": false
+        },
+        {
+          "profile": "eagle",
+          "confused": true,
+          "offGuard": true,
+          "reactionDenied": true,
+          "policy": "confused-simple",
+          "kind": "endTurn",
+          "offered": [],
+          "rosterSize": 9,
+          "normalRoster": 9,
+          "slotSpells": 0,
+          "behaviorPlan": false,
+          "aerialHunt": false,
+          "persistedActor": false
+        }
+      ],
+      "conditionRules": [
+        {
+          "key": "ActiveEffectLike",
+          "mode": "override",
+          "path": "system.attributes.flanking.canFlank",
+          "value": false
+        },
+        {
+          "key": "RollOption",
+          "option": "target:ally",
+          "value": false
+        },
+        {
+          "key": "RollOption",
+          "option": "origin:ally",
+          "value": false
+        },
+        {
+          "inMemoryOnly": true,
+          "key": "GrantItem",
+          "uuid": "Compendium.pf2e.conditionitems.Item.AJh5ex99aV6VTggg"
+        },
+        {
+          "key": "Note",
+          "predicate": [
+            {
+              "or": [
+                "item:type:spell",
+                "origin:action:trait:attack"
+              ]
+            }
+          ],
+          "selector": "damage-received",
+          "text": "PF2E.condition.confused.note",
+          "title": "{item|name}"
+        }
+      ],
+      "valid": true
+    },
+    "version": "0.37.0",
+    "runtimeStable": true,
+    "modes": [
+      {
+        "id": "step",
+        "label": "Step",
+        "normalized": true,
+        "difficulty": 2
+      },
+      {
+        "id": "sneak",
+        "label": "Sneak",
+        "normalized": true,
+        "difficulty": 2
+      }
+    ],
+    "controls": true,
+    "costs": {
+      "up": 10,
+      "upDiagonal": 20,
+      "down": 2.5,
+      "downDiagonal": 5,
+      "level": 5
+    },
+    "owners": {
+      "manualFlatChecks": "pf2e-tactical-core",
+      "managedFlatChecks": "pf2e-tactical-core",
+      "frightened": "pf2e-automations",
+      "duplicateFrightened": false,
+      "stunned": "xdy-pf2e-workbench",
+      "persistentDamage": "xdy-pf2e-workbench"
+    },
+    "features": [
+      "conditions",
+      "environment",
+      "movement"
+    ],
+    "aiActive": true,
+    "aiAPI": true,
+    "sharedReactions": true,
+    "legacyFlagScope": true,
+    "regions": 18,
+    "combat": {
+      "id": "FLkab2aTQ1SoRyYI",
+      "round": 3,
+      "turn": 9
+    },
+    "aiSourceRequests": 83,
+    "actorCountBefore": 159,
+    "actorCountAfter": 159,
+    "newActors": 0,
+    "moduleErrors": [],
+    "valid": true
+  },
+  "installed": {
+    "filesVerified": 221,
+    "archiveSHA256": "169906d72759d96aeecac8c9c986d60e1d3f0a603dd6399b4e88707dbaadce0b"
+  },
+  "serverRestarted": false,
+  "activation": "Client refresh only. Installed files and runtime are 0.37.0; server package metadata remains cached at 0.36.1 until its next normal restart.",
+  "method": "Detached guarded native actors and Token constructors in actual live client. Decision previews with movement disabled; no actors created, checks rolled, resources spent, or tokens moved. Full movement and execution behavior is covered by regression tests."
+}

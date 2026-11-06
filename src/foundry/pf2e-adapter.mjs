@@ -161,7 +161,7 @@ export class PF2eCreatureAdapter {
     if (this.token.document.locked || this.token.document.hidden) throw new Error('Unlock and reveal the wolf before running it');
     if (this.token.document.actorLink) throw new Error('Use an unlinked wolf token so each wolf has its own actor state');
     if (this.targetMode === 'manual' && !this.config.targetIds?.length) throw new Error('Assign known enemy targets in the Wolf AI controls for manual targeting');
-    const condition = blocked.find(c => this.actor.hasCondition(c)&&!(c==='stunned'&&valuedStunned(this.actor)));
+    const condition = blocked.find(c => this.actor.hasCondition(c)&&!(c==='stunned'&&valuedStunned(this.actor))&&!(c==='confused'&&this.handlesConfusion));
     if (condition || this.actor.hitPoints.value <= 0) throw new Error(`Wolf requires manual handling: ${condition ?? '0 HP'}`);
     if (this.actor.hasCondition('slowed') && !Number.isFinite(this.actor.getCondition('slowed')?.value)) throw new Error('Cannot determine slowed action loss');
     this.parts();
@@ -366,7 +366,7 @@ export class PF2eCreatureAdapter {
       };
       // Same-alliance creatures are willing to let this NPC pass. Do not treat
       // them as walls or difficult terrain. Objects and other creatures still block.
-      const blocksPassage = occupied.filter(token => !(token.actor?.isOfType?.('creature') && token.actor.isAllyOf(this.actor)));
+      const blocksPassage = occupied.filter(token => !(token.actor?.isOfType?.('creature') && !this.actor.hasCondition('confused') && token.actor.isAllyOf(this.actor)));
       const canEnter = cell => onMap(cell) && !blocksPassage.some(token => overlaps(cell, token));
       // The AI plans each Stride to a clear endpoint; it does not plan the special
       // case of ending atop an ally and immediately spending another move to leave.

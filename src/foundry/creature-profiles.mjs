@@ -13,6 +13,7 @@ import { attachFlightSystem } from './flight-runtime.mjs';
 import {PF2eManticoreAdapter,MANTICORE_SCORPION_SOURCE} from './manticore-adapter.mjs';
 import {PF2eManticoreQuillAdapter,MANTICORE_QUILL_SOURCE} from './manticore-quill-adapter.mjs';
 import {PF2eDeroMagisterAdapter,DERO_SOURCE} from './dero-magister-adapter.mjs';
+import {attachConfusionSystem} from './confused-adapter.mjs';
 
 const profiles = [];
 export function registerCreatureProfile(profile) {
@@ -58,7 +59,7 @@ export function creatureProfile(actor) {
 }
 export function createCreatureAdapter(token, wolfProfile, options) {
   const profile = creatureProfile(token.actor);
-  return attachBehaviorSystem(attachFlightSystem(new profile.Adapter(token, wolfProfile, options)));
+  return attachConfusionSystem(attachBehaviorSystem(attachFlightSystem(new profile.Adapter(token, wolfProfile, options))));
 }
 export function supportedProfiles() { return [...profiles.map(({ id, label, roles }) => ({ id, label, roles })),
   {id:'basic-npc',label:'Basic NPC (prepared melee Strikes)',roles:['combatant']}]; }

@@ -1,0 +1,17 @@
+# Confused AI — 0.37.0
+
+Confused automatically overrides the ordinary creature profile's decision strategy. No separate checkbox, custom target roster or behavior configuration is needed. Removing Confused restores normal tactics with the actions and MAP already spent.
+
+The override treats other creature combatants as potential enemies regardless of alliance, including allies and neutrals. It selects randomly among located targets. The target stays fixed while the creature approaches, draws/regrips a weapon or reloads; another random selection happens after an attack attempt, or when the target becomes unavailable. Merely previewing/revalidating an action does not replace an existing selection. Actual alliances and other creatures' attitudes are unchanged.
+
+Allowed actions are ordinary Strikes, taught offensive cantrips, simple Strides/Fly, drawing/stowing/regripping weapons, Reload, and Stand/Escape when needed to enable an attack. Ordinary action costs, MAP, ammunition, condition checks, cover/concealment checks, walls, 3D reach and awaited reactions still apply. Known command-granted Step/Stride-only extra actions remain restricted to ground movement. No spell slots are spent. Innate effects carried by an ordinary Strike retain that Strike's existing handler.
+
+There is no Hide, Sneak, Seek, scouting, flank coordination, morale retreat, tank/showcase scoring, command, gaze, Trip/Knockdown, Eagle Dive, Spike Volley, Sustain, slot spell or other activated special ability. Flight uses a bounded route toward the selected target and basic flight maintenance; it has no hunting altitude, escape climb or attack-and-retreat planning. Confused also denies reactions for both AI and supported manual reaction controls. Off-guard and the condition's native modifiers remain PF2e's responsibility.
+
+Offensive cantrips currently use existing taught handlers: **Ignition**, **Tangle Vine** and **Void Warp**. New cantrips still need an effect handler; the override does not guess arbitrary spell results. It can change to available ranged weapons and reverts to melee when their ammunition is exhausted. It does not select support spells or cast slot spells as substitutes.
+
+Confused grants no knowledge of undetected or GM-hidden positions. Existing remembered/located squares and targeting flat checks remain authoritative. If no external target is located, automated self-targeting is not introduced by this strategy: the GM resolves the rule's self-hit/babbling fallback. Missing/locked Escape sources still need their source/DC configured. Damage-triggered recovery and special sources that prevent recovery remain with their existing owner or the GM; this release adds no second recovery roll. Controlled/Fleeing and other overlapping action-dictating conditions still need GM precedence adjudication.
+
+The generic condition adapter sits outside profile/behavior/flight planners and delegates only legal native action execution. An action queued for the wrong condition strategy is skipped before its known-unused reservation is refunded and the runner chooses again. A target dying during an intent/reaction pause likewise triggers recalculation without spending an attack. Encounter completion keeps combat active while a living confused combatant can still attack an erstwhile ally.
+
+Rules reference: [Confused, Archives of Nethys](https://2e.aonprd.com/Conditions.aspx?ID=63). Random-target persistence across preparation is the chosen GM automation policy; the source assigns random target determination to the GM.

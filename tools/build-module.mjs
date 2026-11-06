@@ -81,6 +81,7 @@ for(const id of PACKAGE_IDS){
 }
 await cp(new URL('docs/modular-suite.md',root),new URL('modular-suite.md',output));
 for(const id of PACKAGE_IDS)await cp(new URL('docs/ramps.md',root),path.join(dist,id,'ramps.md'));
+await cp(new URL('docs/confused-ai.md',root),new URL('confused-ai.md',output));
 for(const [id,documents]of [['pf2e-tactical-environment',['environment-zones.md','scene-terrain.md']],
  ['pf2e-tactical-conditions',['condition-manual.md','condition-handling.md']],['pf2e-tactical-movement',['player-stealth.md','eagle-flight.md','condition-manual.md']]]){
  for(const document of documents)await cp(new URL('docs/'+document,root),path.join(dist,id,document));

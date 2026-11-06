@@ -2,14 +2,14 @@
   "id": "foundry-creature-ai",
   "title": "Foundry Creature AI",
   "description": "NPC tactics, creature profiles and automatic turns using the independent PF2e Tactical Rules modules.",
-  "version": "0.36.2",
+  "version": "0.37.0",
   "compatibility": { "minimum": "14.361", "verified": "14.369", "maximum": "14" },
   "relationships": { "systems": [{ "id": "pf2e", "type": "system", "compatibility": { "minimum": "8.6.1", "maximum": "8.6.1" } }],
     "requires": [
-      {"id":"pf2e-tactical-core","type":"module","compatibility":{"minimum":"0.36.2"}},
-      {"id":"pf2e-tactical-environment","type":"module","compatibility":{"minimum":"0.36.2"}},
-      {"id":"pf2e-tactical-conditions","type":"module","compatibility":{"minimum":"0.36.2"}},
-      {"id":"pf2e-tactical-movement","type":"module","compatibility":{"minimum":"0.36.2"}}
+      {"id":"pf2e-tactical-core","type":"module","compatibility":{"minimum":"0.37.0"}},
+      {"id":"pf2e-tactical-environment","type":"module","compatibility":{"minimum":"0.37.0"}},
+      {"id":"pf2e-tactical-conditions","type":"module","compatibility":{"minimum":"0.37.0"}},
+      {"id":"pf2e-tactical-movement","type":"module","compatibility":{"minimum":"0.37.0"}}
     ] },
   "esmodules": ["src/foundry/main.mjs"],
   "styles": ["styles/creature-ai.css"]
