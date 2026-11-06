@@ -8,6 +8,8 @@ test('Step and Sneak register as ordinary native movement choices with walking t
  const f=fixture(),actions={walk:{label:'Walk'}};globalThis.CONFIG={Token:{movement:{actions}}};
  registerMovementModes();assert.equal(actions.step.terrainAction,'walk');assert.equal(actions.sneak.terrainAction,'walk');
  f.player.actor.system.attributes.speed={total:25};assert.equal(actions.step.canSelect(f.player.document),true);assert.equal(actions.sneak.canSelect(f.player.document),true);
+ assert.equal(actions.sneak.canSelect(f.boss.document),true,'NPCs can choose Sneak too');
+ assert.equal(actions.sneak.canSelect({actor:{isOfType:()=>false}}),false,'non-creature tokens stay excluded');
  f.player.actor.conditionsSet.add('prone');assert.equal(actions.step.canSelect(f.player.document),false);assert.equal(actions.sneak.canSelect(f.player.document),false);
  f.player.actor.conditionsSet.clear();f.player.actor.system.attributes.speed.total=5;assert.equal(actions.step.canSelect(f.player.document),false);
  const previous=actions.step;registerMovementModes();assert.equal(actions.step,previous);

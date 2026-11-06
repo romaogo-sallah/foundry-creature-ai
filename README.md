@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.36.2:** fixes Sneak missing from NPC movement menus. Manual Hide/Sneak now supports creature tokens, including NPCs, with the same secret checks, movement budget, removable effect and observer rules. Managed AI actions keep their existing lifecycle. Reload clients with **Ctrl+F5**.
+
 **Version 0.36.1:** adds a native **Ramp / stairs** Region behavior and GM helper in the Movement module. Set lower/upper elevation and uphill direction; walking follows the Region shape, including native platforms created manually. Existing scene ramps remain supported. See [manual ramp instructions](docs/ramps.md).
 
 **Version 0.36.0:** the [modular suite](docs/modular-suite.md) separates Core, Environment, Conditions & Spells, Movement and Creature AI. Manual rules work with AI disabled. Movement owns Step, Sneak and flight costs, including doubled upward diagonals and half-cost downward diagonals. Install the complete suite archive, restart Foundry to discover the packages, enable dependencies and reload clients. Existing flags, shared settings and owned Regions migrate without resetting actors.

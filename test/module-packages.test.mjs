@@ -14,7 +14,7 @@ test('each source has one owner; manual closures exclude AI; generated imports r
    assert.ok(targetOwner===owner||DEPENDENCIES[owner].includes(targetOwner));
   }
  }
- for(const id of PACKAGE_IDS){const manifest=packageManifest(id,'0.36.1');assert.deepEqual(manifest.esmodules,[ENTRIES[id]]);
+ for(const id of PACKAGE_IDS){const manifest=packageManifest(id,'0.36.2');assert.deepEqual(manifest.esmodules,[ENTRIES[id]]);
   if(id==='pf2e-tactical-movement')assert.deepEqual(manifest.documentTypes,{RegionBehavior:{ramp:{}}});
   if(id!=='foundry-creature-ai')assert.equal(manifest.relationships.requires.some(d=>d.id==='foundry-creature-ai'),false);
  }
@@ -25,7 +25,7 @@ test('built manual packages start without AI; AI consumes the same services with
  const add=(map,name,fn)=>map.set(name,[...map.get(name)??[],fn]);
  globalThis.Hooks={once:(name,fn)=>add(once,name,fn),on:(name,fn)=>add(events,name,fn),off:()=>{}};
  const run=async name=>{const callbacks=once.get(name)??[];once.delete(name);await Promise.all(callbacks.map(fn=>fn()));};
- game.modules=new Map(PACKAGE_IDS.filter(id=>id!=='foundry-creature-ai').map(id=>[id,{active:true,version:'0.36.1'}]));
+ game.modules=new Map(PACKAGE_IDS.filter(id=>id!=='foundry-creature-ai').map(id=>[id,{active:true,version:'0.36.2'}]));
  game.settings={settings:registry,storage:new Map([...storage].map(([scope,data])=>[scope,scope==='world'?{getSetting:(key,fallback)=>data.get(key)??fallback}:{getItem:key=>data.get(key)??null}])),
   register:(namespace,key,data)=>registry.set(`${namespace}.${key}`,data),
   get:(namespace,key)=>{const id=`${namespace}.${key}`,meta=registry.get(id);if(!meta)return undefined;const raw=storage.get(meta.scope??'client').get(id);return raw===undefined?meta.default:JSON.parse(raw);},
@@ -67,6 +67,10 @@ test('built manual packages start without AI; AI consumes the same services with
  await Promise.resolve();assert.equal(pathRefreshes,0,'selection/redraw must not restart pathfinding');
  canvas.tokens.recalculatePlannedMovementPaths=recalculate;
  assert.ok(events.get('updateRegionBehavior')?.length,'edited Region behaviors refresh rules');
+ f.boss.document.object=f.boss;f.boss.document.movementAction='sneak';
+ for(const hook of events.get('updateToken')??[])hook(f.boss.document,{movementAction:'sneak'});
+ await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal(core.rules.stealth.player.armed(f.boss),true,'choosing native Sneak arms an NPC too');
  let metadata;for(const hook of events.get('preCreateChatMessage')??[])hook({flags:{pf2e:{context:{options:['foundry-creature-ai:managed','foundry-creature-ai:reaction','foundry-creature-ai:reaction-auto-damage']}}},updateSource:change=>metadata=change});
  assert.equal(metadata['flags.xdy-pf2e-workbench.noAutoDamageRoll'],true,'manual reactions prevent duplicate Workbench damage with AI absent');
  assert.equal(metadata['flags.pf2e.suppressDamageButtons'],true);

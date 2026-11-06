@@ -174,6 +174,36 @@ test('native Sneak resolves without a popup even with automated reactions disabl
   assert.equal(f.calls.filter(c=>c[0]==='stealth').length,1);
 });
 
+test('manually controlled NPCs Sneak with the same speed budget, secret roll and observer results',async()=>{
+  const f=setup();f.player.actor.type='npc';fog();await hidden(f);
+  assert.equal(f.controller.supports(f.player),true);assert.equal(playerSneakSpeed(f.player.actor),12.5);
+  await f.controller.request('arm-sneak');assert.equal(f.controller.armed(f.player),true);
+  assert.equal(await f.movement.receive(f.data(f.point(600)),game.user),true);
+  assert.equal(state(f),'undetected');assert.equal(f.calls.filter(call=>call[0]==='stealth').length,1);assert.equal(f.prompts.length,0);
+  assert.equal(perception(f.boss).entries[0].knownPosition.x,500);
+  await assert.rejects(f.movement.receive(f.data(f.point(900)),game.user),/Sneak path exceeds/);
+  assert.equal(f.player.document.x,600);assert.equal(f.calls.filter(call=>call[0]==='stealth').length,1);
+});
+
+test('managed NPC AI rolls bypass manual Sneak and manually rebuilt NPC Strikes retain precision context',async()=>{
+  const f=setup();f.player.actor.type='npc';let nativeCalls=0;
+  const result=await f.controller.wrapRoll(async()=>{nativeCalls++;return 'ai-roll';},{slug:'stealth'},
+    {type:'skill-check',action:'sneak',token:f.player.document,options:[`${ns}:managed`]});
+  assert.equal(result,'ai-roll');assert.equal(nativeCalls,1);assert.equal(f.controller.armed(f.player),false);assert.equal(f.dialogs.length,0);
+  let damageOptions;const strike={damage:async options=>{damageOptions=options;}};
+  f.player.actor.system.actions=[strike];
+  await f.controller.wrapRoll(async()=>({total:20}),{slug:'attack'},{type:'attack-roll',action:'strike',token:f.player.document,options:[]});
+  await strike.damage({checkContext:{options:[HIDDEN_STRIKE]},options:[]});assert.ok(damageOptions.options.has('target:condition:off-guard'));
+});
+
+test('manual refresh leaves AI-owned NPC stealth alone but reconciles manually resolved NPC hiding',async()=>{
+  const f=setup();f.player.actor.type='npc';await hidden(f);
+  const original=structuredClone(stealthRecord(f.player));await f.controller.refresh();
+  assert.deepEqual(stealthRecord(f.player),original);assert.equal(perception(f.boss),undefined,'AI-owned NPC records are not mirrored by the manual refresh');
+  fog();await f.controller.request('hide');assert.equal(stealthRecord(f.player).manual,true);
+  canvas.scene.regions.contents=[];await f.controller.refresh();assert.equal(state(f),'observed');assert.equal(perception(f.boss).entries[0].state,'observed');
+});
+
 test('Sneak result is present before each movement step, with failure Hidden and critical failure Observed',async()=>{
   for(const [die,expected]of [[15,'undetected'],[8,'hidden'],[1,'observed']]){
     const f=setup({die});fog();await hidden(f);let during;

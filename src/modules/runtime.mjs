@@ -108,7 +108,7 @@ export class RulesRuntime {
     Hooks.on('drawToken',token=>captions(token.id));
     Hooks.on('updateUser',()=>{captions();if(this.has('environment'))void this.zoneConcealment.refresh().catch(this.onError);});
     Hooks.on('updateToken',(document,changed={})=>{
-      if(this.has('movement')&&Object.hasOwn(changed,'movementAction')&&document.actor?.isOfType?.('character')&&game.users.activeGM?.id===game.user.id){
+      if(this.has('movement')&&Object.hasOwn(changed,'movementAction')&&document.actor?.isOfType?.('creature')&&game.users.activeGM?.id===game.user.id){
         const token=document.object??canvas.tokens.get(document.id);if(token)void setSneakMode(token,changed.movementAction==='sneak').catch(this.onError);
       }
       if(TOKEN_GEOMETRY_FIELDS.some(key=>Object.hasOwn(changed,key))||changed.flags?.[MODULE_ID]||Object.keys(changed).some(key=>key.startsWith(`flags.${MODULE_ID}.`)))refresh();

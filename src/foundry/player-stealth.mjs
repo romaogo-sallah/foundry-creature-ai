@@ -29,7 +29,7 @@ export class PlayerStealth {
   constructor({enabled=()=>true,onError=error=>ui.notifications.error(error.message)}={}){
     this.enabled=enabled;this.onError=onError;this.pending=new Set();this.completed=new Map();this.mirrorQueue=Promise.resolve();
   }
-  supports(token){return this.enabled()&&token?.actor?.isOfType?.('character');}
+  supports(token){return this.enabled()&&token?.actor?.isOfType?.('creature');}
   movementEnabled(token){return this.supports(token)&&(stealthObservers(token).length>0||stealthRecord(token)?.entries.length>0||this.armed(token));}
   armed(token){return sneakMode(token);}
   enableSneak(token){return setSneakMode(token,true);}
@@ -61,7 +61,7 @@ export class PlayerStealth {
       const state=detectionFor(canvas.tokens.get(entry.observerId),subject).state;
       return {...entry,state,knownPosition:state==='undetected'?entry.knownPosition:position(subject)};
     });
-    const next={...stealthContext(),moving:false,entries};
+    const next={...stealthContext(),moving:false,entries,manual:true};
     if(JSON.stringify(saved)!==JSON.stringify(next))await subject.document.setFlag(ns,'stealth',next);
     await this.mirror(subject);
   }
@@ -74,14 +74,17 @@ export class PlayerStealth {
         for(const subject of [...canvas.tokens.placeables]){
           if(this.supports(subject)&&subject.document.getFlag(ns,'sneakNextMove'))await this.enableSneak(subject);
           const saved=stealthRecord(subject);
-          if(this.supports(subject)&&saved&&!saved.moving&&!this.pending.has(subject.id))await this.afterStep(subject);
+          // AI-owned NPC records keep their existing lifecycle. Reconcile NPCs
+          // here only after manual stealth or an explicitly armed Sneak mode.
+          const manual=!subject.actor?.isOfType?.('npc')||saved?.manual||this.armed(subject);
+          if(this.supports(subject)&&manual&&saved&&!saved.moving&&!this.pending.has(subject.id))await this.afterStep(subject);
         }
       }while(this.refreshAgain);
     })();
     try{await this.refreshing;}finally{this.refreshing=null;}
   }
   async request(action,token=canvas.tokens.controlled[0],extra={}){
-    if(!this.supports(token)||!game.user.isGM&&!token.actor.testUserPermission(game.user,'OWNER'))throw new Error('Select your character token first');
+    if(!this.supports(token)||!game.user.isGM&&!token.actor.testUserPermission(game.user,'OWNER'))throw new Error('Select a creature token you own first');
     const gm=game.users.activeGM;if(!gm)throw new Error('An active GM is required for secret Stealth checks');
     const data={action,sceneId:canvas.scene.id,tokenId:token.id,origin:position(token),stamp:combatStamp(),expires:Date.now()+120000,
       requestId:foundry.utils.randomID(),...extra};
@@ -90,12 +93,12 @@ export class PlayerStealth {
   async receive(data,sender){
     if(game.users.activeGM?.id!==game.user.id||!sender?.active||!this.enabled())throw new Error('Player Stealth requires the active GM');
     const token=canvas.scene?.id===data.sceneId?canvas.tokens.get(data.tokenId):null;
-    if(!this.supports(token)||!sender.isGM&&!token.actor.testUserPermission(sender,'OWNER'))throw new Error('You do not own this character');
+    if(!this.supports(token)||!sender.isGM&&!token.actor.testUserPermission(sender,'OWNER'))throw new Error('You do not own this creature');
     if(!Number.isFinite(data.expires)||data.expires<Date.now()||data.expires>Date.now()+180000||combatStamp()!==data.stamp||
       !data.origin||!equal(position(token),data.origin)||typeof data.requestId!=='string')throw new Error('The Stealth request is stale');
     const id=`${sender.id}:${data.requestId}`;
     if(this.completed.has(id))return this.completed.get(id);
-    if(this.pending.has(token.id))throw new Error('This character already has a Stealth check resolving');
+    if(this.pending.has(token.id))throw new Error('This creature already has a Stealth check resolving');
     const valid=()=>game.users.activeGM?.id===game.user.id&&canvas.scene?.id===data.sceneId&&combatStamp()===data.stamp&&
       canvas.tokens.get(token.id)===token&&equal(position(token),data.origin)&&(sender.isGM||token.actor.testUserPermission(sender,'OWNER'));
     this.pending.add(token.id);
@@ -117,7 +120,7 @@ export class PlayerStealth {
         }
         const observers=stealthObservers(token),starts=new Map(observers.map(observer=>[observer.id,stealthStart(observer,token)]));
         await rollStealth(token,'hide',{observers,starts,eligible:observers.filter(observer=>hidingFrom(observer,token).canHide).map(o=>o.id),
-          valid,providedRoll,circumstanceBonus});
+          valid,providedRoll,circumstanceBonus,manual:true});
         await this.mirror(token);
       }else throw new Error('Unknown player Stealth action');
       const answer={complete:true};this.completed.set(id,answer);if(this.completed.size>200)this.completed.delete(this.completed.keys().next().value);
@@ -134,7 +137,7 @@ export class PlayerStealth {
       extraRollOptions:[managed,'secret','skip-handling-message','action:sneak']});
     if(!roll||!Number.isFinite(roll.total))throw new Error('Sneak roll was cancelled; no movement occurred');
     const context=stealthContext();
-    await rollStealth(token,'sneak',{observers,starts,eligible,coverThroughout,destination:center(token,path.at(-1)),moving:true,providedRoll:roll,valid});
+    await rollStealth(token,'sneak',{observers,starts,eligible,coverThroughout,destination:center(token,path.at(-1)),moving:true,providedRoll:roll,valid,manual:true});
     await this.mirror(token);
     return {observers,starts,eligible,roll,context};
   }
@@ -145,11 +148,11 @@ export class PlayerStealth {
     const observers=plan.observers.filter(observer=>canvas.tokens.get(observer.id)===observer);
     const coverThroughout=new Map(observers.map(observer=>[observer.id,coverAlongPath(observer,token,path.map(p=>center(token,p)))]));
     await rollStealth(token,'sneak',{observers,starts:plan.starts,eligible:plan.eligible,coverThroughout,destination:center(token,actual),
-      moving:false,providedRoll:plan.roll});
+      moving:false,providedRoll:plan.roll,manual:true});
     await this.mirror(token);
   }
   async open(token=canvas.tokens.controlled[0]){
-    if(!this.supports(token))throw new Error('Select your character token first');
+    if(!this.supports(token))throw new Error('Select a creature token you own first');
     const action=await foundry.applications.api.DialogV2.wait({window:{title:`Stealth — ${token.name}`},
       content:`<p>Hide resolves one secret Stealth check against each enemy. Start Sneak adds a visible effect; ground movements use Sneak until you remove it. Each movement spends one action and rolls separately. Stop Sneak removes the effect without changing enemy detection. Reveal ends ordinary hiding and also stops Sneak.</p><p>Sneak is currently <strong>${this.armed(token)?'on':'off'}</strong>.</p>`,
       buttons:[{action:'hide',label:'Hide',default:true},this.armed(token)?{action:'stop-sneak',label:'Stop Sneak'}:{action:'arm-sneak',label:'Start Sneak'},
@@ -168,7 +171,7 @@ export class PlayerStealth {
       libWrapper.register(packageId,'CONFIG.PF2E.Actor.documentClasses.character.prototype.prepareStrike',function(wrapped,...args){
         const strike=wrapped(...args);controller.prepareDamage(strike);return strike;
       },'WRAPPER');
-      for(const token of canvas.tokens.placeables)if(controller.supports(token))for(const strike of token.actor.system.actions??[])controller.prepareDamage(strike);
+      for(const token of canvas.tokens.placeables)if(controller.supports(token)&&token.actor.isOfType('character'))for(const strike of token.actor.system.actions??[])controller.prepareDamage(strike);
     }
   }
   // The environment installer owns our single libWrapper registration for
@@ -197,6 +200,9 @@ export class PlayerStealth {
         return roll;
       }
       if(context.type==='attack-roll'){
+        // NPC Strikes are rebuilt when effects change. Prepare the current
+        // entries before a manual attack, after the managed-AI bypass above.
+        for(const strike of token.actor.system.actions??[])controller.prepareDamage(strike);
         if(action!=='strike')await controller.request('reveal-action',token);
         const roll=await wrapped(check,context,...rest);if(roll&&action==='strike')await controller.request('reveal-action',token);return roll;
       }

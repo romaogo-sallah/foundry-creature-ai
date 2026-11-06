@@ -65,7 +65,7 @@ export async function reveal(subject) {
 }
 
 export async function rollStealth(subject, kind, { observers = stealthObservers(subject), eligible, valid = () => true, coverThroughout, destination, moving = false,
-  providedRoll, circumstanceBonus, starts: suppliedStarts } = {}) {
+  providedRoll, circumstanceBonus, starts: suppliedStarts, manual = false } = {}) {
   const statistic = subject.actor.getStatistic('stealth');
   if (!statistic?.check?.roll) throw new Error('This creature has no native Stealth roll');
   const starts = suppliedStarts ?? new Map(observers.map(observer => [observer.id, detectionFor(observer, subject)]));
@@ -91,7 +91,7 @@ export async function rollStealth(subject, kind, { observers = stealthObservers(
     return { observerId: observer.id, state, degree, total: roll.total + bonus, dc,
       knownPosition: state === 'undetected' ? starts.get(observer.id)?.knownPosition ?? square(subject) : square(subject) };
   });
-  await subject.document.setFlag(namespace, 'stealth', { ...stealthContext(), moving, entries });
+  await subject.document.setFlag(namespace, 'stealth', { ...stealthContext(), moving, entries, ...(manual?{manual:true}:{}) });
   return entries;
 }
 

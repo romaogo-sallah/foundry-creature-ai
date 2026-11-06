@@ -1,19 +1,15 @@
-# Player Hide and Sneak — 0.15.3
+# Manual Hide and Sneak — 0.36.2
 
-Patch **0.15.3** fixes ordinary snapped dragging across scene regions. Foundry-generated intermediate boundary points are rebuilt from the requested path instead of being mistaken for unsnapped user waypoints. Native token snapping also handles footprint offsets and coordinate rounding. Partial API waypoints inherit unchanged coordinates/elevation/level. Actual unsupported level/elevation/size changes and explicit unsnapped destinations retain manual handling.
-
-Patch **0.15.2** fixes duplicate registration of the native check wrapper during startup. Terrain checks and player stealth share one registration; no libWrapper setting changes or module disabling are needed. Reload every client after installing the fix.
-
-Reload **every client with Ctrl+F5**. The world setting **Foundry Creature AI → Player Hide and Sneak** defaults on. An active GM is required to resolve secret checks and save observer results. The feature works for character tokens without selecting an AI profile, including outside combat.
+The **PF2e Tactical Rules — Movement** module supports both PC and manually controlled NPC creature tokens. **Sneak** was previously filtered out for NPCs; 0.36.2 removes that restriction. Reload every client with **Ctrl+F5**. The world setting **Manual Hide and Sneak (PCs and NPCs)** defaults on. An active GM resolves secret checks and saves observer results. No AI profile is needed.
 
 ## Play
 
-1. Select your character. Use the sheet's **Hide** action, or roll **Stealth** and choose **Hide** when asked. A sheet roll is reused; the GM does not roll a second check. The **Player Hide / Sneak** token tool (masked figure) also offers Hide.
-2. Drag a ground movement path. With opposing observers present, the movement prompt offers **Stride**, a legal **Sneak**, and a legal **Step**. Stride ends ordinary hiding; Step preserves it while protection remains. Cancelling leaves the token in place.
-3. Choosing **Sneak** on the sheet, **Start Sneak** on the masked-figure tool, or **Sneak** in the movement prompt adds a native **Sneak** effect with a token icon. While it remains active, ground moves automatically Sneak without the movement-choice popup. Every move gets its own secret check; clicking Sneak does not roll before a path exists. An excessive path is rejected without rolling or moving, leaving the mode active so you can shorten the path.
-4. Remove **Sneak** from your own Effects panel/sheet, or choose **Stop Sneak** in the masked-figure tool, to stop automatic Sneak. It remains active across moves and turns until removed. Removing it does not spend an action, roll a check, or instantly reveal you. Attacks and other revealing actions change detection without removing the movement choice. **Reveal / stop Sneak** intentionally does both.
+1. Select a creature token you own, or any creature as GM. Use the sheet's **Hide** action, or the **Hide / Sneak (PCs and NPCs)** token tool. A native Hide roll is reused rather than rolled twice.
+2. Choose **Sneak** from the token's native movement menu, then drag a ground path. **Step** and **Walk** are in the same menu; no movement-choice popup is needed.
+3. Choosing Sneak adds a removable **Sneak** effect. Each move uses a separate secret check and the current Sneak movement budget. Oversized paths are rejected without moving or rolling. The mode itself grants no Hidden or Undetected state.
+4. Choose **Walk**, remove the effect, or use **Stop Sneak** to return to normal movement. Removing the mode does not instantly reveal the creature; revealing actions still do. Each Sneak move costs one action; manual users track their own actions.
 
-Hide and each Sneak movement cost one action. Toggling the mode itself does not spend or refund an action. **Players still track their own actions**; these controls do not change another module's action counter. Each drag represents at most one movement action. In combat, movement automation applies during that character's turn. Walking, keyboard movement and normal API walking use the same engine.
+NPC manual checks use the same observer records, native Stealth statistic, Speed and terrain rules as PCs. Existing AI-managed moves/rolls bypass manual handling, and AI-owned stealth records keep their existing refresh lifecycle. Movement automation applies during the creature's active turn in combat, and also supports eligible movement outside combat.
 
 ## Detection and rules
 
@@ -29,7 +25,7 @@ Character detection and enemy perception flags refresh on movement and terrain/c
 
 ## Scope and corrections
 
-Automated movement currently requires a **5-foot square grid**, snapped ground paths on one elevation/level, and supported terrain behaviors. Off-turn movement, flying, swimming, teleportation, special senses, noise adjudication, initiative/Avoid Notice, player Seek, automatic Point Out, passive Legendary Sneak, and feat-specific exceptions beyond the two listed feats remain manual. Since **0.18.0**, taught NPCs [Seek automatically](npc-perception.md), updating their own detection of a hiding player without revealing that player's secret Stealth result to their planner. Hide uses explicit cover regions and blocked sight; Toolbelt wall/creature cover still controls its own attack modifiers and does not supply this module with a public hiding query.
+Automated movement currently requires a **5-foot square grid**, snapped ground paths within one scene level (including supported ramps), and supported terrain behaviors. Off-turn movement, flying, swimming, teleportation, special senses, noise adjudication, initiative/Avoid Notice, player Seek, automatic Point Out, passive Legendary Sneak, and feat-specific exceptions beyond the two listed feats remain manual. Since **0.18.0**, taught NPCs [Seek automatically](npc-perception.md), updating their own detection of a hiding player without revealing that player's secret Stealth result to their planner. Hide uses explicit cover regions and blocked sight; Toolbelt wall/creature cover still controls its own attack modifiers and does not supply this module with a public hiding query.
 
 Use **Reveal / stop Sneak** after unchecked actions such as Interact or casting a save-only spell. GM **Detection controls** (eye tool) can correct individual observers after Seek or special adjudication. Independently applied global Hidden/Undetected/Invisible conditions remain separate and require their usual manual removal. No enemy DCs or success list are sent in the player query acknowledgement.
 
@@ -40,8 +36,8 @@ The character token keeps the canonical `flags.foundry-creature-ai.stealth` obse
 The actor's native effect is tagged `flags.foundry-creature-ai.sneakMode.source = "player-sneak"`; it has no global speed or detection rule elements. Linked tokens share the effect. The old `sneakNextMove` flag migrates once to the visible effect and is cleared, so deleting the effect cannot silently reactivate the old selection. Unrelated effects, including effects merely named Sneak, are preserved.
 
 ```js
-const stealth = game.modules.get('foundry-creature-ai').api.stealth;
-await stealth.hide();    // Selected owned character, secret GM check
+const stealth = game.modules.get('pf2e-tactical-movement').api.stealth;
+await stealth.hide();    // Selected owned creature, secret GM check
 await stealth.sneak();     // Enable persistent Sneak; no premature roll
 await stealth.stopSneak(); // Remove the mode without changing detection
 await stealth.reveal();    // End ordinary hiding and stop Sneak
