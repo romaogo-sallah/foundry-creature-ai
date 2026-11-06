@@ -1,0 +1,1013 @@
+{
+  "items": [
+    {
+      "_id": "JqajO4nisN5Ddc6s",
+      "img": "systems/pf2e/icons/default-icons/spellcastingEntry.svg",
+      "name": "Divine Innate Spells",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "otherTags": []
+        },
+        "ability": {
+          "value": "cha"
+        },
+        "spelldc": {
+          "value": 14,
+          "dc": 22,
+          "mod": 0
+        },
+        "tradition": {
+          "value": "divine"
+        },
+        "prepared": {
+          "value": "innate",
+          "flexible": false
+        },
+        "showSlotlessLevels": {
+          "value": false
+        },
+        "proficiency": {
+          "value": 0
+        },
+        "slots": {
+          "slot0": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot1": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot2": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot3": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot4": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot5": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot6": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot7": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot8": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot9": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot10": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot11": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          }
+        },
+        "autoHeightenLevel": {
+          "value": null
+        }
+      },
+      "type": "spellcastingEntry",
+      "flags": {}
+    },
+    {
+      "_id": "YI0ylNDmvxevAqnt",
+      "img": "systems/pf2e/icons/spells/dominate.webp",
+      "name": "Dominate (At Will) (See Dominate)",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "dominate",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "incapacitation",
+            "manipulate",
+            "mental"
+          ],
+          "rarity": "uncommon",
+          "traditions": [
+            "arcane",
+            "divine",
+            "occult"
+          ]
+        },
+        "level": {
+          "value": 6
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 creature"
+        },
+        "range": {
+          "value": "30 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "until the next time you make your daily preparations",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": {
+          "save": {
+            "basic": false,
+            "statistic": "will"
+          }
+        },
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "JqajO4nisN5Ddc6s",
+          "heightenedLevel": 6
+        },
+        "counteraction": false
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "7pJhkrdCMRHYdTFf",
+      "img": "systems/pf2e/icons/equipment/weapons/rapier.webp",
+      "name": "Rapier",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "rapier",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "deadly-d8",
+            "disarm",
+            "finesse"
+          ],
+          "rarity": "common"
+        },
+        "level": {
+          "value": 0
+        },
+        "quantity": 1,
+        "baseItem": "rapier",
+        "bulk": {
+          "value": 1
+        },
+        "hp": {
+          "value": 0,
+          "max": 0
+        },
+        "hardness": 0,
+        "price": {
+          "value": {
+            "gp": 2
+          }
+        },
+        "equipped": {
+          "carryType": "held",
+          "invested": null,
+          "handsHeld": 1
+        },
+        "containerId": null,
+        "size": "med",
+        "material": {
+          "type": null,
+          "grade": null
+        },
+        "identification": {
+          "status": "identified",
+          "unidentified": {
+            "name": "",
+            "img": "",
+            "data": {
+              "description": {
+                "value": ""
+              }
+            }
+          },
+          "misidentified": {}
+        },
+        "usage": {
+          "value": "held-in-one-hand"
+        },
+        "category": "martial",
+        "group": "sword",
+        "bonus": {
+          "value": 0
+        },
+        "damage": {
+          "dice": 1,
+          "die": "d6",
+          "damageType": "piercing",
+          "persistent": null
+        },
+        "splashDamage": {
+          "value": 0
+        },
+        "range": null,
+        "expend": null,
+        "ammo": null,
+        "reload": {
+          "value": null
+        },
+        "grade": null,
+        "runes": {
+          "potency": 1,
+          "striking": 0,
+          "property": []
+        },
+        "specific": null,
+        "subitems": [],
+        "bonusDamage": {
+          "value": 0
+        }
+      },
+      "type": "weapon",
+      "flags": {}
+    },
+    {
+      "_id": "IHktHOGAoQ7i14c1",
+      "img": "icons/equipment/chest/breastplate-banded-simple-leather-brown.webp",
+      "name": "Leather Armor",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "leather-armor",
+        "traits": {
+          "otherTags": [],
+          "value": [],
+          "rarity": "common"
+        },
+        "level": {
+          "value": 0
+        },
+        "quantity": 1,
+        "baseItem": "leather-armor",
+        "bulk": {
+          "value": 1
+        },
+        "hp": {
+          "value": 0,
+          "max": 0
+        },
+        "hardness": 0,
+        "price": {
+          "value": {
+            "gp": 2
+          }
+        },
+        "equipped": {
+          "carryType": "worn",
+          "invested": null,
+          "handsHeld": 0,
+          "inSlot": true
+        },
+        "containerId": null,
+        "size": "med",
+        "material": {
+          "type": null,
+          "grade": null
+        },
+        "identification": {
+          "status": "identified",
+          "unidentified": {
+            "name": "",
+            "img": "",
+            "data": {
+              "description": {
+                "value": ""
+              }
+            }
+          },
+          "misidentified": {}
+        },
+        "category": "light",
+        "group": "leather",
+        "acBonus": 1,
+        "strength": 0,
+        "dexCap": 4,
+        "checkPenalty": -1,
+        "speedPenalty": 0,
+        "grade": null,
+        "runes": {
+          "potency": 0,
+          "resilient": 0,
+          "property": []
+        },
+        "subitems": []
+      },
+      "type": "armor",
+      "flags": {}
+    },
+    {
+      "_id": "bgkXxmVMntPQOmND",
+      "flags": {
+        "pf2e": {
+          "linkedWeapon": "7pJhkrdCMRHYdTFf"
+        }
+      },
+      "img": "systems/pf2e/icons/default-icons/melee.svg",
+      "name": "Rapier",
+      "system": {
+        "attackEffects": {
+          "value": []
+        },
+        "bonus": {
+          "value": 17
+        },
+        "damageRolls": {
+          "6r2xqkx5nywfedxwtyts": {
+            "damage": "1d6+11",
+            "damageType": "piercing",
+            "category": null
+          }
+        },
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "deadly-d8",
+            "disarm"
+          ],
+          "otherTags": [],
+          "config": {}
+        },
+        "action": "strike",
+        "area": null,
+        "range": null,
+        "subjectToMAP": true
+      },
+      "type": "melee"
+    },
+    {
+      "_id": "ziSz2omKZDCD4A0e",
+      "img": "systems/pf2e/icons/default-icons/melee.svg",
+      "name": "Claw",
+      "system": {
+        "attackEffects": {
+          "value": [
+            "grab"
+          ]
+        },
+        "bonus": {
+          "value": 17
+        },
+        "damageRolls": {
+          "biya5r6cbmpnb9ww4s11": {
+            "damage": "1d8+8",
+            "damageType": "slashing",
+            "category": null
+          }
+        },
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "agile",
+            "unarmed"
+          ],
+          "otherTags": [],
+          "config": {}
+        },
+        "action": "strike",
+        "area": null,
+        "range": null,
+        "subjectToMAP": true
+      },
+      "type": "melee",
+      "flags": {}
+    },
+    {
+      "_id": "TjOmyfilNvHKI58M",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Children of the Night",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "interaction",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-true-children-of-the-night",
+        "traits": {
+          "value": [
+            "divine",
+            "mental"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "KeTrwbKWih6HyuoM",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Fast Healing 7",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "defensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [
+          {
+            "key": "FastHealing",
+            "predicate": [
+              {
+                "not": "turn-to-mist"
+              }
+            ],
+            "value": 7
+          }
+        ],
+        "slug": "fast-healing",
+        "traits": {
+          "value": [],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "gRQ32Y4BWrQbWOlS",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Coffin Restoration",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "defensive",
+        "deathNote": true,
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-basic-coffin-restoration",
+        "traits": {
+          "value": [
+            "divine",
+            "void"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "iuyYNQtDMprDDoZH",
+      "img": "systems/pf2e/icons/actions/FreeAction.webp",
+      "name": "Mist Escape",
+      "system": {
+        "actionType": {
+          "value": "free"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "defensive",
+        "deathNote": true,
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-true-mist-escape",
+        "traits": {
+          "value": [],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "OgOkCo3ZpgcUbZr1",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Vampire Vulnerabilities",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "defensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [
+          {
+            "exceptions": [
+              {
+                "definition": [
+                  "item:magical",
+                  {
+                    "or": [
+                      "damage:material:dawnsilver",
+                      "damage:material:silver"
+                    ]
+                  }
+                ],
+                "label": "PF2E.IWR.Custom.MagicalSilver"
+              }
+            ],
+            "key": "Resistance",
+            "type": "physical",
+            "value": 7
+          }
+        ],
+        "slug": "vampire-basic-vampire-vulnerabilities",
+        "traits": {
+          "value": [],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "0w3FhoNrrNel3ZcH",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Void Healing",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "defensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [
+          {
+            "key": "ActiveEffectLike",
+            "mode": "override",
+            "path": "system.attributes.hp.negativeHealing",
+            "value": true
+          }
+        ],
+        "slug": "void-healing",
+        "traits": {
+          "value": [],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "QpzMidSalFaHGivw",
+      "img": "systems/pf2e/icons/actions/OneAction.webp",
+      "name": "Change Shape",
+      "system": {
+        "actionType": {
+          "value": "action"
+        },
+        "actions": {
+          "value": 1
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [
+          {
+            "alwaysActive": true,
+            "key": "RollOption",
+            "label": "PF2E.NPCAbility.ChangeShape.Label",
+            "option": "change-shape",
+            "selection": "vampire",
+            "suboptions": [
+              {
+                "label": "PF2E.NPCAbility.ChangeShape.Form.Vampire",
+                "value": "vampire"
+              },
+              {
+                "label": "PF2E.NPCAbility.ChangeShape.Form.Animal.Specific.BatGiant",
+                "value": "bat-giant"
+              }
+            ],
+            "toggleable": true,
+            "value": true
+          },
+          {
+            "attackModifier": 15,
+            "damage": {
+              "base": {
+                "damageType": "piercing",
+                "dice": 1,
+                "die": "d8",
+                "modifier": 9
+              }
+            },
+            "key": "Strike",
+            "label": "PF2E.BattleForm.Attack.Fangs",
+            "predicate": [
+              "change-shape:bat-giant"
+            ],
+            "replaceAll": true
+          }
+        ],
+        "slug": "vampire-true-change-shape",
+        "traits": {
+          "value": [
+            "concentrate",
+            "divine",
+            "polymorph"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "jnZDE6piOq3rzmdg",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Create Servitor",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-true-create-servitor",
+        "traits": {
+          "value": [
+            "divine",
+            "downtime"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "AWS8p85NHI3IGL2n",
+      "img": "systems/pf2e/icons/actions/TwoActions.webp",
+      "name": "Dominate",
+      "system": {
+        "actionType": {
+          "value": "action"
+        },
+        "actions": {
+          "value": 2
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-true-dominate",
+        "traits": {
+          "value": [
+            "divine",
+            "incapacitation",
+            "mental",
+            "visual"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "KESgZ7EFPclSlLY8",
+      "img": "systems/pf2e/icons/actions/OneAction.webp",
+      "name": "Drink Blood",
+      "system": {
+        "actionType": {
+          "value": "action"
+        },
+        "actions": {
+          "value": 1
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-true-drink-blood",
+        "traits": {
+          "value": [
+            "divine"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "AVpXnwBBGoOo68pw",
+      "img": "systems/pf2e/icons/actions/OneAction.webp",
+      "name": "Turn to Mist",
+      "system": {
+        "actionType": {
+          "value": "action"
+        },
+        "actions": {
+          "value": 1
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [
+          {
+            "key": "RollOption",
+            "option": "turn-to-mist",
+            "toggleable": true
+          }
+        ],
+        "slug": "vampire-true-turn-to-mist",
+        "traits": {
+          "value": [
+            "air",
+            "concentrate",
+            "divine",
+            "polymorph"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "JUgPxjF2b7DYZwEu",
+      "img": "systems/pf2e/icons/actions/OneAction.webp",
+      "name": "Grab",
+      "system": {
+        "actionType": {
+          "value": "action"
+        },
+        "actions": {
+          "value": 1
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "grab",
+        "traits": {
+          "value": [],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    }
+  ],
+  "name": "Vampire Count",
+  "system": {
+    "attributes": {
+      "hp": {
+        "value": 85,
+        "temp": 0,
+        "max": 65,
+        "details": "coffin restoration, fast healing 7, void healing"
+      },
+      "ac": {
+        "value": 24,
+        "details": ""
+      },
+      "allSaves": {
+        "value": ""
+      },
+      "speed": {
+        "value": 25,
+        "otherSpeeds": [
+          {
+            "type": "climb",
+            "value": 25
+          }
+        ],
+        "details": ""
+      },
+      "immunities": [
+        {
+          "type": "death-effects"
+        },
+        {
+          "type": "disease"
+        },
+        {
+          "type": "paralyzed"
+        },
+        {
+          "type": "poison"
+        },
+        {
+          "type": "sleep"
+        }
+      ],
+      "weaknesses": [],
+      "adjustment": "elite"
+    },
+    "initiative": {
+      "statistic": "perception"
+    },
+    "details": {
+      "languages": {
+        "value": [
+          "common",
+          "necril"
+        ],
+        "details": "plus one regional language"
+      },
+      "level": {
+        "value": 6
+      },
+      "blurb": "",
+      "publication": {
+        "title": "Pathfinder Monster Core",
+        "authors": "",
+        "license": "ORC",
+        "remaster": true
+      }
+    },
+    "resources": {},
+    "_migration": {
+      "version": 0.959,
+      "previous": {
+        "schema": 0.955,
+        "foundry": "14.363",
+        "system": "8.2.0"
+      }
+    },
+    "abilities": {
+      "str": {
+        "mod": 5
+      },
+      "dex": {
+        "mod": 3
+      },
+      "con": {
+        "mod": 2
+      },
+      "int": {
+        "mod": 2
+      },
+      "wis": {
+        "mod": 4
+      },
+      "cha": {
+        "mod": 4
+      }
+    },
+    "perception": {
+      "details": "",
+      "mod": 17,
+      "senses": [
+        {
+          "type": "darkvision"
+        }
+      ],
+      "vision": true
+    },
+    "saves": {
+      "fortitude": {
+        "value": 11,
+        "saveDetail": ""
+      },
+      "reflex": {
+        "value": 14,
+        "saveDetail": ""
+      },
+      "will": {
+        "value": 17,
+        "saveDetail": ""
+      }
+    },
+    "skills": {
+      "acrobatics": {
+        "base": 13
+      },
+      "athletics": {
+        "base": 13
+      },
+      "deception": {
+        "base": 14
+      },
+      "diplomacy": {
+        "base": 14
+      },
+      "intimidation": {
+        "base": 16
+      },
+      "society": {
+        "base": 14
+      },
+      "stealth": {
+        "base": 13
+      }
+    },
+    "traits": {
+      "value": [
+        "undead",
+        "unholy",
+        "vampire"
+      ],
+      "rarity": "uncommon",
+      "size": {
+        "value": "med"
+      }
+    }
+  },
+  "type": "npc",
+  "_stats": {
+    "compendiumSource": "Compendium.pf2e.pathfinder-monster-core.Actor.pPQyoQHTxrE2U7px"
+  }
+}

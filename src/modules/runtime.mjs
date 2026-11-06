@@ -22,6 +22,7 @@ import {migrateRegionScripts} from './script-migration.mjs';
 import {registerLegacyRuleFlags} from '../foundry/legacy-rule-flags.mjs';
 import {markManagedRuleMessage} from '../foundry/managed-rule-message.mjs';
 import {spellProfilesAPI} from '../foundry/spell-profile-controls.mjs';
+import {resolveFireDamage} from '../foundry/lingering-fire.mjs';
 
 const runtimes=new WeakMap();
 export function getRulesRuntime(){
@@ -40,7 +41,7 @@ export class RulesRuntime {
     this.reactions.afterMoveAction=(...args)=>this.ai?.afterMove?.(...args);
     this.zoneConcealment=new ZoneConcealment();
     this.environmentAwareness=new EnvironmentAwareness({enabled:()=>this.has('environment')&&rulesSetting('directionalZoneIndicators')!==false});
-    this.onHazardMove=createHazardHandler({resolve:operation=>this.reactions.resolve(operation),onPause:()=>this.pause()});
+    this.onHazardMove=createHazardHandler({resolve:operation=>this.reactions.resolve(operation),onPause:()=>this.pause(),resolveFire:resolveFireDamage});
     this.rules={reactions:this.reactions,manualMovement:this.manualMovement,
       zones:{open:openZones,configure:configureZone,between:environmentBetween,refresh:()=>this.refresh(),view:()=>({observerId:this.environmentAwareness.observer?.id??null,
         defenses:[...this.environmentAwareness.entries].map(([tokenId,entry])=>({tokenId,...entry.environment,detection:entry.detection}))})},

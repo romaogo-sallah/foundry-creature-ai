@@ -2,7 +2,7 @@ import {fixture as deroFixture} from './dero-fixture.mjs';
 import {createCreatureAdapter} from '../../src/foundry/creature-profiles.mjs';
 export function fixture(options={}){
  const f=deroFixture(options);f.actor.sourceId='Actor.shared-caster';
- const slugs=['sickened','stunned','clumsy','frightened','enfeebled','persistent-damage'];
+ const slugs=['sickened','stunned','clumsy','frightened','enfeebled','persistent-damage','drained','blinded','dazzled'];
  game.pf2e.ConditionManager={getCondition:slug=>slugs.includes(slug)?{sourceId:`Compendium.pf2e.conditionitems.Item.${slug}`,toObject:()=>({name:slug,type:'condition',system:{slug,value:{isValued:slug!=='persistent-damage',value:slug==='persistent-damage'?null:1}},flags:{}})}:null};
  for(const actor of [f.actor,f.player.actor]){
   Object.defineProperty(actor.itemTypes,'condition',{get:()=>[...actor.items.values()].filter(i=>i.type==='condition')});

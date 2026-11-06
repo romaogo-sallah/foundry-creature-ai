@@ -2,7 +2,7 @@
 // Native structured fields supply geometry/damage. Prose riders are taught
 // explicitly: an unknown spell never becomes safe merely because it has dice.
 const definitions=new Map();
-const kinds=new Set(['condition-save','damage-attack','control-attack','basic-save','ground-control','save','auto','heal','ward','maneuver','attack']);
+const kinds=new Set(['condition-save','damage-attack','control-attack','basic-save','ground-control','save','auto','heal','ward','maneuver','attack','buff','lingering','counteract']);
 const saves=new Set(['fortitude','reflex','will']);
 export function defineSpell(input){
  const data=structuredClone(input);
@@ -24,7 +24,7 @@ export function defineSpell(input){
  if(data.area&&(!['cone','line','burst'].includes(data.area.type)||!Number.isFinite(data.area.value)||data.area.value<=0||data.area.value>500))throw new Error('Unsupported spell area');
  if(data.persistent&&(!/^[\d\sd@rank()+*\-\/]+$/.test(data.persistent.formula??'')||!Array.isArray(data.persistent.degrees)||data.persistent.degrees.some(n=>!Number.isInteger(n)||n<0||n>3)))throw new Error('Invalid persistent damage formula or outcomes');
  if(data.persistent&&!['mental','bleed','fire','acid','poison','cold','electricity','void','vitality','sonic','force','spirit'].includes(data.persistent.type))throw new Error('Unsupported persistent damage type');
- data.role??=['heal','ward'].includes(data.kind)?'support':data.kind==='ground-control'||data.kind==='control-attack'?'control':'damage';
+ data.role??=['heal','ward','buff'].includes(data.kind)?'support':['ground-control','control-attack','counteract'].includes(data.kind)?'control':'damage';
  if(!['control','damage','drain','support'].includes(data.role))throw new Error('Unknown spell role');
  data.resolver??=data.kind==='condition-save'?'legacy-condition':['damage-attack','control-attack'].includes(data.kind)?'legacy-attack':data.kind==='ground-control'?'grease':data.kind==='basic-save'?'legacy-area':'outcomes';
  if(!['legacy-condition','legacy-attack','grease','legacy-area','outcomes'].includes(data.resolver))throw new Error('Unknown spell resolver');
@@ -60,6 +60,27 @@ for(const data of [
  {slug:'telekinetic-maneuver',kind:'maneuver',role:'control',maneuver:'trip'},
  {slug:'paranoia',kind:'save',save:'will',role:'control',duration:60,groupOnly:true,outcomes:[
   {damage:0,noAllies:true,hostileReactions:true,utility:9},{damage:0,noAllies:true,utility:6},{damage:0,noAllies:true,utility:3,duration:6,until:'caster-start'},{damage:0}]},
+ {slug:'dominate',kind:'save',save:'will',role:'control',domination:true,range:30,duration:86400,
+  outcomes:[{damage:0,utility:28,controlled:true},{damage:0,utility:20,controlled:true},{damage:0,conditions:[{slug:'stunned',value:1}]},{damage:0}]},
+ {slug:'fireball',kind:'save',save:'reflex',area:{type:'burst',value:20},outcomes:basic},
+ {slug:'lightning-bolt',kind:'save',save:'reflex',area:{type:'line',value:120},outcomes:basic},
+ {slug:'vision-of-death',kind:'save',save:'will',deathAtZero:true,living:true,outcomes:[
+  {damage:2,conditions:[{slug:'frightened',value:4},{slug:'fleeing'}]},{damage:1,conditions:[{slug:'frightened',value:2}]},{damage:0.5,conditions:[{slug:'frightened',value:1}]},{damage:0}],endOnRecovery:'frightened'},
+ {slug:'enfeeble',kind:'save',save:'fortitude',role:'control',duration:60,outcomes:[
+  {damage:0,conditions:[{slug:'enfeebled',value:3}]},{damage:0,conditions:[{slug:'enfeebled',value:2}]},{damage:0,conditions:[{slug:'enfeebled'}],until:'caster-start',duration:6},{damage:0}]},
+ {slug:'frostbite',kind:'save',save:'fortitude',outcomes:basic,weakness:{degree:0,type:'bludgeoning',perRank:1,until:'caster-start'}},
+ {slug:'dizzying-colors',kind:'save',save:'will',role:'control',area:{type:'cone',value:15},outcomes:[
+  {damage:0,conditions:[{slug:'blinded'}],duration:60,noActions:true,noActionsDuration:6},
+  {damage:0,conditions:[{slug:'stunned'},{slug:'blinded'},{slug:'dazzled'}],duration:60,conditionDurations:{blinded:6}},
+  {damage:0,conditions:[{slug:'dazzled'}],duration:6,until:'caster-start'},{damage:0}]},
+ {slug:'haste',kind:'buff',role:'support',duration:60,effectId:'ElkXovNrHB0Doi6O'},
+ {slug:'blur',kind:'buff',role:'support',duration:60,condition:'concealed',hideAllowed:false},
+ {slug:'invisibility',kind:'buff',role:'support',duration:600,condition:'invisible'},
+ {slug:'fleet-step',kind:'buff',duration:60,selfOnly:true,effectId:'ThFug45WHkQQXcoF'},
+ {slug:'fire-shield',kind:'buff',duration:60,selfOnly:true,effectId:'1RsScTvNdGD9zGWe'},
+ {slug:'floating-flame',kind:'lingering',save:'reflex',range:30,duration:60,sustained:true,outcomes:basic},
+ {slug:'wall-of-fire',kind:'lingering',range:120,duration:60,wall:true},
+ {slug:'dispel-magic',kind:'counteract',range:120},
 ])registerSpellDefinition(data);
 const builtinDefinitions=new Map(definitions);
 

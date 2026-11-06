@@ -22,7 +22,7 @@ export function witnessedSpellConfidence(state,spell,target){
   const p=spellSaveProbabilities(state,{...spell,...cast},target);
   const probabilities=[p.criticalFailure,p.failure,p.success,p.criticalSuccess];
   const effective=spell.outcomes?probabilities.reduce((n,chance,degree)=>{const o=spell.outcomes[degree];
-   return n+chance*Number(Boolean(o?.conditions?.length||o?.noActions||o?.noReactions||o?.noAllies||spell.persistent?.degrees.includes(degree)));},0):1-p.criticalSuccess;
+   return n+chance*Number(Boolean(o?.conditions?.length||o?.controlled||o?.noActions||o?.noReactions||o?.noAllies||spell.persistent?.degrees.includes(degree)));},0):1-p.criticalSuccess;
   return 1-(1-confidence)*(1-effective);
  },0);
 }

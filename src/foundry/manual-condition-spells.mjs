@@ -3,11 +3,12 @@ import {restrictionsEnabled} from './action-restrictions.mjs';
 import {spellDefinition} from '../framework/spell-definitions.mjs';
 import {applyDefinedSpellEffects} from './defined-spell-effects.mjs';
 import {observeSpellCast} from './spell-observations.mjs';
+import {applyDomination,dominateImmune} from './domination.mjs';
 const ns='foundry-creature-ai',query=`${ns}.conditionSpell`,supported=new Set(['laughing-fit','stupefy','blindness']);
 const has=(options,value)=>options?.has?.(value)??options?.includes?.(value)??false;
 const resolved=new Map();let resolver;
 const supports=spell=>supported.has(spell?.slug)||spellDefinition(spell)?.kind==='save'&&
- Boolean(spellDefinition(spell).persistent||spellDefinition(spell).outcomes?.some(o=>o.conditions?.length||o.noAllies||o.noActions||o.noReactions));
+ Boolean(spellDefinition(spell).persistent||spellDefinition(spell).domination||spellDefinition(spell).weakness||spellDefinition(spell).outcomes?.some(o=>o.conditions?.length||o.noAllies||o.noActions||o.noReactions));
 export async function wrapConditionSave(wrapped,check,context,...rest){
  const spell=context?.item;
  if(!restrictionsEnabled()||context?.type!=='saving-throw'||context.isReroll||context.createMessage===false||
@@ -40,6 +41,12 @@ export async function resolveManualSpellSave(data,user){
  let commitment;if(spell.slug==='laughing-fit')commitment=await beginSustainedCast({actor:spell.actor,token:sourceToken},spell,target,`manual-${message.id}`);
  if(target.actor.isImmuneTo?.(spell))return null;
  const definition=spellDefinition(spell);
+ if(definition?.domination){
+  if(!sourceToken)throw new Error('Dominate requires the caster token in the active scene');
+  if(dominateImmune(target.actor,sourceToken.id))return null;
+  return applyDomination({source:{actor:spell.actor,token:sourceToken},target,spell,degree,
+   dc:spell.spellcasting?.statistic?.dc?.value??spell.actor.itemTypes.spellcastingEntry.find(e=>e.id===spell.system.location.value)?.statistic.dc.value});
+ }
  await observeSpellCast({source:{actor:spell.actor,token:sourceToken},target,spell,castId:commitment?.id,observationId:`manual-${message.id}`,
   dc:spell.spellcasting?.statistic?.dc?.value??spell.actor.itemTypes.spellcastingEntry.find(e=>e.id===spell.system.location.value)?.statistic.dc.value});
  if(definition?.resolver==='outcomes')return applyDefinedSpellEffects({source:{actor:spell.actor,token:sourceToken},target,spell,definition,degree,

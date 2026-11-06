@@ -8,14 +8,16 @@ import {flightRoutePlanner} from './flight-route-planner.mjs';
 import {gateActivityGoal} from '../framework/activity-plan.mjs';
 import {chooseTacticalAction} from '../framework/tactical-behaviors.mjs';
 import {aerialTactics,recordAerialPlan} from './aerial-tactics.mjs';
+import {isTrueVampire} from './vampire-state.mjs';
 const attached=new WeakSet(),ns='foundry-creature-ai';
 export function attachFlightSystem(adapter){
-  if(attached.has(adapter)||!flySpeed(adapter.actor))return adapter;
+  if(attached.has(adapter)||!flySpeed(adapter.actor)&&!isTrueVampire(adapter.actor))return adapter;
   attached.add(adapter);
   const snapshot=adapter.snapshot.bind(adapter),candidates=adapter.candidates.bind(adapter),execute=adapter.execute.bind(adapter),prepare=adapter.prepareTurn.bind(adapter),record=adapter.recordOutcome.bind(adapter);
   const flightSnapshot=async(ledger,options={})=>{
-    const initiallyFlying=!flightLost(adapter.token)&&!adapter.actor.hasCondition('immobilized','grabbed','restrained');
+    const initiallyFlying=flySpeed(adapter.actor)>0&&!flightLost(adapter.token)&&!adapter.actor.hasCondition('immobilized','grabbed','restrained');
     const state=await snapshot(ledger,initiallyFlying?{...options,movement:false}:options),saved=adapter.token.document.getFlag(ns,'flight');
+    if(state.mistEscape||!flySpeed(adapter.actor))return state;
     const canFly=!flightLost(adapter.token)&&!adapter.actor.hasCondition('immobilized','grabbed','restrained');
     state.flight={speed:flySpeed(adapter.actor),airborne:isAirborne(adapter.token),canFly,
       flown:saved?.combatId===game.combat.id&&saved.round===game.combat.round,
@@ -58,7 +60,7 @@ export function attachFlightSystem(adapter){
   adapter.decide=state=>{
     const result=chooseTacticalAction(offered(state),state,{actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened});
     return {...result,diagnostics:{...state.diagnostics,...result.diagnostics,
-      ...(result.chosen?.kind==='endTurn'&&state.flight?.canFly&&(state.flight.flown||!state.flight.airborne&&state.flight.airCombat?.mode==='disengage')?{turnComplete:true}:{} )}};
+      ...(result.chosen?.kind==='endTurn'&&(state.mistEscape||state.flight?.canFly&&(state.flight.flown||!state.flight.airborne&&state.flight.airCombat?.mode==='disengage'))?{turnComplete:true}:{} )}};
   };
   adapter.execute=(choice,ledger,context)=>choice.kind==='fly'?executeFlight(adapter,choice,ledger,context):execute(choice,ledger,context);
   adapter.recordOutcome=async(choice,ledger,result={})=>{await record(choice,ledger,result);await recordAerialPlan(adapter,choice,result);};

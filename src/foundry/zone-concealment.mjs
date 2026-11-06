@@ -20,6 +20,11 @@ export function hasUnmanagedConcealment(actor) {
   const conditions = concealedConditions(actor);
   return !conditions.length || conditions.some(condition => !isZoneConcealment(condition) || condition.isLocked || condition.readonly);
 }
+export function hasStealthConcealment(actor){
+ if(!hasUnmanagedConcealment(actor))return false;
+ const conditions=concealedConditions(actor);
+ return !conditions.length||conditions.some(c=>!isZoneConcealment(c)&&c.appliedBy?.flags?.[namespace]?.supportSpell?.slug!=='blur'&&c.appliedBy?.slug!=='spell-effect-blur');
+}
 
 export function occupantConcealment(document, scene = document.parent) {
   const source = document._source ?? document, size = scene.grid?.size ?? globalThis.canvas?.grid?.size ?? 1;

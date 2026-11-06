@@ -1,10 +1,15 @@
 import { allianceSide, canAssignTarget, combatantSceneId, targetingMode } from './targeting.mjs';
+import {movingMist,escapingMist,pendingMistEscape,vampireState} from './vampire-state.mjs';
 
 // These states end an NPC's ability to act. Temporary movement restrictions and
 // unresolved reactions still require a pause rather than completing the turn.
 export function incapacitationReason(token, combat = game.combat) {
   const actor = token?.actor;
   if (!actor) return null;
+  if(vampireState(actor).destroyed)return 'destroyed';
+  if(pendingMistEscape(actor))return null;
+  if(movingMist(actor))return null;
+  if(escapingMist(actor))return 'mist escaped';
   if (actor.isDead || actor.hasCondition('dead')) return 'dead';
   if (actor.hitPoints?.value <= 0) return '0 HP';
   if (actor.hasCondition('dying')) return 'dying';
@@ -30,7 +35,9 @@ export function occupiesMovementSpace(token, combat = game.combat) {
 // A single creature exhausting its manual target list is not a battle victory.
 export function encounterOutcome({ combat = game.combat, scene = canvas.scene, tokens = canvas.tokens } = {}) {
   if (!combat?.started || !scene) return null;
+  if(Array.from(combat.combatants??[]).some(c=>combatantSceneId(c,combat)===scene.id&&(movingMist(tokens.get(c.tokenId)?.actor)||pendingMistEscape(tokens.get(c.tokenId)?.actor))))return null;
   const roster = Array.from(combat.combatants ?? []).filter(c => combatantSceneId(c, combat) === scene.id);
+  if(roster.some(c=>{const actor=tokens.get(c.tokenId)?.actor;return actor?.hitPoints?.value>0&&actor.hasCondition('controlled')&&actor.getFlag?.('foundry-creature-ai','domination');}))return null;
   const entries = roster.map(c => ({ combatant: c, token: tokens.get(c.tokenId) }));
   // An unresolved document is not evidence of defeat.
   if (entries.some(e => !e.token?.actor)) return null;

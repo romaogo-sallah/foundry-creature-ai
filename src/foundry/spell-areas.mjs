@@ -74,7 +74,7 @@ export function greaseShapes(adapter, enemies, position = adapter.actualWaypoint
 
 export function describeSpellAreas(adapter, spell, state, bystanders, position) {
   const caster = adapter.token, origin = position ? { x: position.x + caster.w / 2, y: position.y + caster.h / 2 } : caster.center;
-  const shapes = spell.slug==='grease'?greaseShapes(adapter,state.enemies,position,state.casterDefense?.enabled&&!state.casterDefense.preparedGrease):
+  const shapes = ['wall-of-fire','floating-flame'].includes(spell.slug)?fireAreaShapes(adapter,spell,state.enemies,position):spell.slug==='grease'?greaseShapes(adapter,state.enemies,position,state.casterDefense?.enabled&&!state.casterDefense.preparedGrease):
     spell.area?.type==='line'?lineShapes(caster,position,spell.area.value):spell.area?.type==='burst'?burstShapes(adapter,spell,state.enemies,position):coneShapes(caster,position,spell.area?.value??15);
   return shapes.map(area => {
     const region = spellRegion(area.shapes, caster);
@@ -86,6 +86,24 @@ export function describeSpellAreas(adapter, spell, state, bystanders, position) 
         immobilized: token.actor.hasCondition('immobilized'), greased: state.bystanderGrease?.[token.id] ?? false,
         airborne: token.document.movementAction === 'fly' })) };
   }).filter(area => area.enemies.length || area.approaches?.length);
+}
+export function fireAreaShapes(adapter,spell,enemies,position=adapter.actualWaypoint()){
+ const size=canvas.grid.size,result=[],rect=canvas.dimensions.sceneRect;
+ for(const enemy of enemies.filter(e=>e.lineOfSight!==false&&e.awareness?.detection!=='undetected')){
+  const target=adapter.perceivedSpellTarget(enemy),x=Math.floor(target.center.x/size)*size,y=Math.floor(target.center.y/size)*size;
+  if(Math.hypot(x-position.x,y-position.y)/size*5>spell.range)continue;
+  for(const horizontal of spell.slug==='floating-flame'?[true]:[true,false])for(const length of spell.slug==='floating-flame'?[1]:[3,6,12]){
+   const shape={type:'rectangle',x:horizontal?x-Math.floor(length/2)*size:x,y:horizontal?y:y-Math.floor(length/2)*size,
+    width:horizontal?length*size:size,height:horizontal?size:length*size};
+   if(shape.x<rect.x||shape.y<rect.y||shape.x+shape.width>rect.x+rect.width||shape.y+shape.height>rect.y+rect.height)continue;
+   const origin={x:position.x+adapter.token.w/2,y:position.y+adapter.token.h/2};let legal=true;
+   for(let ox=0;ox<shape.width&&legal;ox+=size)for(let oy=0;oy<shape.height;oy+=size){const ground=groundTarget(adapter.token,shape.x+ox,shape.y+oy);
+    if(Math.hypot(ground.center.x-origin.x,ground.center.y-origin.y)/size*5>spell.range||!clearAttackPath(adapter.token,ground,origin)){legal=false;break;}}
+   if(!legal)continue;
+   result.push({id:`fire:${x},${y}:${horizontal}:${length}`,shapes:[shape]});
+  }
+ }
+ return result;
 }
 
 export function lineShapes(caster,position=caster.document,range=30){

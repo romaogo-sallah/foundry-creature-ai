@@ -123,3 +123,11 @@ test('movement pauses synchronously and damage waits for the entered-square anim
   const safe=f.move(f.point(500),f.point(600));await handler(safe,f.region,f.behavior);assert.equal(damage,1);
   assert.equal(f.calls.filter(call=>call[0]==='pause').length,1,'leaving a hazardous square does not pause for damage');
 });
+test('Wall of Fire crossings use the shared spell resolver once and stop movement on lethal damage',async()=>{
+ const f=setup({frequency:'crossing'}),event=f.move(f.point(200),f.point(300),{name:'tokenMoveIn'});
+ f.region.flags={'foundry-creature-ai':{lingeringFire:{slug:'wall-of-fire'}}};f.token.object=f.boss;f.token.movement=event.data.movement;
+ f.token.pauseMovement=()=>{f.calls.push(['pause']);return ()=>f.calls.push(['resume']);};f.token.stopMovement=async()=>f.calls.push(['stop']);
+ let hits=0;const handler=createHazardHandler({resolveFire:async(region,targets)=>{assert.equal(region,f.region);assert.deepEqual(targets,[f.boss]);hits++;f.actor.hitPoints.value=0;}});
+ await handler(event,f.region,f.behavior);await handler(event,f.region,f.behavior);
+ assert.equal(hits,1);assert.ok(f.calls.some(c=>c[0]==='stop'));assert.equal(f.calls.some(c=>c[0]==='resume'),false);
+});

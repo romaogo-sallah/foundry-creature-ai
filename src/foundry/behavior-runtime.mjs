@@ -4,6 +4,7 @@ import { casterStealthKnowledge } from './caster-stealth.mjs';
 import { casterTargetKnowledge } from './caster-target-knowledge.mjs';
 import {withdrawalPosition} from '../framework/withdrawal.mjs';
 import {casterScenarios} from '../framework/caster-scenarios.mjs';
+import {endHostileInvisibility} from './support-spells.mjs';
 import { clearSightPath } from './attack-path.mjs';
 import { reveal, detectionFor, STEALTH_MOVEMENT } from './stealth-awareness.mjs';
 import { executeSharedHide, executeSharedSneak, sneakSpeed, retainStepStealth, stealthAdapter } from './shared-stealth.mjs';
@@ -174,7 +175,7 @@ export function attachBehaviorSystem(adapter) {
     if(JSON.stringify(adapter.token.document.getFlag(ns,'casterTargets'))!==JSON.stringify(knowledge))await adapter.token.document.setFlag(ns,'casterTargets',knowledge);
     return options.canContinue?.()??true;
   };
-  adapter.snapshot=async(...args)=>enrichState(adapter,await snapshot(...args));
+  adapter.snapshot=async(...args)=>{const state=await snapshot(...args);return state.mistEscape?state:enrichState(adapter,state);};
   adapter.execute=async(choice,ledger,context={})=>{
     if(!await adapter.waitForReactions({signal:context.signal})||!(context.canContinue?.()??true)||adapter.turnKey()!==ledger.turn)
       return {skipped:true,pause:true,skipReason:'Stopped before the behavior action'};
@@ -198,9 +199,9 @@ export function attachBehaviorSystem(adapter) {
     }
     if(!['kobold-scout','goblin-pyro'].includes(adapter.profileId)&&!['step','hide','strike','spikeVolley'].includes(choice.kind))await reveal(adapter.token);
     if(!['kobold-scout','goblin-pyro'].includes(adapter.profileId)&&['strike','spikeVolley'].includes(choice.kind)){
-      try{return await execute(choice,ledger,context);}finally{await reveal(adapter.token);}
+      try{return await execute(choice,ledger,context);}finally{await reveal(adapter.token);await endHostileInvisibility(adapter.token);}
     }
-    return execute(choice,ledger,context);
+    try{return await execute(choice,ledger,context);}finally{if(['strike','spikeVolley','grab','drinkBlood'].includes(choice.kind)||choice.kind==='castSpell'&&!['heal','buff','ward'].includes(adapter.parts().descriptors?.find(s=>s.id===choice.spellId)?.kind))await endHostileInvisibility(adapter.token);}
   };
   adapter.recordOutcome=async(choice,ledger,result={})=>{
     await record(choice,ledger,result);

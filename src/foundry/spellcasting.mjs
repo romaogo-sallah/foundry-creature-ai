@@ -11,6 +11,7 @@ import {nativeRuleAction,resolveConditionChecks,automationOwnsFlatChecks} from '
 import {resolveSpellBinding,spellDescriptor} from './spell-catalog.mjs';
 import {executeSpellOutcomes} from './spell-outcomes.mjs';
 import {observeSpellCast,witnessedSpellCasts} from './spell-observations.mjs';
+import {vampireForm,isTrueVampire} from './vampire-state.mjs';
 
 const ns = 'foundry-creature-ai';
 const outcomes = ['criticalFailure','failure','success','criticalSuccess'];
@@ -27,7 +28,7 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
   if(choice.bindingId&&!binding)return {skipped:true,skipReason:'The selected casting entry or resource is no longer available'};
   const entry=binding?.entry??parts.entry,definition=binding?.definition;
   const targetRange=choice.melee?Math.max(5,adapter.actor.getReach({action:'attack'})):binding?spellDescriptor(binding,choice.actionCost).range:Infinity;
-  const target = choice.area ? null : ['heal','ward'].includes(definition?.kind)?adapter.liveSpellTarget?.(choice.targetId):adapter.liveTarget(choice.targetId);
+  const target = choice.area ? null : ['heal','ward','buff','counteract'].includes(definition?.kind)?adapter.liveSpellTarget?.(choice.targetId):adapter.liveTarget(choice.targetId);
   if(['heal','ward'].includes(definition?.kind)&&(target?.actor.isDead||target?.actor.hasCondition('dead')))
     return {skipped:true,skipReason:'A dead creature cannot receive this healing or ward'};
   if (!choice.area && (!target || !clearAttackPath(adapter.token,target))) return { skipped: true, skipReason: 'Spell target or attack path changed' };
@@ -45,16 +46,22 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
     if (!overlay) throw new Error('The Ignition melee variant is unavailable');
     spell = original.loadVariant({ overlayIds: [overlay._id] });
   }
+  if(definition?.domination&&isTrueVampire(adapter.actor)&&!spell.traits.has('visual')&&spell.clone)
+    spell=spell.clone({'system.traits.value':[...spell.traits,'visual']},{keepId:true});
   // Committing Cast a Spell spends its native resource even if a subsequent
   // reaction disrupts it. The action ledger has already reserved its actions.
-  if (!original.atWill&&!await entry.consume(original, spell.rank,binding?.slotId)) throw new Error('The spell resource could not be spent; inspect the reserved action');
+  if(binding?.bonded)await binding.bonded.update({'system.frequency.value':0});
+  else if (!original.atWill&&!binding?.atWill&&!await entry.consume(original, spell.rank,binding?.slotId)) throw new Error('The spell resource could not be spent; inspect the reserved action');
   await spellMessage(spell,Boolean(adapter.config.applyDamage),{targetIds:choice.targetIds??[choice.targetId].filter(Boolean)});
   if ((spell.traits?.has?.('manipulate')??true)&&adapter.config.pauseForReactions !== false && adapter.reactions) {
     const interrupt = await adapter.reactions.action({ mover: adapter.token, kind: 'manipulate', valid, applyDamage: adapter.config.applyDamage });
     if (interrupt.endTurn || interrupt.pause) return interrupt;
-    if (interrupt.disrupted) return { resolved: true, note: 'Reactive Strike disrupted the spell. Its actions and slot remain spent.' };
+    if(interrupt.disrupted){const steady=adapter.actor.itemTypes.action.some(a=>(a.slug??a.name.toLowerCase().replaceAll(' ','-'))==='steady-spellcasting');
+      const roll=steady?await new Roll('1d20').evaluate():null;if(roll)await roll.toMessage({speaker:ChatMessage.getSpeaker({token:adapter.token.document}),flavor:'Steady Spellcasting: DC 15',flags:{[ns]:{managed:true}}});
+      if(!roll||roll.total<15)return {resolved:true,note:'Reactive Strike disrupted the spell. Its actions and slot remain spent.'};}
   }
   if (!valid() || adapter.turnEndReason()) return { resolved: true, endTurn: Boolean(adapter.turnEndReason()), incapacitationReason: adapter.turnEndReason() };
+  if(vampireForm(adapter.actor)==='mist')return {resolved:true,note:'Mist transformation prevented completion of the spell; its actions and resources remain spent.'};
   if(!await resolveConditionChecks(adapter.actor,nativeRuleAction(spell),{token:adapter.token,valid}))
     return {resolved:true,note:'Condition flat check failed; spell actions and resources remain spent.'};
   if(!choice.area&&(!target||!clearAttackPath(adapter.token,target)||adapter.targetAt(adapter.originCell(),target,[],adapter.actualWaypoint()).distance>targetRange))

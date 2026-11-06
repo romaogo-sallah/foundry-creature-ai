@@ -1,17 +1,17 @@
 // Pure action rules: both AI candidates and manual Foundry adapters consume
 // these facts. Numeric modifiers, immunities and effect durations stay native.
 const movement=new Set(['stride','step','sneak','crawl','stand','escapeStride','fly','eagleDive','scamper','climb','swim','burrow','jump']);
-const attacks=new Set(['strike','trip','knockdown','sweepingHook','spikeVolley','eagleDive','escape','force-open']);
-const handling=new Set(['reload','regrip','drawMelee','drawJavelin','drawRefuse','drawSword','stow','stowSword','gripBow']);
+const attacks=new Set(['strike','trip','knockdown','sweepingHook','spikeVolley','eagleDive','escape','force-open','grab']);
+const handling=new Set(['reload','regrip','drawMelee','drawJavelin','drawRefuse','drawSword','stow','stowSword','gripBow','vampireEquip','vampireStow']);
 export function ruleAction(action){
   const traits=new Set(action.traits??[]);
   if(movement.has(action.kind))traits.add('move');
   if(attacks.has(action.kind))traits.add('attack');
   if(handling.has(action.kind))traits.add('manipulate');
-  if(['sustainSpell','seek'].includes(action.kind)||action.kind==='castSpell'&&!action.traits)traits.add('concentrate');
+  if(['sustainSpell','seek','vampireForm'].includes(action.kind)||action.kind==='castSpell'&&!action.traits)traits.add('concentrate');
   if(action.kind==='castSpell'&&!action.traits)traits.add('manipulate');
   if(action.kind==='bellow')traits.add('auditory');
-  return {...action,traits:[...traits]};
+  return {...action,ingest:action.ingest||action.kind==='drinkBlood'||action.kind?.endsWith('drink-blood'),traits:[...traits]};
 }
 export function conditionViolation(facts={},input){
   const action=ruleAction(input),has=trait=>action.traits.includes(trait);

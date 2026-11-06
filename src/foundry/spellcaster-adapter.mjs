@@ -17,6 +17,8 @@ import {detectionFor} from './stealth-awareness.mjs';
 import {inGrease} from './spell-zones.mjs';
 import {spellDefinition} from '../framework/spell-definitions.mjs';
 import {witnessedSpellCasts} from './spell-observations.mjs';
+import {taughtBuffs} from './support-spells.mjs';
+import {visibleDispelTargets} from './counteract-spells.mjs';
 const ns='foundry-creature-ai';
 export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
  get profileId(){return 'spellcaster';}
@@ -36,6 +38,9 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
  }
  async enrichCasterState(state,ledger){
   const parts=this.parts(),knowledge=casterTargetKnowledge(this),attempts=this.token.document.getFlag(ns,'conditionCaster');
+  // Persistent native regions continue outside the caster's turn. Do not
+  // create autonomous damage sources when the GM selected rolls-only mode.
+  parts.descriptors=parts.descriptors.map(s=>s.kind==='lingering'&&!this.config.applyDamage||s.domination&&this.actor.hasCondition('blinded')?{...s,available:false}:s);
   state.round=game.combat.round;state.spellAttempts=attempts?.combatId===game.combat.id?attempts.attempts??[]:[];
   state.witnessedCasts=witnessedSpellCasts(this.token);state.self.level=this.actor.level;
   state.self.hpFraction=this.actor.hitPoints.value/Math.max(1,this.actor.hitPoints.max);state.self.tempHP=this.actor.hitPoints.temp??0;
@@ -52,12 +57,15 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
     if(token?.actor&&(token===this.token||this.actor.isAllyOf(token.actor)))enemy.alliedTurnsBeforeNextStart++;}}
   const allies=canvas.tokens.placeables.filter(t=>t.actor?.isOfType?.('creature')&&!t.actor.isDead&&!t.actor.hasCondition('dead')&&!t.document.hidden&&(t===this.token||this.actor.isAllyOf(t.actor)&&this.sight(this.token.center,t)&&detectionFor(this.token,t).state==='observed'));
   const support=(token,cell=state.self.cell,position=this.actualWaypoint())=>({id:token.id,self:token===this.token,missingHP:Math.max(0,token.actor.hitPoints.max-token.actor.hitPoints.value),
+   buffs:taughtBuffs(token.actor),martialPower:Math.max(0,...basicMeleeStrikes(token.actor).map(s=>Number(s.totalModifier)*0.6)),
+   skulk:Boolean((token.actor.itemTypes.action??[]).some(a=>a.slug==='sneak-attack')),nearestEnemy:Math.min(Infinity,...state.enemies.filter(e=>e.lineOfSight!==false).map(e=>token.distanceTo(this.perceivedSpellTarget(e)))),
    hpFraction:token.actor.hitPoints.value/Math.max(1,token.actor.hitPoints.max),...token===this.token?{distance:0,lineOfSight:true,lineOfEffect:true}:this.targetAt(cell,token,[],position)});
   state.casterAllies=allies.map(t=>support(t));
+  state.dispelTargets=parts.descriptors.some(s=>s.slug==='dispel-magic'&&s.available)?visibleDispelTargets(this):[];
   state.casterDefense={enabled:true,engagementRange:Math.max(5,...parts.descriptors.filter(s=>s.kind!=='heal').map(s=>s.range))};
   const bystanders=allies.filter(t=>t!==this.token); // Add other visible neutrals as friendly-fire risks too.
   for(const t of canvas.tokens.placeables)if(t!==this.token&&!bystanders.includes(t)&&!state.enemies.some(e=>e.id===t.id)&&t.actor?.isOfType?.('creature')&&!t.document.hidden&&this.sight(this.token.center,t)&&detectionFor(this.token,t).state==='observed')bystanders.push(t);
-  const decorate=(position,enemies)=>parts.descriptors.map(spell=>spell.available&&(spell.area||spell.kind==='ground-control')?
+  const decorate=(position,enemies)=>parts.descriptors.map(spell=>spell.available&&(spell.area||['ground-control','lingering'].includes(spell.kind))?
    {...spell,areas:describeSpellAreas(this,spell,{...state,enemies,bystanderGrease:Object.fromEntries(bystanders.map(t=>[t.id,inGrease(t).length>0]))},bystanders,position)}:spell);
   state.spells=decorate(undefined,state.enemies);
   for(const move of state.moves){const defense=stealth.at(this.center(move));move.spells=parts.descriptors;

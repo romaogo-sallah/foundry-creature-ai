@@ -8,6 +8,8 @@ import { concealmentCheck } from './environment-rolls.mjs';
 import { detectionFor } from './stealth-awareness.mjs';
 import {sharesVerticalSpace} from './vertical-space.mjs';
 import {reactionRestriction} from './action-restrictions.mjs';
+import {movingMist} from './vampire-state.mjs';
+import {fireShield} from './fire-shield.mjs';
 
 export const REACTION_OPTION = `${MODULE_ID}:reaction`;
 export const REACTION_AUTO_DAMAGE = `${MODULE_ID}:reaction-auto-damage`;
@@ -18,6 +20,7 @@ const abilitySources = {
 };
 
 function ability(actor, slugs) {
+  if(slugs.includes('shield-block')&&fireShield(actor))return true;
   return [...(actor.itemTypes?.feat ?? []), ...(actor.itemTypes?.action ?? [])].some(item => {
     if (slugs.includes(item.slug ?? item.system?.slug)) return true;
     // PF2e preserves nullable source slugs. Its prepared item roll options still
@@ -157,7 +160,7 @@ export class ReactionEngine {
     if (!record().eligible) return false;
     return this.exclusive(target, async () => {
       if (!record().eligible) return false;
-      const answer = await this.prompts.ask({ token: target, title: `Shield Block — ${target.name}`,
+      const answer = fireShield(target.actor)&&target.actor.type==='npc'&&target.document.getFlag(MODULE_ID,'config')?.enabled?'block':await this.prompts.ask({ token: target, title: `Shield Block — ${target.name}`,
         description: `${origin.name} rolled ${damage.total} damage before resistance or immunity. ${target.name}'s raised shield has Hardness ${target.actor.attributes.shield.hardness}. Use Shield Block before damage is applied?`,
         choices: [{ id: 'block', label: 'Shield Block' }], valid });
       if (answer === 'pause' || !valid()) throw new Error('Shield Block decision paused. Damage has not been applied; resolve the damage and correct action counts before resuming.');
@@ -279,6 +282,7 @@ export class ReactionEngine {
       const terminal = ended();
       if (terminal) return terminal;
       if (result.disrupted) return result;
+      if(movingMist(mover.actor))return {};
       if (!valid() || !canReact(mover.actor) || movementRequired && mover.actor.hasCondition('immobilized', 'grabbed', 'restrained') ||
         (!allowProne && mover.actor.hasCondition('prone'))) {
         return { pause: true, pauseReason: 'The reaction changed the mover or stopped automation. Inspect its position before resuming.' };

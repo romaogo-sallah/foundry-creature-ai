@@ -4,8 +4,9 @@ import {incapacitationReason,occupiesMovementSpace} from './combat-state.mjs';
 import {tokenAt,volumesOverlap} from './vertical-geometry.mjs';
 import {MANAGED_MOVEMENT} from './movement-options.mjs';
 import {flightLevelAt} from './vertical-space.mjs';
+import {movingMist,pendingMistEscape} from './vampire-state.mjs';
 const ns='foundry-creature-ai',pending=new Map();
-export const flightLost=token=>Boolean(incapacitationReason(token)||token.actor.hasCondition('prone','paralyzed','petrified','unconscious')||!flySpeed(token.actor));
+export const flightLost=token=>!movingMist(token.actor)&&!pendingMistEscape(token.actor)&&Boolean(incapacitationReason(token)||token.actor.hasCondition('prone','paralyzed','petrified','unconscious')||!flySpeed(token.actor));
 const validToken=token=>canvas.ready&&canvas.tokens.get(token.id)===token&&game.users.activeGM?.id===game.user.id;
 export async function resolveFlightFall(token,{reactions,force=false,applyDamage=true,valid=()=>true}={}){
   const key=token.document.uuid??token.id;

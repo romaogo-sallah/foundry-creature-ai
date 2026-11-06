@@ -17,6 +17,8 @@ import {attachConfusionSystem} from './confused-adapter.mjs';
 import {attachFleeingSystem} from './fleeing-adapter.mjs';
 import {PF2eSpellcasterAdapter} from './spellcaster-adapter.mjs';
 import {attachSpellcastingSystem} from './spellcasting-runtime.mjs';
+import {PF2eVampireAdapter,vampireSpec,VAMPIRES} from './vampire-adapter.mjs';
+import {attachQuickenedSystem} from './quickened-runtime.mjs';
 
 const profiles = [];
 export function registerCreatureProfile(profile) {
@@ -54,6 +56,8 @@ registerCreatureProfile({id:'manticore-quill',label:'Manticore (Quill Tail)',rol
 registerCreatureProfile({id:'dero-magister',label:'Dero Magister',roles:['debuffer','controller','sustained caster'],Adapter:PF2eDeroMagisterAdapter,
   matches:actor=>actor?.type==='npc'&&[actor.sourceId,actor._stats?.compendiumSource,actor._stats?.duplicateSource,actor.flags?.core?.sourceId]
     .some(source=>source===DERO_SOURCE||source===DERO_SOURCE.replace('.Actor.','.'))});
+for(const spec of Object.values(VAMPIRES))registerCreatureProfile({id:spec.id,label:spec.id.replaceAll('-',' '),roles:['vampire',spec.id==='vampire-mastermind'?'prepared caster':'martial controller'],Adapter:PF2eVampireAdapter,
+ matches:actor=>actor?.type==='npc'&&vampireSpec(actor)?.id===spec.id});
 export function creatureProfile(actor) {
   const profile = profiles.find(profile => profile.matches(actor)) ?? (actor?.type==='npc'&&actor.itemTypes?.spell?.length&&actor.itemTypes?.spellcastingEntry?.length?
     {id:'spellcaster',label:'Spellcaster NPC',roles:['caster'],Adapter:PF2eSpellcasterAdapter}:null) ?? (actor?.type==='npc'&&basicMeleeStrikes(actor).length?
@@ -63,7 +67,7 @@ export function creatureProfile(actor) {
 }
 export function createCreatureAdapter(token, wolfProfile, options) {
   const profile = creatureProfile(token.actor);
-  return attachFleeingSystem(attachConfusionSystem(attachBehaviorSystem(attachFlightSystem(attachSpellcastingSystem(new profile.Adapter(token, wolfProfile, options))))));
+  return attachFleeingSystem(attachConfusionSystem(attachBehaviorSystem(attachQuickenedSystem(attachFlightSystem(attachSpellcastingSystem(new profile.Adapter(token, wolfProfile, options)))))));
 }
 export function supportedProfiles() { return [...profiles.map(({ id, label, roles }) => ({ id, label, roles })),
   {id:'spellcaster',label:'Spellcaster NPC (shared spell library)',roles:['caster']},

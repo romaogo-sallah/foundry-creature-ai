@@ -1,6 +1,7 @@
 import {conditionViolation,conditionFlatChecks,ruleAction} from '../framework/condition-rules.mjs';
 import {rulesSetting} from './rules-settings.mjs';
 import {conditionDirective} from '../framework/condition-directives.mjs';
+import {vampireForm} from './vampire-state.mjs';
 const ns='foundry-creature-ai';
 export function conditionFacts(actor){
   const condition=slug=>Boolean(actor?.hasCondition?.(slug));
@@ -16,7 +17,11 @@ export function nativeRuleAction(item,extra={}){
   return ruleAction({kind:item?.type==='spell'?'castSpell':item?.slug??'item',traits,reaction:item?.actionCost?.type==='reaction',
     ingest:item?.type==='consumable'&&['potion','elixir','drug','food','beverage'].includes(item.system?.category),...extra});
 }
-export function manualConditionViolation(actor,action){return conditionViolation(conditionFacts(actor),action);}
+export function manualConditionViolation(actor,action){
+ if(vampireForm(actor)==='mist'&&(['strike','castSpell','grab','drinkBlood'].includes(action.kind)||action.kind?.endsWith('drink-blood')||action.traits?.some(t=>['attack','manipulate'].includes(t))))
+  return 'Mist form cannot cast spells, attack, or use attack/manipulate actions.';
+ return conditionViolation(conditionFacts(actor),action);
+}
 export function automationOwnsFlatChecks(){
   if(!game.modules?.get?.('pf2e-automations')?.active)return false;
   try{return ['attack','all'].includes(game.settings.get('pf2e-automations','flatCheck'));}catch{return false;}

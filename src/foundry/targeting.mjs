@@ -1,7 +1,8 @@
+import {effectiveAlliance} from './domination.mjs';
 // PF2e's prepared alliance is party, opposition, or null (neutral). Token
 // disposition colors are separate from this creature relationship.
 export function allianceSide(actor) {
-  return ['party', 'opposition'].includes(actor?.alliance) ? actor.alliance : null;
+  const alliance=effectiveAlliance(actor);return ['party', 'opposition'].includes(alliance) ? alliance : null;
 }
 
 export function targetingMode(actor, config = {}) {

@@ -1,7 +1,7 @@
 import { clearSightPath, tokenRayPoint } from './attack-path.mjs';
 import { environmentBetween } from './environment-zones.mjs';
 import { checkDegree } from '../framework/math.mjs';
-import { hasUnmanagedConcealment } from './zone-concealment.mjs';
+import { hasStealthConcealment } from './zone-concealment.mjs';
 import { clearStealthBelief } from './stealth-belief.mjs';
 import { sensoryDetection } from './perception-senses.mjs';
 
@@ -9,7 +9,7 @@ const namespace = 'foundry-creature-ai';
 export const STEALTH_MOVEMENT = `${namespace}:sneak`;
 const square = token => Object.fromEntries(['x','y','elevation','level','width','height','depth'].map(key => [key, token.document[key] ?? (key === 'depth' ? 1 : null)]));
 export const stealthContext = () => ({ combatId: game.combat?.started ? game.combat.id : null, sceneId: canvas.scene?.id });
-const openStealth = subject => hasUnmanagedConcealment(subject.actor) || subject.actor.hasCondition('invisible') || (subject.actor.itemTypes?.feat ?? []).some(item=>item.slug==='legendary-sneak');
+const openStealth = subject => hasStealthConcealment(subject.actor) || subject.actor.hasCondition('invisible') || (subject.actor.itemTypes?.feat ?? []).some(item=>item.slug==='legendary-sneak');
 
 export function stealthRecord(subject) {
   const saved = subject.document.getFlag?.(namespace, 'stealth');

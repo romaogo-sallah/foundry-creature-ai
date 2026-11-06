@@ -2,6 +2,7 @@ import {actionRestriction} from './action-restrictions.mjs';
 import {manualConditionViolation,resolveConditionChecks} from './condition-actions.mjs';
 import {cleanupDefinedSpells} from './defined-spell-effects.mjs';
 import {observeSustain} from './spell-observations.mjs';
+import {sustainFloatingFire,endLingeringFire} from './lingering-fire.mjs';
 const ns='foundry-creature-ai',query=`${ns}.ongoingSpell`;
 const statuses={slowed:'xYTAsEpcJE1Ccni3',stupefied:'e1XGnhKNSQIm5IXg',blinded:'XgEqL1kFApUbl5Z2',enfeebled:'MIRkyAjyBeXivMa7',dazzled:'TkIyaNPgTZFBCCuh',confused:'yblD8fOR1J8rDwEQ'};
 const condition=(slug,value=1)=>({key:'GrantItem',uuid:`Compendium.pf2e.conditionitems.Item.${statuses[slug]}`,inMemoryOnly:true,
@@ -105,10 +106,12 @@ async function sustain(actor,castId){
   return {resolved:true,note:'Condition flat check failed; Sustain action spent without extending the spell.'};
  await actor.setFlag(ns,'ongoingCasts',casts.map(c=>c.id===castId?{...c,lastRound:game.combat.round,lastTime:now()}:c));
  await observeSustain(token,cast);
+ if(cast.slug==='floating-flame')await sustainFloatingFire(actor,cast);
  return {resolved:true,note:'Sustain: the spell continues until the end of the caster’s next turn.'};
 }
 export const temporarySpellImmunity=(actor,slug)=>slug==='blindness'&&owned(actor).some(e=>e.flags[ns].ongoingSpell.slug==='blindness-immunity'&&e.flags[ns].ongoingSpell.expiresAt>now());
 async function endCast(actor,castId){
+ await endLingeringFire({castId});
  await cleanupDefinedSpells({castIds:[castId]});
  await actor.setFlag(ns,'ongoingCasts',casterCasts(actor).filter(c=>c.id!==castId));
  for(const token of canvas.tokens.placeables){const ids=owned(token.actor).filter(e=>e.flags[ns].ongoingSpell.castId===castId).map(e=>e.id);
@@ -165,9 +168,12 @@ export function installOngoingSpells({reactions,onError}){
  Hooks.on('updateWorldTime',()=>{void reactions.resolve(()=>advanceOngoingSpells()).catch(onError);});
 }
 async function resetSpells(tokenIds){
+ await endLingeringFire({sourceTokenIds:tokenIds});
  await cleanupDefinedSpells({resetTokenIds:tokenIds});
  const ids=new Set(tokenIds);
  for(const token of canvas.tokens.placeables){
+  const vampireEffects=(token.actor?.itemTypes.effect??[]).filter(e=>ids.has(e.flags?.[ns]?.vampireGrab?.sourceTokenId)||ids.has(e.flags?.[ns]?.domination?.sourceId)||ids.has(e.flags?.[ns]?.dominateImmunity?.sourceId)).map(e=>e.id);
+  if(vampireEffects.length)await token.actor.deleteEmbeddedDocuments('Item',vampireEffects);
   const effects=owned(token.actor).filter(e=>{const d=e.flags[ns].ongoingSpell;return ids.has(d.sourceTokenId)||ids.has(d.targetId);}).map(e=>e.id);
   if(effects.length)await token.actor.deleteEmbeddedDocuments('Item',effects);
   const casts=casterCasts(token.actor),retained=casts.filter(c=>!ids.has(c.sourceTokenId)&&!ids.has(c.targetId));

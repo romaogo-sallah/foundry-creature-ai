@@ -23,7 +23,7 @@ export function casterPressure(enemies) {
 }
 
 export function spellReserveCost(state, spell) {
-  if (spell.cantrip) return 0;
+  if (spell.cantrip||spell.unlimited) return 0;
   const reserve = 2.5 + Math.max(0, 2 - state.spellSlots);
   // Only the caster's own HP is used. Losing the fight makes saving the last
   // slot less attractive, without awarding utility to an ineffective spell.

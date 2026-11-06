@@ -1,0 +1,2428 @@
+{
+  "items": [
+    {
+      "_id": "6pmMLkbrsF7wRVrQ",
+      "img": "systems/pf2e/icons/default-icons/spellcastingEntry.svg",
+      "name": "Arcane Prepared Spells",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "otherTags": []
+        },
+        "ability": {
+          "value": "cha"
+        },
+        "spelldc": {
+          "value": 19,
+          "dc": 29,
+          "mod": 0
+        },
+        "tradition": {
+          "value": "arcane"
+        },
+        "prepared": {
+          "value": "prepared",
+          "flexible": false
+        },
+        "showSlotlessLevels": {
+          "value": false
+        },
+        "proficiency": {
+          "value": 0
+        },
+        "slots": {
+          "slot0": {
+            "prepared": [
+              {
+                "id": "nzMbs7QGCid4AuoL"
+              },
+              {
+                "id": "cG4r6xQln183svLS"
+              },
+              {
+                "id": "bYbGpMFjXE5bow91"
+              },
+              {
+                "id": "aVCA09o4QbGY77u1"
+              },
+              {
+                "id": "BjCWAzX3dZmwc5Vb"
+              }
+            ],
+            "value": 0,
+            "max": 5
+          },
+          "slot1": {
+            "prepared": [
+              {
+                "id": "c7Vtzw9HHMgAy3kq"
+              },
+              {
+                "id": "c7Vtzw9HHMgAy3kq"
+              },
+              {
+                "id": "Sx0m1HsDc7rpe1mQ"
+              },
+              {
+                "id": "BZwBqXTjwbpc7tgm"
+              }
+            ],
+            "value": 0,
+            "max": 4
+          },
+          "slot2": {
+            "prepared": [
+              {
+                "id": "4zgD8fzodsdIKyK8"
+              },
+              {
+                "id": "nzpUkVab90FpZ3nA"
+              },
+              {
+                "id": "dy7zl8OWzSjKquVG"
+              },
+              {
+                "id": "5f8J5NPqNYnZpOnp"
+              }
+            ],
+            "value": 0,
+            "max": 4
+          },
+          "slot3": {
+            "prepared": [
+              {
+                "id": "ECBRcuYlMZqQBRSr"
+              },
+              {
+                "id": "KpzeqDxgaDqd8XOX"
+              },
+              {
+                "id": "KjO442ffuTRxoq8r"
+              },
+              {
+                "id": "sbuyMpvWIcq4ySzA"
+              }
+            ],
+            "value": 0,
+            "max": 4
+          },
+          "slot4": {
+            "prepared": [
+              {
+                "id": "e2DaEeYF4L1MYah0"
+              },
+              {
+                "id": "22ucg1ZMw7HJ7npc"
+              },
+              {
+                "id": "ynMWX7FGPz5yXQUC"
+              },
+              {
+                "id": "imJWrHDHoynbCsd3"
+              }
+            ],
+            "value": 0,
+            "max": 4
+          },
+          "slot5": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot6": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot7": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot8": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot9": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot10": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot11": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          }
+        },
+        "autoHeightenLevel": {
+          "value": 4
+        }
+      },
+      "type": "spellcastingEntry",
+      "flags": {}
+    },
+    {
+      "_id": "94oa0RrcsKbas3ys",
+      "img": "systems/pf2e/icons/default-icons/spellcastingEntry.svg",
+      "name": "Divine Innate Spells",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "otherTags": []
+        },
+        "ability": {
+          "value": "cha"
+        },
+        "spelldc": {
+          "value": 18,
+          "dc": 26,
+          "mod": 0
+        },
+        "tradition": {
+          "value": "divine"
+        },
+        "prepared": {
+          "value": "innate",
+          "flexible": false
+        },
+        "showSlotlessLevels": {
+          "value": false
+        },
+        "proficiency": {
+          "value": 0
+        },
+        "slots": {
+          "slot0": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot1": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot2": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot3": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot4": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot5": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot6": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot7": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot8": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot9": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot10": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          },
+          "slot11": {
+            "prepared": [],
+            "value": 0,
+            "max": 0
+          }
+        },
+        "autoHeightenLevel": {
+          "value": null
+        }
+      },
+      "type": "spellcastingEntry",
+      "flags": {}
+    },
+    {
+      "_id": "rjvFPfDJN8mX263J",
+      "img": "systems/pf2e/icons/spells/dominate.webp",
+      "name": "Dominate (At Will) (See Dominate)",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "dominate",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "incapacitation",
+            "manipulate",
+            "mental"
+          ],
+          "rarity": "uncommon",
+          "traditions": [
+            "arcane",
+            "divine",
+            "occult"
+          ]
+        },
+        "level": {
+          "value": 6
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 creature"
+        },
+        "range": {
+          "value": "30 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "until the next time you make your daily preparations",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": {
+          "save": {
+            "basic": false,
+            "statistic": "will"
+          }
+        },
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "94oa0RrcsKbas3ys",
+          "heightenedLevel": 6
+        },
+        "counteraction": false
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "e2DaEeYF4L1MYah0",
+      "img": "icons/magic/fire/barrier-shield-explosion-yellow.webp",
+      "name": "Fire Shield",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "fire-shield",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "fire",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "primal"
+          ]
+        },
+        "level": {
+          "value": 4
+        },
+        "requirements": "",
+        "target": {
+          "value": ""
+        },
+        "range": {
+          "value": ""
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "1 minute",
+          "sustained": false
+        },
+        "damage": {
+          "0": {
+            "applyMod": false,
+            "category": null,
+            "formula": "2d6",
+            "kinds": [
+              "damage"
+            ],
+            "materials": [],
+            "type": "fire"
+          }
+        },
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false,
+        "heightening": {
+          "damage": {
+            "0": "1d6"
+          },
+          "interval": 1,
+          "type": "interval"
+        }
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "ynMWX7FGPz5yXQUC",
+      "img": "systems/pf2e/icons/spells/phantasmal-killer.webp",
+      "name": "Vision of Death",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vision-of-death",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "death",
+            "emotion",
+            "fear",
+            "manipulate",
+            "mental"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "occult"
+          ]
+        },
+        "level": {
+          "value": 4
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 living creature"
+        },
+        "range": {
+          "value": "120 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "",
+          "sustained": false
+        },
+        "damage": {
+          "0": {
+            "applyMod": false,
+            "category": null,
+            "formula": "8d6",
+            "kinds": [
+              "damage"
+            ],
+            "materials": [],
+            "type": "mental"
+          }
+        },
+        "defense": {
+          "save": {
+            "basic": false,
+            "statistic": "will"
+          }
+        },
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false,
+        "heightening": {
+          "damage": {
+            "0": "2d6"
+          },
+          "interval": 1,
+          "type": "interval"
+        }
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "imJWrHDHoynbCsd3",
+      "img": "icons/magic/fire/flame-burning-campfire-rocks.webp",
+      "name": "Wall of Fire",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "wall-of-fire",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "fire",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "primal"
+          ]
+        },
+        "level": {
+          "value": 4
+        },
+        "requirements": "",
+        "target": {
+          "value": ""
+        },
+        "range": {
+          "value": "120 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "3"
+        },
+        "duration": {
+          "value": "1 minute",
+          "sustained": false
+        },
+        "damage": {
+          "0": {
+            "applyMod": false,
+            "category": null,
+            "formula": "4d6",
+            "kinds": [
+              "damage"
+            ],
+            "materials": [],
+            "type": "fire"
+          }
+        },
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false,
+        "heightening": {
+          "damage": {
+            "0": "1d6"
+          },
+          "interval": 1,
+          "type": "interval"
+        }
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "KpzeqDxgaDqd8XOX",
+      "img": "icons/magic/fire/projectile-fireball-orange-yellow.webp",
+      "name": "Fireball",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "fireball",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "fire",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "primal"
+          ]
+        },
+        "level": {
+          "value": 3
+        },
+        "requirements": "",
+        "target": {
+          "value": ""
+        },
+        "range": {
+          "value": "500 feet"
+        },
+        "area": {
+          "type": "burst",
+          "value": 20
+        },
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "",
+          "sustained": false
+        },
+        "damage": {
+          "0": {
+            "applyMod": false,
+            "category": null,
+            "formula": "6d6",
+            "kinds": [
+              "damage"
+            ],
+            "materials": [],
+            "type": "fire"
+          }
+        },
+        "defense": {
+          "save": {
+            "basic": true,
+            "statistic": "reflex"
+          }
+        },
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false,
+        "heightening": {
+          "damage": {
+            "0": "2d6"
+          },
+          "interval": 1,
+          "type": "interval"
+        }
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "KjO442ffuTRxoq8r",
+      "img": "systems/pf2e/icons/spells/haste.webp",
+      "name": "Haste",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "haste",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "occult",
+            "primal"
+          ]
+        },
+        "level": {
+          "value": 3
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 creature"
+        },
+        "range": {
+          "value": "30 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "1 minute",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false,
+        "heightening": {
+          "levels": {
+            "7": {
+              "target": {
+                "value": "6 creatures"
+              }
+            }
+          },
+          "type": "fixed"
+        }
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "sbuyMpvWIcq4ySzA",
+      "img": "icons/magic/lightning/bolt-strike-sparks-blue.webp",
+      "name": "Lightning Bolt",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "lightning-bolt",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "electricity",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "primal"
+          ]
+        },
+        "level": {
+          "value": 3
+        },
+        "requirements": "",
+        "target": {
+          "value": ""
+        },
+        "range": {
+          "value": ""
+        },
+        "area": {
+          "type": "line",
+          "value": 120
+        },
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "",
+          "sustained": false
+        },
+        "damage": {
+          "0": {
+            "applyMod": false,
+            "category": null,
+            "formula": "4d12",
+            "kinds": [
+              "damage"
+            ],
+            "materials": [],
+            "type": "electricity"
+          }
+        },
+        "defense": {
+          "save": {
+            "basic": true,
+            "statistic": "reflex"
+          }
+        },
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false,
+        "heightening": {
+          "damage": {
+            "0": "1d12"
+          },
+          "interval": 1,
+          "type": "interval"
+        }
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "4zgD8fzodsdIKyK8",
+      "img": "systems/pf2e/icons/spells/blur.webp",
+      "name": "Blur",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "blur",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "illusion",
+            "manipulate",
+            "visual"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "occult"
+          ]
+        },
+        "level": {
+          "value": 2
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 creature"
+        },
+        "range": {
+          "value": "touch"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "1 minute",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "ECBRcuYlMZqQBRSr",
+      "img": "systems/pf2e/icons/spells/dispel-magic.webp",
+      "name": "Dispel Magic",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "dispel-magic",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "divine",
+            "occult",
+            "primal"
+          ]
+        },
+        "level": {
+          "value": 2
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 spell effect or unattended magic item"
+        },
+        "range": {
+          "value": "120 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": true
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "nzpUkVab90FpZ3nA",
+      "img": "icons/magic/earth/orb-lava-ball-yellow.webp",
+      "name": "Floating Flame",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "floating-flame",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "fire",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "primal"
+          ]
+        },
+        "level": {
+          "value": 2
+        },
+        "requirements": "",
+        "target": {
+          "value": ""
+        },
+        "range": {
+          "value": "30 feet"
+        },
+        "area": {
+          "type": "square",
+          "value": 5
+        },
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "1 minute",
+          "sustained": true
+        },
+        "damage": {
+          "0": {
+            "applyMod": false,
+            "category": null,
+            "formula": "3d6",
+            "kinds": [
+              "damage"
+            ],
+            "materials": [],
+            "type": "fire"
+          }
+        },
+        "defense": {
+          "save": {
+            "basic": true,
+            "statistic": "reflex"
+          }
+        },
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false,
+        "heightening": {
+          "damage": {
+            "0": "1d6"
+          },
+          "interval": 1,
+          "type": "interval"
+        }
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "dy7zl8OWzSjKquVG",
+      "img": "icons/creatures/magical/construct-stone-earth-gray.webp",
+      "name": "Invisibility",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "invisibility",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "illusion",
+            "manipulate",
+            "subtle"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "occult"
+          ]
+        },
+        "level": {
+          "value": 2
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 creature"
+        },
+        "range": {
+          "value": "touch"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "10 minutes",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "5f8J5NPqNYnZpOnp",
+      "img": "systems/pf2e/icons/spells/feeblemind.webp",
+      "name": "Stupefy",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "stupefy",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "manipulate",
+            "mental"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "occult"
+          ]
+        },
+        "level": {
+          "value": 2
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 creature"
+        },
+        "range": {
+          "value": "30 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "varies",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": {
+          "save": {
+            "basic": false,
+            "statistic": "will"
+          }
+        },
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "nzMbs7QGCid4AuoL",
+      "img": "systems/pf2e/icons/spells/detect-magic.webp",
+      "name": "Detect Magic",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "detect-magic",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "cantrip",
+            "concentrate",
+            "detection",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "divine",
+            "occult",
+            "primal"
+          ]
+        },
+        "level": {
+          "value": 1
+        },
+        "requirements": "",
+        "target": {
+          "value": ""
+        },
+        "range": {
+          "value": ""
+        },
+        "area": {
+          "type": "emanation",
+          "value": 30
+        },
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "c7Vtzw9HHMgAy3kq",
+      "img": "icons/magic/control/buff-luck-fortune-rainbow.webp",
+      "name": "Dizzying Colors",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "dizzying-colors",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "illusion",
+            "incapacitation",
+            "manipulate",
+            "visual"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "occult"
+          ]
+        },
+        "level": {
+          "value": 1
+        },
+        "requirements": "",
+        "target": {
+          "value": ""
+        },
+        "range": {
+          "value": ""
+        },
+        "area": {
+          "type": "cone",
+          "value": 15
+        },
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "1 or more rounds (see below)",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": {
+          "save": {
+            "basic": false,
+            "statistic": "will"
+          }
+        },
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "Sx0m1HsDc7rpe1mQ",
+      "img": "systems/pf2e/icons/spells/ray-of-enfeeblement.webp",
+      "name": "Enfeeble",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "enfeeble",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "divine",
+            "occult"
+          ]
+        },
+        "level": {
+          "value": 1
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 creature"
+        },
+        "range": {
+          "value": "30 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "varies",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": {
+          "save": {
+            "basic": false,
+            "statistic": "fortitude"
+          }
+        },
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "BZwBqXTjwbpc7tgm",
+      "img": "icons/skills/movement/feet-winged-sandals-tan.webp",
+      "name": "Fleet Step",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "fleet-step",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "primal"
+          ]
+        },
+        "level": {
+          "value": 1
+        },
+        "requirements": "",
+        "target": {
+          "value": ""
+        },
+        "range": {
+          "value": ""
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "1 minute",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "cG4r6xQln183svLS",
+      "img": "icons/magic/movement/trail-streak-impact-blue.webp",
+      "name": "Frostbite",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "frostbite",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "cantrip",
+            "cold",
+            "concentrate",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "primal"
+          ]
+        },
+        "level": {
+          "value": 1
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 creature"
+        },
+        "range": {
+          "value": "60 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "",
+          "sustained": false
+        },
+        "damage": {
+          "3bsJUDEgedKhPx6T": {
+            "applyMod": false,
+            "category": null,
+            "formula": "2d4",
+            "kinds": [
+              "damage"
+            ],
+            "materials": [],
+            "type": "cold"
+          }
+        },
+        "defense": {
+          "save": {
+            "basic": true,
+            "statistic": "fortitude"
+          }
+        },
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false,
+        "heightening": {
+          "damage": {
+            "3bsJUDEgedKhPx6T": "1d4"
+          },
+          "interval": 1,
+          "type": "interval"
+        }
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "22ucg1ZMw7HJ7npc",
+      "img": "systems/pf2e/icons/spells/illusory-disguise.webp",
+      "name": "Illusory Disguise",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "illusory-disguise",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "concentrate",
+            "illusion",
+            "manipulate",
+            "visual"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "occult"
+          ]
+        },
+        "level": {
+          "value": 1
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 willing creature"
+        },
+        "range": {
+          "value": "30 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "1 hour",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "bYbGpMFjXE5bow91",
+      "img": "systems/pf2e/icons/spells/message.webp",
+      "name": "Message",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "message",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "auditory",
+            "cantrip",
+            "concentrate",
+            "illusion",
+            "linguistic",
+            "mental",
+            "subtle"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "divine",
+            "occult"
+          ]
+        },
+        "level": {
+          "value": 1
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 creature"
+        },
+        "range": {
+          "value": "120 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "1"
+        },
+        "duration": {
+          "value": "see below",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false,
+        "heightening": {
+          "levels": {
+            "3": {
+              "range": {
+                "value": "500 feet"
+              }
+            }
+          },
+          "type": "fixed"
+        }
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "BjCWAzX3dZmwc5Vb",
+      "img": "systems/pf2e/icons/spells/sigil.webp",
+      "name": "Sigil",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "sigil",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "cantrip",
+            "concentrate",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "divine",
+            "occult",
+            "primal"
+          ]
+        },
+        "level": {
+          "value": 1
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 creature or object"
+        },
+        "range": {
+          "value": "touch"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "unlimited",
+          "sustained": false
+        },
+        "damage": {},
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "aVCA09o4QbGY77u1",
+      "img": "systems/pf2e/icons/spells/mage-hand.webp",
+      "name": "Telekinetic Hand",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "telekinetic-hand",
+        "traits": {
+          "otherTags": [],
+          "value": [
+            "cantrip",
+            "concentrate",
+            "manipulate"
+          ],
+          "rarity": "common",
+          "traditions": [
+            "arcane",
+            "occult"
+          ]
+        },
+        "level": {
+          "value": 1
+        },
+        "requirements": "",
+        "target": {
+          "value": "1 unattended object of light Bulk or less"
+        },
+        "range": {
+          "value": "30 feet"
+        },
+        "area": null,
+        "time": {
+          "value": "2"
+        },
+        "duration": {
+          "value": "",
+          "sustained": true
+        },
+        "damage": {},
+        "defense": null,
+        "cost": {
+          "value": ""
+        },
+        "location": {
+          "value": "6pmMLkbrsF7wRVrQ"
+        },
+        "counteraction": false,
+        "heightening": {
+          "levels": {
+            "3": {
+              "target": {
+                "value": "1 unattended object with a Bulk of 1 or less"
+              }
+            },
+            "5": {
+              "range": {
+                "value": "60 feet"
+              }
+            },
+            "7": {
+              "target": {
+                "value": "1 unattended object with a Bulk of 2 or less"
+              }
+            }
+          },
+          "type": "fixed"
+        }
+      },
+      "type": "spell",
+      "flags": {}
+    },
+    {
+      "_id": "Zo0FP9W2ApyQ1WcK",
+      "img": "icons/equipment/finger/ring-cabochon-gold-pink.webp",
+      "name": "Signet Ring",
+      "system": {
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "otherTags": [],
+          "value": [],
+          "rarity": "common"
+        },
+        "level": {
+          "value": 0
+        },
+        "quantity": 1,
+        "baseItem": null,
+        "bulk": {
+          "value": 0
+        },
+        "hp": {
+          "value": 0,
+          "max": 0
+        },
+        "hardness": 0,
+        "price": {
+          "value": {}
+        },
+        "equipped": {
+          "carryType": "held",
+          "invested": null,
+          "handsHeld": 1
+        },
+        "containerId": null,
+        "size": "med",
+        "material": {
+          "type": null,
+          "grade": null
+        },
+        "identification": {
+          "status": "identified",
+          "unidentified": {
+            "name": "",
+            "img": "",
+            "data": {
+              "description": {
+                "value": ""
+              }
+            }
+          }
+        },
+        "usage": {
+          "value": "held-in-one-hand"
+        },
+        "subitems": []
+      },
+      "type": "equipment",
+      "flags": {}
+    },
+    {
+      "_id": "2wdfh7JIT7SjhXIz",
+      "img": "systems/pf2e/icons/default-icons/melee.svg",
+      "name": "Claw",
+      "system": {
+        "attackEffects": {
+          "value": [
+            "grab"
+          ]
+        },
+        "bonus": {
+          "value": 18
+        },
+        "damageRolls": {
+          "m9mz4oyjtoq9c4vswevw": {
+            "damage": "2d8+9",
+            "damageType": "slashing",
+            "category": null
+          }
+        },
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "range": null,
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "agile",
+            "unarmed"
+          ],
+          "otherTags": [],
+          "config": {}
+        },
+        "action": "strike",
+        "area": null,
+        "subjectToMAP": true
+      },
+      "type": "melee",
+      "flags": {}
+    },
+    {
+      "_id": "I0GaQls3ghJMJ5Ib",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Children of the Night",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "interaction",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-true-children-of-the-night",
+        "traits": {
+          "value": [
+            "divine",
+            "mental"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "8u1Hcx3t6JzOkXtF",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Fast Healing 10",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "defensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [
+          {
+            "key": "FastHealing",
+            "value": 10
+          }
+        ],
+        "slug": "fast-healing",
+        "traits": {
+          "value": [],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "9iYmbVoVyCe6SNu9",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Coffin Restoration",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "defensive",
+        "deathNote": true,
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-basic-coffin-restoration",
+        "traits": {
+          "value": [
+            "divine",
+            "void"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "S7Khn0wjpXjjyPAp",
+      "img": "systems/pf2e/icons/actions/FreeAction.webp",
+      "name": "Mist Escape",
+      "system": {
+        "actionType": {
+          "value": "free"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "defensive",
+        "deathNote": true,
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-true-mist-escape",
+        "traits": {
+          "value": [],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "GXr4u9s0uuvI5J6d",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Vampire Vulnerabilities",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "defensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [
+          {
+            "exceptions": [
+              {
+                "definition": [
+                  "item:magical",
+                  {
+                    "or": [
+                      "damage:material:dawnsilver",
+                      "damage:material:silver"
+                    ]
+                  }
+                ],
+                "label": "PF2E.IWR.Custom.MagicalSilver"
+              }
+            ],
+            "key": "Resistance",
+            "type": "physical",
+            "value": 10
+          }
+        ],
+        "slug": "vampire-basic-vampire-vulnerabilities",
+        "traits": {
+          "value": [],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "VXAdFMEIJiPWyhRq",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Void Healing",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "defensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [
+          {
+            "key": "ActiveEffectLike",
+            "mode": "override",
+            "path": "system.attributes.hp.negativeHealing",
+            "value": true
+          }
+        ],
+        "slug": "void-healing",
+        "traits": {
+          "value": [],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "zEz9gGlpNBUnyF2Y",
+      "img": "systems/pf2e/icons/actions/OneAction.webp",
+      "name": "Change Shape",
+      "system": {
+        "actionType": {
+          "value": "action"
+        },
+        "actions": {
+          "value": 1
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [
+          {
+            "alwaysActive": true,
+            "key": "RollOption",
+            "label": "PF2E.NPCAbility.ChangeShape.Label",
+            "option": "change-shape",
+            "selection": "vampire",
+            "suboptions": [
+              {
+                "label": "PF2E.NPCAbility.ChangeShape.Form.Vampire",
+                "value": "vampire"
+              },
+              {
+                "label": "PF2E.NPCAbility.ChangeShape.Form.Animal.Specific.BatGiant",
+                "value": "bat-giant"
+              }
+            ],
+            "toggleable": true,
+            "value": true
+          },
+          {
+            "attackModifier": 19,
+            "damage": {
+              "base": {
+                "damageType": "piercing",
+                "dice": 2,
+                "die": "d8",
+                "modifier": 9
+              }
+            },
+            "key": "Strike",
+            "label": "PF2E.BattleForm.Attack.Fangs",
+            "predicate": [
+              "change-shape:bat-giant"
+            ],
+            "replaceAll": true
+          }
+        ],
+        "slug": "vampire-true-change-shape",
+        "traits": {
+          "value": [
+            "concentrate",
+            "divine",
+            "polymorph"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "czqtIybNHs8mmEeg",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Create Servitor",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-true-create-servitor",
+        "traits": {
+          "value": [
+            "divine",
+            "downtime"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "3ZSVEZBMKleuEd84",
+      "img": "systems/pf2e/icons/actions/TwoActions.webp",
+      "name": "Dominate",
+      "system": {
+        "actionType": {
+          "value": "action"
+        },
+        "actions": {
+          "value": 2
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-true-dominate",
+        "traits": {
+          "value": [
+            "divine",
+            "incapacitation",
+            "mental",
+            "visual"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "9ewh7tMyC0NRIpZx",
+      "img": "systems/pf2e/icons/actions/FreeAction.webp",
+      "name": "Drain Bonded Item",
+      "system": {
+        "actionType": {
+          "value": "free"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "frequency": {
+          "max": 1,
+          "per": "day",
+          "value": 1
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [
+            "arcane"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "HhkalK1aMfqDSiWQ",
+      "img": "systems/pf2e/icons/actions/OneAction.webp",
+      "name": "Drink Blood",
+      "system": {
+        "actionType": {
+          "value": "action"
+        },
+        "actions": {
+          "value": 1
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "vampire-true-drink-blood",
+        "traits": {
+          "value": [
+            "divine"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "DD9mP7VmHRk4Lm97",
+      "img": "systems/pf2e/icons/actions/Passive.webp",
+      "name": "Steady Spellcasting",
+      "system": {
+        "actionType": {
+          "value": "passive"
+        },
+        "actions": {
+          "value": null
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": null,
+        "traits": {
+          "value": [],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "zl24K9E3qEAfVXrR",
+      "img": "systems/pf2e/icons/actions/OneAction.webp",
+      "name": "Turn to Mist",
+      "system": {
+        "actionType": {
+          "value": "action"
+        },
+        "actions": {
+          "value": 1
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [
+          {
+            "key": "RollOption",
+            "option": "turn-to-mist",
+            "toggleable": true
+          }
+        ],
+        "slug": "vampire-true-turn-to-mist",
+        "traits": {
+          "value": [
+            "air",
+            "concentrate",
+            "divine",
+            "polymorph"
+          ],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    },
+    {
+      "_id": "m3iQuuvCSejqA1Ue",
+      "img": "systems/pf2e/icons/actions/OneAction.webp",
+      "name": "Grab",
+      "system": {
+        "actionType": {
+          "value": "action"
+        },
+        "actions": {
+          "value": 1
+        },
+        "category": "offensive",
+        "description": {
+          "value": "",
+          "gm": ""
+        },
+        "rules": [],
+        "slug": "grab",
+        "traits": {
+          "value": [],
+          "otherTags": []
+        }
+      },
+      "type": "action",
+      "flags": {}
+    }
+  ],
+  "name": "Vampire Mastermind",
+  "system": {
+    "attributes": {
+      "hp": {
+        "value": 135,
+        "temp": 0,
+        "max": 115,
+        "details": "coffin restoration, fast healing 10, void healing"
+      },
+      "ac": {
+        "value": 27,
+        "details": ""
+      },
+      "allSaves": {
+        "value": ""
+      },
+      "speed": {
+        "value": 25,
+        "otherSpeeds": [
+          {
+            "type": "climb",
+            "value": 25
+          }
+        ],
+        "details": ""
+      },
+      "immunities": [
+        {
+          "type": "death-effects"
+        },
+        {
+          "type": "disease"
+        },
+        {
+          "type": "paralyzed"
+        },
+        {
+          "type": "poison"
+        },
+        {
+          "type": "sleep"
+        }
+      ],
+      "weaknesses": [],
+      "adjustment": "elite"
+    },
+    "initiative": {
+      "statistic": "perception"
+    },
+    "details": {
+      "languages": {
+        "value": [
+          "common",
+          "necril"
+        ],
+        "details": "plus one regional language"
+      },
+      "level": {
+        "value": 9
+      },
+      "blurb": "",
+      "publication": {
+        "title": "Pathfinder Monster Core",
+        "authors": "",
+        "license": "ORC",
+        "remaster": true
+      }
+    },
+    "resources": {
+      "focus": {
+        "max": 1,
+        "value": 1
+      }
+    },
+    "_migration": {
+      "version": 0.959,
+      "previous": {
+        "schema": 0.955,
+        "foundry": "14.363",
+        "system": "8.2.0"
+      }
+    },
+    "abilities": {
+      "str": {
+        "mod": 3
+      },
+      "dex": {
+        "mod": 4
+      },
+      "con": {
+        "mod": 1
+      },
+      "int": {
+        "mod": 6
+      },
+      "wis": {
+        "mod": 4
+      },
+      "cha": {
+        "mod": 5
+      }
+    },
+    "perception": {
+      "details": "",
+      "mod": 20,
+      "senses": [
+        {
+          "type": "darkvision"
+        }
+      ],
+      "vision": true
+    },
+    "saves": {
+      "fortitude": {
+        "value": 15,
+        "saveDetail": ""
+      },
+      "reflex": {
+        "value": 18,
+        "saveDetail": ""
+      },
+      "will": {
+        "value": 20,
+        "saveDetail": ""
+      }
+    },
+    "skills": {
+      "acrobatics": {
+        "base": 17
+      },
+      "arcana": {
+        "base": 21
+      },
+      "athletics": {
+        "base": 18
+      },
+      "deception": {
+        "base": 20
+      },
+      "diplomacy": {
+        "base": 20
+      },
+      "intimidation": {
+        "base": 22
+      },
+      "society": {
+        "base": 19
+      },
+      "stealth": {
+        "base": 19
+      }
+    },
+    "traits": {
+      "value": [
+        "undead",
+        "unholy",
+        "vampire"
+      ],
+      "rarity": "rare",
+      "size": {
+        "value": "med"
+      }
+    }
+  },
+  "type": "npc",
+  "_stats": {
+    "compendiumSource": "Compendium.pf2e.pathfinder-monster-core.Actor.TZt3H39oxVdZRKs9"
+  }
+}

@@ -106,6 +106,11 @@ export function installHazardMovement({packageId=namespace}={}){
 export function hazardUnits(event,region,behavior,actionKey){
   const {token,movement}=event.data,settings=behavior.flags[namespace].terrain;
   if(!movement?.id||!movement.passed?.waypoints.length||excludedMethods.has(movement.method))return 0;
+  if(settings.frequency==='crossing'){
+    if(event.name!=='tokenMoveIn'||movement.passed.waypoints.some(p=>globalThis.CONFIG?.Token?.movement?.actions?.[p.action]?.teleport))return 0;
+    const key=`cross:${token.uuid}:${region.id}:${behavior.id}:${movement.id}`,stamp=JSON.stringify(movement.passed.waypoints);
+    if(progress.get(key)===stamp)return 0;progress.set(key,stamp);if(progress.size>500)progress.delete(progress.keys().next().value);return 1;
+  }
   const document=token.document??token,grid=document.parent.grid??canvas.grid;
   if(grid.type===1&&grid.distance===5){
     const origin={...(document._source??document),...movement.origin};
@@ -145,7 +150,7 @@ export function hazardUnits(event,region,behavior,actionKey){
 }
 
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function createHazardHandler({resolve=fn=>fn(),onPause=()=>{}}={}){
+export function createHazardHandler({resolve=fn=>fn(),onPause=()=>{},resolveFire}={}){
   return function onHazardMove(event,region,behavior){
     if(!['tokenMoveIn','tokenMoveWithin'].includes(event.name)||event.user?.id!==game.user.id || behavior.disabled || region.hidden)return;
     const {token,movement}=event.data,settings=behavior.flags[namespace].terrain;
@@ -159,7 +164,11 @@ export function createHazardHandler({resolve=fn=>fn(),onPause=()=>{}}={}){
         // The document reaches the checkpoint before its sprite animation.
         // Wait for that arrival while movement and the AI barrier stay paused.
         await (movement.animation?.ended??token.object?.movementAnimationPromise);
-        if(!['entry','per5'].includes(settings.frequency)){
+        if(resolveFire&&region.flags?.[namespace]?.lingeringFire?.slug==='wall-of-fire'){
+          const target=token.object??canvas.tokens.get(token.id);if(target)await resolveFire(region,[target]);
+          if(token.actor.hitPoints.value<=0){stopped=true;await token.stopMovement?.();}return;
+        }
+        if(!['entry','per5','crossing'].includes(settings.frequency)){
           onPause();stopped=true;await token.stopMovement?.();
           await ChatMessage.create({whisper:ChatMessage.getWhisperRecipients('GM').map(user=>user.id),
             content:`<p>${escape(token.name)} entered ${escape(region.name)}: resolve ${escape(settings.formula)} ${escape(settings.damageType)} damage manually. Movement is stopped; the action remains spent.</p>`});return;

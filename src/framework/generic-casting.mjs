@@ -7,6 +7,8 @@ export function outcomeSpellValue(state,spell,target,{area=false}={}){
  if(!area&&(target.lineOfSight===false||target.lineOfEffect===false||target.distance>spell.range||
    target.awareness?.searchRequired&&!target.awareness.allowAttackEstimate&&!target.awareness.attackOnSight))return 0;
  if(knownSpellImmunity(state,spell,target))return 0;
+ if(spell.domination&&target.knownConditions?.includes('blinded'))return 0;
+ if(spell.domination&&state.spellAttempts?.some(a=>a.slug===spell.slug&&a.targetId===target.id&&a.untilRound>=state.round))return 0;
  const flat=area?1:target.concealmentDC?(21-target.concealmentDC)/20:1;
  if(spell.kind==='maneuver'){
   if(target.prone||target.spellTrippable===false)return 0;
@@ -31,7 +33,19 @@ export function genericCastingCandidates(state){
  for(const spell of state.spells.filter(s=>s.resolver==='outcomes'&&s.available&&s.actionCost<=state.actionsRemaining)){
   const reserve=spellReserveCost(state,spell),base={kind:'castSpell',spellId:spell.id,spellSlug:spell.slug,spellName:spell.name,...spellChoiceFields(spell),
    actionCost:spell.actionCost,mapIncreases:['maneuver','attack'].includes(spell.kind)?1:0,legal:true,provokes:spell.traits?.includes('manipulate'),features:{spell:true,modularSpell:true}};
-  if(spell.kind==='ward')for(const ally of state.casterAllies??[]){
+  if(spell.kind==='counteract')for(const effect of state.dispelTargets??[]){
+   if(effect.distance>spell.range||effect.value<=reserve)continue;
+   result.push({...base,id:`dispel:${spell.bindingId}:${effect.id}`,targetId:effect.targetId,effectUuid:effect.uuid,
+    assessment:{value:effect.value-reserve},scoringTerms:[{label:'Remove an observed taught magical advantage or harmful control',contribution:effect.value-reserve}]});
+  }else if(spell.kind==='buff')for(const ally of state.casterAllies??[]){
+   if(spell.selfOnly&&!ally.self||ally.distance>spell.range&&!ally.self||ally.lineOfEffect===false||ally.lineOfSight===false||ally.buffs?.includes(spell.slug))continue;
+   const exposed=ally.threatened||ally.nearestEnemy<=35,ownDanger=ally.hpFraction<0.5;
+   const value=spell.slug==='haste'?4+(ally.martialPower??8)*0.7+(exposed?3:0):spell.slug==='blur'?exposed?7+(ownDanger?3:0):1:
+    spell.slug==='invisibility'?ownDanger?12:ally.skulk?8:2:spell.slug==='fleet-step'?state.nearestEnemy>25?6:0:exposed?8:1;
+   if(value<=reserve)continue;
+   result.push({...base,id:`spell:${spell.bindingId}:${ally.id}`,targetId:ally.id,features:{...base.features,support:true,onceKey:`buff:${spell.slug}:${ally.id}`},assessment:{value:value-reserve},
+    scoringTerms:[{label:'Expected group benefit from '+spell.name,contribution:value},{label:'Reserve limited casting resources',contribution:-reserve}]});
+  }else if(spell.kind==='ward')for(const ally of state.casterAllies??[]){
    if(ally.self||ally.distance>spell.range||ally.lineOfEffect===false||ally.lineOfSight===false)continue;
    for(const enemy of state.enemies.filter(e=>e.distance<=spell.range&&e.lineOfSight!==false&&e.lineOfEffect!==false)){
     if(state.activeSustained?.some(c=>c.slug===spell.slug&&c.targetId===ally.id&&c.enemyId===enemy.id)||state.plannedCapabilities?.includes(`ward:${ally.id}:${enemy.id}`))continue;
@@ -45,8 +59,8 @@ export function genericCastingCandidates(state){
    if(value<=reserve)continue;
    result.push({...base,id:`spell:${spell.bindingId}:${ally.id}`,targetId:ally.id,features:{...base.features,support:true,onceKey:`heal:${ally.id}`},
     assessment:{value:value-reserve},scoringTerms:[{label:'Restore allied HP; prioritize allies in danger',contribution:value},{label:'Reserve limited casting resources',contribution:-reserve}]});
-  }else if(spell.area)for(const area of spell.areas??[]){
-   const value=area.enemies.reduce((n,e)=>n+outcomeSpellValue(state,spell,e,{area:true}),0)-area.bystanders.reduce((n,e)=>n+2*outcomeSpellValue(state,spell,e,{area:true}),0);
+  }else if(spell.area||spell.kind==='lingering')for(const area of spell.areas??[]){
+   const value=area.enemies.reduce((n,e)=>n+(spell.wall?spell.damage:outcomeSpellValue(state,spell,e,{area:true})),0)*(spell.kind==='lingering'?1.4:1)-area.bystanders.reduce((n,e)=>n+2*(spell.wall?spell.damage:outcomeSpellValue(state,spell,e,{area:true})),0);
    if(value>reserve)result.push({...base,id:`spell:${spell.bindingId}:${area.id}`,area,targetId:area.enemies[0]?.id,assessment:{value:value-reserve},
     scoringTerms:[{label:'Area benefit minus friendly fire and resource cost',contribution:value-reserve}]});
   }else if(spell.maxTargets>1){

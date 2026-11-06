@@ -12,6 +12,8 @@ const isUUID = (value, pack, id) => value === `Compendium.${pack}.Item.${id}` ||
 // Recognize the inspected effects by provenance AND their single-purpose grant;
 // an unrelated spell or a modified effect with other rules remains manual.
 function supportedGrappleEffect(condition, effect) {
+  if(effect?.flags?.[MODULE_ID]?.vampireGrab)return effect.system.rules?.length===1&&effect.system.rules[0].key==='GrantItem'&&
+    ['grabbed','restrained'].includes(condition.slug)&&condition.flags?.pf2e?.grantedBy?.id===effect.id;
   const spec = grappleEffects[effect?.slug];
   if (!spec || effect.type !== 'effect' || condition.slug !== spec.slug) return false;
   const source = effect.sourceId ?? effect._stats?.compendiumSource;
@@ -27,7 +29,7 @@ function supportedGrappleEffect(condition, effect) {
 
 function recordedSource(adapter, group) {
   const spell = group.root.flags?.[MODULE_ID];
-  if ((spell?.spellEffect === 'tangle-vine'||spell?.restraint==='spike-pin') && Number.isFinite(spell.escapeDC))
+  if ((spell?.spellEffect === 'tangle-vine'||spell?.restraint==='spike-pin'||spell?.vampireGrab) && Number.isFinite(spell.escapeDC))
     return { tokenId: null, actorUuid: null, customDC: spell.escapeDC, recorded: true };
   const origin = group.root.system?.context?.origin;
   if (!origin?.token || !origin.actor) return null;

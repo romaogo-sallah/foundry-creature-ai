@@ -47,6 +47,7 @@ await cp(new URL('docs/aerial-combat.md', root), new URL('aerial-combat.md', out
 await cp(new URL('docs/manticore-scorpion.md', root), new URL('manticore-scorpion.md', output));
 await cp(new URL('docs/manticore-quill.md', root), new URL('manticore-quill.md', output));
 await cp(new URL('docs/dero-magister.md',root),new URL('dero-magister.md',output));
+await cp(new URL('docs/vampires.md',root),new URL('vampires.md',output));
 await cp(new URL('docs/spellcaster-framework.md',root),new URL('spellcaster-framework.md',output));
 await cp(new URL('docs/condition-handling.md',root),new URL('condition-handling.md',output));
 await cp(new URL('docs/condition-ai.md',root),new URL('condition-ai.md',output));
@@ -84,7 +85,7 @@ await cp(new URL('docs/modular-suite.md',root),new URL('modular-suite.md',output
 for(const id of PACKAGE_IDS)await cp(new URL('docs/ramps.md',root),path.join(dist,id,'ramps.md'));
 await cp(new URL('docs/confused-ai.md',root),new URL('confused-ai.md',output));
 for(const [id,documents]of [['pf2e-tactical-environment',['environment-zones.md','scene-terrain.md']],
- ['pf2e-tactical-conditions',['condition-manual.md','condition-handling.md']],['pf2e-tactical-movement',['player-stealth.md','eagle-flight.md','condition-manual.md']]]){
+ ['pf2e-tactical-conditions',['condition-manual.md','condition-handling.md','vampires.md']],['pf2e-tactical-movement',['player-stealth.md','eagle-flight.md','condition-manual.md']]]){
  for(const document of documents)await cp(new URL('docs/'+document,root),path.join(dist,id,document));
 }
 await writeFile(path.join(dist,'package-index.json'),JSON.stringify(index,null,2)+'\n');

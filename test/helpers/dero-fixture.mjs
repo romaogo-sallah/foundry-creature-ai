@@ -3,8 +3,8 @@ import {fixture as baseFixture} from './ogre-fixture.mjs';
 import {PF2eDeroMagisterAdapter} from '../../src/foundry/dero-magister-adapter.mjs';
 import {installSpellRegionFixture} from './spell-regions.mjs';
 export const deroData=JSON.parse(await readFile(new URL('../fixtures/dero-magister-mechanics.json',import.meta.url)));
-export function fixture({saveDegree=1,size=14}={}){
- const f=baseFixture({npcData:deroData,Adapter:PF2eDeroMagisterAdapter,footprint:1,size});f.saveDegree=saveDegree;let sequence=0;
+export function fixture({saveDegree=1,size=14,npcData=deroData,Adapter=PF2eDeroMagisterAdapter}={}){
+ const f=baseFixture({npcData,Adapter,footprint:1,size});f.saveDegree=saveDegree;let sequence=0;
  globalThis.foundry={utils:{randomID:()=>`test${++sequence}`}};
  globalThis.ui={notifications:{warn:()=>{},info:()=>{},error:()=>{}}};game.time={worldTime:0};game.modules=new Map();
  const hooks=new Map();globalThis.Hooks={on:(name,fn)=>hooks.set(name,[...hooks.get(name)??[],fn]),
@@ -34,7 +34,7 @@ export function fixture({saveDegree=1,size=14}={}){
    for(const effect of actor.itemTypes.effect)for(const rule of effect.system.rules??[]){
     if(rule.key==='ActiveEffectLike'){const [,namespace,key]=rule.path.split('.');(actor.flags[namespace]??={})[key]=rule.value;}
     if(rule.key!=='GrantItem')continue;
-    const names={xYTAsEpcJE1Ccni3:'slowed',e1XGnhKNSQIm5IXg:'stupefied',XgEqL1kFApUbl5Z2:'blinded',MIRkyAjyBeXivMa7:'enfeebled',TkIyaNPgTZFBCCuh:'dazzled',yblD8fOR1J8rDwEQ:'confused'};
+    const names={xYTAsEpcJE1Ccni3:'slowed',e1XGnhKNSQIm5IXg:'stupefied',XgEqL1kFApUbl5Z2:'blinded',MIRkyAjyBeXivMa7:'enfeebled',TkIyaNPgTZFBCCuh:'dazzled',yblD8fOR1J8rDwEQ:'confused',kWc1fhmv9LBiTuei:'grabbed',VcDeM8A5oI6VqhbM:'restrained','9qGBRpbX9NEwtAAr':'controlled',nlCjDvLMf2EkV2dl:'quickened',DmAIPqOBomZ7H95W:'concealed',zJxUflt9np0q4yML:'invisible'};
     const slug=names[rule.uuid.split('.').at(-1)];if(slug){actor.conditionsSet.add(slug);previous.add(slug);values.set(slug,Math.max(values.get(slug)??0,rule.alterations?.[0]?.value??1));}
    }
   };

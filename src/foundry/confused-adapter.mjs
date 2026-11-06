@@ -1,3 +1,4 @@
+import {movingMist} from './vampire-state.mjs';
 import {PF2eCreatureAdapter} from './pf2e-adapter.mjs';
 import {confusedStrikes,confusedGear,executeConfusedGear} from './confused-gear.mjs';
 import {chooseConfusedAction,confusedCandidates} from '../framework/confused-policy.mjs';
@@ -139,7 +140,7 @@ export class PF2eConfusedAdapter extends PF2eCreatureAdapter{
 }
 export function attachConfusionSystem(adapter,options){
   if(attached.has(adapter))return adapter;attached.add(adapter);
-  const driver=new PF2eConfusedAdapter(adapter,options),active=()=>conditionDirective(adapter.actor)==='confused';
+  const driver=new PF2eConfusedAdapter(adapter,options),active=()=>!movingMist(adapter.actor)&&conditionDirective(adapter.actor)==='confused';
   driver.nativeExecute=adapter.execute.bind(adapter);
   for(const name of ['prepareTurn','assertReady','snapshot','candidates','decide','liveTarget','allies']){
     const original=adapter[name].bind(adapter);adapter[name]=(...args)=>active()?driver[name](...args):original(...args);

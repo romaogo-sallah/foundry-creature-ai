@@ -1,3 +1,4 @@
+import {movingMist} from './vampire-state.mjs';
 import {PF2eCreatureAdapter} from './pf2e-adapter.mjs';
 import {conditionDirective} from '../framework/condition-directives.mjs';
 import {chooseFleeingAction,fleeingCandidates} from '../framework/fleeing-policy.mjs';
@@ -95,7 +96,7 @@ export class PF2eFleeingAdapter extends PF2eCreatureAdapter{
 }
 export function attachFleeingSystem(adapter){
   if(attached.has(adapter))return adapter;attached.add(adapter);
-  const driver=new PF2eFleeingAdapter(adapter),active=()=>conditionDirective(adapter.actor)==='fleeing';
+  const driver=new PF2eFleeingAdapter(adapter),active=()=>!movingMist(adapter.actor)&&conditionDirective(adapter.actor)==='fleeing';
   for(const name of ['prepareTurn','assertReady','snapshot','candidates','decide']){
     const original=adapter[name].bind(adapter);adapter[name]=(...args)=>active()?driver[name](...args):original(...args);
   }

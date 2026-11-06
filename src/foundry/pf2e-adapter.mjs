@@ -164,7 +164,7 @@ export class PF2eCreatureAdapter {
     if (this.token.document.actorLink) throw new Error('Use an unlinked wolf token so each wolf has its own actor state');
     if (this.targetMode === 'manual' && !this.config.targetIds?.length) throw new Error('Assign known enemy targets in the Wolf AI controls for manual targeting');
     const condition = blocked.find(c => this.actor.hasCondition(c)&&!directiveOverrides(this.actor,c)&&
-      !(c==='stunned'&&valuedStunned(this.actor))&&!(c==='confused'&&this.handlesConfusion)&&!(c==='fleeing'&&this.handlesFleeing));
+      !(c==='stunned'&&valuedStunned(this.actor))&&!(c==='controlled'&&this.actor.getFlag(MODULE_ID,'domination'))&&!(c==='confused'&&this.handlesConfusion)&&!(c==='fleeing'&&this.handlesFleeing));
     if (condition || this.actor.hitPoints.value <= 0) throw new Error(`Wolf requires manual handling: ${condition ?? '0 HP'}`);
     if (this.actor.hasCondition('slowed') && !Number.isFinite(this.actor.getCondition('slowed')?.value)) throw new Error('Cannot determine slowed action loss');
     this.parts();
@@ -680,10 +680,10 @@ export class PF2eCreatureAdapter {
       : ledger.completionReason === 'battle-over' ? `<p>${escapeHTML(decision.diagnostics?.noActionReason ?? 'Battle over. Creature AI stopped.')}</p>` :
         ledger.completionReason === 'no-enemies' ? '<p>All enemies in the current target roster are defeated or unconscious.</p>' :
         ledger.completionReason === 'escape-blocked' ? '<p>Escape critically failed and cannot be attempted again this turn. No other supported action is available; unused actions are forfeited.</p>' :
-        ledger.completionReason === 'retreated' ? '<p>The wolf escaped to a scene edge, at least 30 feet from known enemies. It will sit out this combat; its token remains for the GM.</p>' :
+        ledger.completionReason === 'retreated' ? (this.actor.getFlag?.(MODULE_ID,'vampire')?.escaped?'<p>The vampire escaped as mist toward its coffin. Its token stays at the scene border; coffin arrival is not assumed.</p>':'<p>The creature escaped to a scene edge, at least 30 feet from known enemies. It will sit out this combat; its token remains for the GM.</p>') :
         decision.diagnostics?.holdForApproach ? '<p>Holding a casting position and letting the melee enemies come closer.</p>' : '';
     await ChatMessage.create({
-      content: `<p><strong>${escapeHTML(this.token.name)}</strong>: ${escapeHTML(choice?.kind ?? 'endTurn')}${skipped}${target ? ` → ${escapeHTML(target)}` : ''}${escapeHTML(purpose)} · ${ledger.actionsRemaining} actions left.${ledger.bonusMovementActions ? ` Plus ${ledger.bonusMovementActions} Step/Stride-only action.` : ''}</p><p><small>Creature AI ${RUNTIME_VERSION}</small></p>${endNote}${explanation ? `<p>${escapeHTML(explanation)} Remaining actions are preserved; you can retry.</p>` : ''}${result.skipReason ? `<p>${escapeHTML(result.skipReason)}</p>` : ''}${result.pauseReason ? `<p>${escapeHTML(result.pauseReason)}</p>` : ''}
+      content: `<p><strong>${escapeHTML(this.token.name)}</strong>: ${escapeHTML(choice?.kind ?? 'endTurn')}${skipped}${target ? ` → ${escapeHTML(target)}` : ''}${escapeHTML(purpose)} · ${ledger.actionsRemaining} actions left.${ledger.bonusMovementActions ? ` Plus ${ledger.bonusMovementActions} ${ledger.hasteBonus?'Strike/Stride':'Step/Stride'}-only action.` : ''}</p><p><small>Creature AI ${RUNTIME_VERSION}</small></p>${endNote}${explanation ? `<p>${escapeHTML(explanation)} Remaining actions are preserved; you can retry.</p>` : ''}${result.skipReason ? `<p>${escapeHTML(result.skipReason)}</p>` : ''}${result.pauseReason ? `<p>${escapeHTML(result.pauseReason)}</p>` : ''}
         ${result.note ? `<p>${escapeHTML(result.note)}</p>` : ''}
         ${decisionLog.options.length ? `<details><summary>Why this decision?</summary>${renderDecisionExplanation(decisionLog)}</details>` : ''}`,
       whisper: ChatMessage.getWhisperRecipients('GM').map(user => user.id),

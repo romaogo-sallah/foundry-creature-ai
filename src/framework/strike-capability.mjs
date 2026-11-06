@@ -8,7 +8,7 @@ export function preparedStrikeCandidates(state){
     const position=enemy.strikes?.[strike.id];
     if(!position?.usable||enemy.lineOfSight===false||position.lineOfSight===false||position.lineOfEffect===false||
       enemy.awareness?.searchRequired&&!enemy.awareness.allowAttackEstimate&&!enemy.awareness.attackOnSight)return [];
-    const value=attackValue({bonus:strike.bonus+strike.mapPenalties[Math.min(2,state.attacksMade)]-(position.rangePenalty??0),damage:strike.damage,
+    const value=attackValue({bonus:strike.bonus+strike.mapPenalties[Math.min(2,state.attacksMade)]-(position.rangePenalty??0),damage:strike.damage+(enemy.prone||enemy.offGuard||position.flanked?strike.precisionDamage??0:0),
       referenceAC:state.self.referenceAC,defenseAdjustment:(position.coverBonus??0)-(enemy.prone||enemy.offGuard||position.flanked?2:0),concealmentDC:position.concealmentDC});
     const benefit=enemy.strikeEffectValues?.[strike.id]??strike.onHitValue??0;
     const onHit=benefit>0?attackValue({bonus:strike.bonus+strike.mapPenalties[Math.min(2,state.attacksMade)]-(position.rangePenalty??0),damage:benefit,

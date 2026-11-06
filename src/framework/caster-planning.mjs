@@ -5,7 +5,7 @@ import { casterProtection, waitingCaster } from './caster-defense.mjs';
 
 function afterAction(state, action) {
   const spell = state.spells.find(spell => action.bindingId?spell.bindingId===action.bindingId:spell.id === action.spellId);
-  const spellSlots = state.spellSlots - (spell && !spell.cantrip ? spell.resourceCost??1 : 0);
+  const spellSlots = state.spellSlots - (spell && !spell.cantrip&&!spell.unlimited ? spell.resourceCost??1 : 0);
   const resourcePools={...state.resourcePools};if(spell?.poolId)resourcePools[spell.poolId]=Math.max(0,(resourcePools[spell.poolId]??spell.resourceRemaining??0)-(spell.resourceCost??1));
   return { ...state, actionsRemaining: state.actionsRemaining - action.actionCost,
     plannedCapabilities:[...(state.plannedCapabilities??[]),...(action.features?.onceKey?[action.features.onceKey]:[]),...(action.features?.blocksForecast??[])],
@@ -18,7 +18,7 @@ function afterAction(state, action) {
     attacksMade: state.attacksMade + (action.mapIncreases ?? 0), spellSlots,resourcePools,
     shownSpells: spell ? { ...state.shownSpells, [spell.slug]: true } : state.shownSpells,
     spells: state.spells.map(spell => ({ ...spell, available: spell.available && (spell.poolId?
-      resourcePools[spell.poolId]>=(spell.resourceCost??1):spell.cantrip||spellSlots>0) })) };
+      resourcePools[spell.poolId]>=(spell.resourceCost??1):spell.cantrip||spell.unlimited||spellSlots>0) })) };
 }
 
 function moveState(state, move) {
@@ -26,7 +26,7 @@ function moveState(state, move) {
     self: { ...state.self, cell: { x: move.x, y: move.y }, threatened: Boolean(move.destinationThreatened),
       reactionRisk:move.destinationReactionRisk??(move.destinationThreatened?state.self.reactionRisk??move.reactionRisk??0:0) },
     nearestEnemy: move.nearestEnemy, spells: (move.spells ?? state.spells).map(spell => ({ ...spell,
-      available: spell.available && (spell.poolId?(state.resourcePools?.[spell.poolId]??spell.resourceRemaining)>=(spell.resourceCost??1):spell.cantrip || state.spellSlots > 0) })),
+      available: spell.available && (spell.poolId?(state.resourcePools?.[spell.poolId]??spell.resourceRemaining)>=(spell.resourceCost??1):spell.cantrip || spell.unlimited || state.spellSlots > 0) })),
     casterAllies:(state.casterAllies??[]).map(ally=>({...ally,...move.supportTargets?.[ally.id]})),
     enemies: state.enemies.map(enemy => ({ ...enemy, ...move.targets[enemy.id],
       stealthChance: move.kind === 'step' && move.targets[enemy.id]?.incoming?.canHide ? enemy.stealthChance ?? 0 : 0,
@@ -88,7 +88,7 @@ export function casterTurnCandidates(state, { actions }) {
     let follow = stationaryPlan(after);
     // A ground-control spell changes paths and Balance checks. Do not forecast
     // movement using stale pre-cast terrain; the next real snapshot handles it.
-    const changesTerrain = state.spells.find(spell => spell.id === action.spellId)?.kind === 'ground-control';
+    const changesTerrain = ['ground-control','lingering'].includes(state.spells.find(spell => spell.id === action.spellId)?.kind);
     if (after.actionsRemaining > 0 && !changesTerrain) for (const move of planningMoves) {
       if (!allowedMove(after, move)) continue;
       const position = movementValue(after, move);

@@ -1,0 +1,730 @@
+{
+  "date": "2026-11-07",
+  "version": "0.41.0",
+  "method": "Mechanics from the three supplied vampire actor exports; isolated parallel regressions plus native Foundry/PF2e preparation, effects, shield damage, spell/Region construction and zero-HP form checks. Diagnostic actors and Regions were detached constructors; persistent mutations and diagnostic chat were intercepted. No world actors were created or live combat actions executed.",
+  "native": {
+    "version": "0.41.0",
+    "foundry": "14.369",
+    "pf2e": "8.6.1",
+    "checks": [
+      {
+        "name": "guardian profile and innate",
+        "pass": true,
+        "detail": {
+          "profile": "vampire-guardian",
+          "dc": 26,
+          "rank": 6,
+          "strikes": [
+            "Bat Fangs",
+            "Claw",
+            "Composite Shortbow",
+            "Rapier"
+          ]
+        }
+      },
+      {
+        "name": "guardian bat",
+        "pass": true,
+        "detail": {
+          "fly": {
+            "type": "fly",
+            "slug": "fly-speed",
+            "label": "Fly Speed",
+            "value": 30,
+            "base": 30,
+            "source": "Vampire giant bat form",
+            "breakdown": "30-Foot Fly Speed (Vampire giant bat form)",
+            "modifiers": []
+          },
+          "strikes": [
+            {
+              "label": "Bat Fangs",
+              "mod": 21
+            },
+            {
+              "label": "Bat Fangs",
+              "mod": 21
+            },
+            {
+              "label": "Claw",
+              "mod": 21
+            },
+            {
+              "label": "Composite Shortbow",
+              "mod": 20
+            },
+            {
+              "label": "Rapier",
+              "mod": 22
+            }
+          ],
+          "senses": [
+            {
+              "type": "darkvision",
+              "acuity": "precise",
+              "range": null,
+              "source": null,
+              "label": "Darkvision",
+              "emphasizeLabel": false
+            },
+            {
+              "type": "echolocation",
+              "acuity": "precise",
+              "range": 40,
+              "source": "Vampire giant bat form",
+              "label": "Echolocation 40 Feet",
+              "emphasizeLabel": false
+            }
+          ]
+        }
+      },
+      {
+        "name": "guardian mist",
+        "pass": true,
+        "detail": {
+          "speeds": {
+            "land": {
+              "type": "land",
+              "slug": "land-speed",
+              "label": "Land Speed",
+              "value": 25,
+              "base": 25,
+              "source": null,
+              "breakdown": "25-Foot Land Speed",
+              "modifiers": [],
+              "crawl": 5,
+              "step": 5
+            },
+            "burrow": null,
+            "climb": {
+              "type": "climb",
+              "slug": "climb-speed",
+              "label": "Climb Speed",
+              "value": 25,
+              "base": 25,
+              "source": null,
+              "breakdown": "25-Foot Climb Speed",
+              "modifiers": []
+            },
+            "fly": {
+              "type": "fly",
+              "slug": "fly-speed",
+              "label": "Fly Speed",
+              "value": 10,
+              "base": 10,
+              "source": "Turn to Mist",
+              "breakdown": "10-Foot Fly Speed (Turn to Mist)",
+              "modifiers": []
+            },
+            "swim": null,
+            "travel": {
+              "type": "travel",
+              "slug": "travel-speed",
+              "label": "Travel Speed",
+              "value": 25,
+              "base": 25,
+              "source": null,
+              "breakdown": "25-Foot Travel Speed",
+              "modifiers": []
+            }
+          },
+          "immunities": [
+            "death-effects",
+            "disease",
+            "paralyzed",
+            "poison",
+            "sleep",
+            "precision"
+          ]
+        }
+      },
+      {
+        "name": "guardian fast healing suspended",
+        "pass": true,
+        "detail": {
+          "rules": [
+            {
+              "predicate": [
+                {
+                  "not": "turn-to-mist"
+                }
+              ],
+              "ignored": false,
+              "test": false
+            }
+          ],
+          "mistOption": true
+        }
+      },
+      {
+        "name": "count profile and innate",
+        "pass": true,
+        "detail": {
+          "profile": "vampire-count",
+          "dc": 24,
+          "rank": 6,
+          "strikes": [
+            "Claw",
+            "Rapier"
+          ]
+        }
+      },
+      {
+        "name": "count bat",
+        "pass": true,
+        "detail": {
+          "fly": {
+            "type": "fly",
+            "slug": "fly-speed",
+            "label": "Fly Speed",
+            "value": 30,
+            "base": 30,
+            "source": "Vampire giant bat form",
+            "breakdown": "30-Foot Fly Speed (Vampire giant bat form)",
+            "modifiers": []
+          },
+          "strikes": [
+            {
+              "label": "Claw",
+              "mod": 19
+            },
+            {
+              "label": "Fangs",
+              "mod": 17
+            },
+            {
+              "label": "Rapier",
+              "mod": 19
+            }
+          ],
+          "senses": [
+            {
+              "type": "darkvision",
+              "acuity": "precise",
+              "range": null,
+              "source": null,
+              "label": "Darkvision",
+              "emphasizeLabel": false
+            },
+            {
+              "type": "echolocation",
+              "acuity": "precise",
+              "range": 40,
+              "source": "Vampire giant bat form",
+              "label": "Echolocation 40 Feet",
+              "emphasizeLabel": false
+            }
+          ]
+        }
+      },
+      {
+        "name": "count mist",
+        "pass": true,
+        "detail": {
+          "speeds": {
+            "land": {
+              "type": "land",
+              "slug": "land-speed",
+              "label": "Land Speed",
+              "value": 25,
+              "base": 25,
+              "source": null,
+              "breakdown": "25-Foot Land Speed",
+              "modifiers": [],
+              "crawl": 5,
+              "step": 5
+            },
+            "burrow": null,
+            "climb": {
+              "type": "climb",
+              "slug": "climb-speed",
+              "label": "Climb Speed",
+              "value": 25,
+              "base": 25,
+              "source": null,
+              "breakdown": "25-Foot Climb Speed",
+              "modifiers": []
+            },
+            "fly": {
+              "type": "fly",
+              "slug": "fly-speed",
+              "label": "Fly Speed",
+              "value": 10,
+              "base": 10,
+              "source": "Turn to Mist",
+              "breakdown": "10-Foot Fly Speed (Turn to Mist)",
+              "modifiers": []
+            },
+            "swim": null,
+            "travel": {
+              "type": "travel",
+              "slug": "travel-speed",
+              "label": "Travel Speed",
+              "value": 25,
+              "base": 25,
+              "source": null,
+              "breakdown": "25-Foot Travel Speed",
+              "modifiers": []
+            }
+          },
+          "immunities": [
+            "death-effects",
+            "disease",
+            "paralyzed",
+            "poison",
+            "sleep",
+            "precision"
+          ]
+        }
+      },
+      {
+        "name": "count fast healing suspended",
+        "pass": true,
+        "detail": {
+          "rules": [
+            {
+              "predicate": [
+                {
+                  "not": "turn-to-mist"
+                }
+              ],
+              "ignored": false,
+              "test": false
+            }
+          ],
+          "mistOption": true
+        }
+      },
+      {
+        "name": "mastermind profile and innate",
+        "pass": true,
+        "detail": {
+          "profile": "vampire-mastermind",
+          "dc": 28,
+          "rank": 6,
+          "strikes": [
+            "Claw"
+          ]
+        }
+      },
+      {
+        "name": "mastermind bat",
+        "pass": true,
+        "detail": {
+          "fly": {
+            "type": "fly",
+            "slug": "fly-speed",
+            "label": "Fly Speed",
+            "value": 30,
+            "base": 30,
+            "source": "Vampire giant bat form",
+            "breakdown": "30-Foot Fly Speed (Vampire giant bat form)",
+            "modifiers": []
+          },
+          "strikes": [
+            {
+              "label": "Claw",
+              "mod": 20
+            },
+            {
+              "label": "Fangs",
+              "mod": 21
+            }
+          ],
+          "senses": [
+            {
+              "type": "darkvision",
+              "acuity": "precise",
+              "range": null,
+              "source": null,
+              "label": "Darkvision",
+              "emphasizeLabel": false
+            },
+            {
+              "type": "echolocation",
+              "acuity": "precise",
+              "range": 40,
+              "source": "Vampire giant bat form",
+              "label": "Echolocation 40 Feet",
+              "emphasizeLabel": false
+            }
+          ]
+        }
+      },
+      {
+        "name": "mastermind mist",
+        "pass": true,
+        "detail": {
+          "speeds": {
+            "land": {
+              "type": "land",
+              "slug": "land-speed",
+              "label": "Land Speed",
+              "value": 25,
+              "base": 25,
+              "source": null,
+              "breakdown": "25-Foot Land Speed",
+              "modifiers": [],
+              "crawl": 5,
+              "step": 5
+            },
+            "burrow": null,
+            "climb": {
+              "type": "climb",
+              "slug": "climb-speed",
+              "label": "Climb Speed",
+              "value": 25,
+              "base": 25,
+              "source": null,
+              "breakdown": "25-Foot Climb Speed",
+              "modifiers": []
+            },
+            "fly": {
+              "type": "fly",
+              "slug": "fly-speed",
+              "label": "Fly Speed",
+              "value": 10,
+              "base": 10,
+              "source": "Turn to Mist",
+              "breakdown": "10-Foot Fly Speed (Turn to Mist)",
+              "modifiers": []
+            },
+            "swim": null,
+            "travel": {
+              "type": "travel",
+              "slug": "travel-speed",
+              "label": "Travel Speed",
+              "value": 25,
+              "base": 25,
+              "source": null,
+              "breakdown": "25-Foot Travel Speed",
+              "modifiers": []
+            }
+          },
+          "immunities": [
+            "death-effects",
+            "disease",
+            "paralyzed",
+            "poison",
+            "sleep",
+            "precision"
+          ]
+        }
+      },
+      {
+        "name": "mastermind fast healing suspended",
+        "pass": true,
+        "detail": {
+          "rules": [
+            {
+              "predicate": [
+                {
+                  "not": "turn-to-mist"
+                }
+              ],
+              "ignored": false,
+              "test": false
+            }
+          ],
+          "mistOption": true
+        }
+      },
+      {
+        "name": "haste native effect",
+        "pass": true,
+        "detail": {
+          "speed": 25,
+          "conditions": [
+            "quickened"
+          ],
+          "shield": {
+            "itemId": null,
+            "name": "PF2E.ArmorTypeShield",
+            "ac": 0,
+            "hp": {
+              "value": 0,
+              "max": 0
+            },
+            "brokenThreshold": 0,
+            "hardness": 0,
+            "raised": false,
+            "broken": false,
+            "destroyed": false,
+            "icon": "systems/pf2e/icons/actions/raise-a-shield.webp"
+          }
+        }
+      },
+      {
+        "name": "fleet-step native effect",
+        "pass": true,
+        "detail": {
+          "speed": 55,
+          "conditions": [
+            "quickened"
+          ],
+          "shield": {
+            "itemId": null,
+            "name": "PF2E.ArmorTypeShield",
+            "ac": 0,
+            "hp": {
+              "value": 0,
+              "max": 0
+            },
+            "brokenThreshold": 0,
+            "hardness": 0,
+            "raised": false,
+            "broken": false,
+            "destroyed": false,
+            "icon": "systems/pf2e/icons/actions/raise-a-shield.webp"
+          }
+        }
+      },
+      {
+        "name": "blur native effect",
+        "pass": true,
+        "detail": {
+          "speed": 55,
+          "conditions": [
+            "quickened",
+            "concealed"
+          ],
+          "shield": {
+            "itemId": null,
+            "name": "PF2E.ArmorTypeShield",
+            "ac": 0,
+            "hp": {
+              "value": 0,
+              "max": 0
+            },
+            "brokenThreshold": 0,
+            "hardness": 0,
+            "raised": false,
+            "broken": false,
+            "destroyed": false,
+            "icon": "systems/pf2e/icons/actions/raise-a-shield.webp"
+          }
+        }
+      },
+      {
+        "name": "invisibility native effect",
+        "pass": true,
+        "detail": {
+          "speed": 55,
+          "conditions": [
+            "quickened",
+            "concealed",
+            "invisible"
+          ],
+          "shield": {
+            "itemId": null,
+            "name": "PF2E.ArmorTypeShield",
+            "ac": 0,
+            "hp": {
+              "value": 0,
+              "max": 0
+            },
+            "brokenThreshold": 0,
+            "hardness": 0,
+            "raised": false,
+            "broken": false,
+            "destroyed": false,
+            "icon": "systems/pf2e/icons/actions/raise-a-shield.webp"
+          }
+        }
+      },
+      {
+        "name": "fire-shield native effect",
+        "pass": true,
+        "detail": {
+          "speed": 55,
+          "conditions": [
+            "quickened",
+            "concealed",
+            "invisible"
+          ],
+          "shield": {
+            "itemId": "mnZWOueuaOHf4Xmu",
+            "name": "Fire Shield (spell)",
+            "ac": 1,
+            "hp": {
+              "value": 40,
+              "max": 40,
+              "brokenThreshold": 20
+            },
+            "hardness": 10,
+            "brokenThreshold": 20,
+            "raised": false,
+            "broken": false,
+            "destroyed": false,
+            "icon": "icons/magic/fire/barrier-shield-explosion-yellow.webp"
+          }
+        }
+      },
+      {
+        "name": "Raise Fire Shield",
+        "pass": true,
+        "detail": {
+          "ac": 30,
+          "shield": {
+            "itemId": "mnZWOueuaOHf4Xmu",
+            "name": "Fire Shield (spell)",
+            "ac": 1,
+            "hp": {
+              "value": 40,
+              "max": 40,
+              "brokenThreshold": 20
+            },
+            "hardness": 10,
+            "brokenThreshold": 20,
+            "raised": true,
+            "broken": false,
+            "destroyed": false,
+            "icon": "icons/magic/fire/barrier-shield-explosion-yellow.webp"
+          }
+        }
+      },
+      {
+        "name": "native Fire Shield block",
+        "pass": true,
+        "detail": {
+          "shieldHP": 35,
+          "actorHP": 130
+        }
+      },
+      {
+        "name": "floating-flame native damage",
+        "pass": true,
+        "detail": {
+          "formula": "3d6 + 4 fire",
+          "serialized": "{(3d6 + 4)[fire]}"
+        }
+      },
+      {
+        "name": "wall-of-fire native damage",
+        "pass": true,
+        "detail": {
+          "formula": "4d6 + 4 fire",
+          "serialized": "{(4d6 + 4)[fire]}"
+        }
+      },
+      {
+        "name": "vision-of-death native damage",
+        "pass": true,
+        "detail": {
+          "formula": "8d6 + 4 mental",
+          "serialized": "{(8d6 + 4)[mental]}"
+        }
+      },
+      {
+        "name": "frostbite native damage",
+        "pass": true,
+        "detail": {
+          "formula": "5d4 + 2 cold",
+          "serialized": "{(5d4 + 2)[cold]}"
+        }
+      },
+      {
+        "name": "native counteract API",
+        "pass": true,
+        "detail": {}
+      },
+      {
+        "name": "wall-of-fire native region and replayable roll",
+        "pass": true,
+        "detail": {
+          "slug": "wall-of-fire",
+          "formula": "{(4d6 + 4)[fire]}",
+          "behaviors": [
+            "executeScript",
+            "executeScript"
+          ]
+        }
+      },
+      {
+        "name": "floating-flame native region and replayable roll",
+        "pass": true,
+        "detail": {
+          "slug": "floating-flame",
+          "formula": "{(3d6 + 4)[fire]}",
+          "behaviors": []
+        }
+      },
+      {
+        "name": "native visual variant preserves caster",
+        "pass": true,
+        "detail": {}
+      },
+      {
+        "name": "native control and allegiance",
+        "pass": true,
+        "detail": {
+          "controlled": true,
+          "originalAlliance": "party",
+          "alliance": "opposition"
+        }
+      },
+      {
+        "name": "native vampire vulnerabilities",
+        "pass": true,
+        "detail": {
+          "conditions": [
+            "controlled",
+            "slowed",
+            "unconscious",
+            "off-guard"
+          ],
+          "hp": 0
+        }
+      },
+      {
+        "name": "native zero HP Mist Escape",
+        "pass": true,
+        "detail": {
+          "state": {
+            "form": "mist",
+            "escape": true,
+            "escapeTriggered": true,
+            "escaped": false,
+            "expiresAt": 94804
+          },
+          "hp": 0
+        }
+      }
+    ],
+    "interceptedChatMessages": 1,
+    "valid": true,
+    "actorCountBefore": 159,
+    "actorCountAfter": 159,
+    "newActors": 0,
+    "moduleErrors": []
+  },
+  "tests": {
+    "passed": 1105,
+    "failed": 0,
+    "workers": 11,
+    "durationSeconds": 18.8,
+    "vampireRegressions": 38,
+    "files": [
+      "test/vampire.test.mjs",
+      "test/hazard-entry.test.mjs"
+    ],
+    "log": ".scratch/vampire-final-tests.log"
+  },
+  "installation": {
+    "packages": 5,
+    "verifiedFiles": 257,
+    "verifiedArchiveEntries": 257
+  },
+  "release": {
+    "file": "releases/pf2e-tactical-suite-0.41.0.zip",
+    "sha256": "b99b731debd72b99a27249746ac1b6496fac870394af80787dd17c62df16bfb2"
+  },
+  "limits": [
+    "No live vampire battle replay; native checks validate preparation and supported resolution boundaries.",
+    "Revulsion, running water, invitations, Children of the Night recruitment and downtime creation remain GM adjudication. Sunlight, stakes and coffin rest require explicit marks.",
+    "The supplied Mastermind has an orphan prepared rank-4 slot; utility/unprepared spells remain manual.",
+    "Areas use the current floor; straight axis-aligned walls and horizontal Floating Flame paths are a legal subset of full spell shapes.",
+    "Dispel handles visible taught source effects. Mixed fire/physical blocks require fire-immunity shield HP adjudication.",
+    "Controlled NPCs follow the automatic standing order; PCs remain manually GM-directed. Dominate daily duration uses 24 hours."
+  ]
+}

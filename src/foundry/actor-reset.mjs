@@ -2,7 +2,7 @@ const namespace = 'foundry-creature-ai';
 const transientFlags = [
   'ledger', 'scoutGear', 'ogreGear', 'ogreAttacks', 'scoutActions', 'scoutShown', 'pyroShown', 'pyroActions','flight','eagleShown','aerialPlan','manticoreHunts','quillShown',
   'scoutThreats', 'casterTargets', 'spellObservations', 'behaviorState', 'behaviorActions', 'conditionCaster', 'scoutFocus', 'scoutMotion', 'targetMemory', 'stealth',
-  'stealthBelief', 'perception', 'playState', 'retreated', 'scampering', 'sneakNextMove',
+  'stealthBelief', 'perception', 'playState', 'retreated', 'scampering', 'sneakNextMove','vampireLastStrike','vampireActions',
 ];
 
 /** Restore selected unlinked token actors to their current world-actor baseline.

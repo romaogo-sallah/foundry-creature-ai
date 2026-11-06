@@ -7,11 +7,21 @@ import {clearAttackPath} from './attack-path.mjs';
 import {environmentBetween} from './environment-zones.mjs';
 import {beginSustainedCast} from './ongoing-spells.mjs';
 import {observeSpellCast} from './spell-observations.mjs';
+import {applySupportSpell} from './support-spells.mjs';
+import {applyDomination,dominateImmune} from './domination.mjs';
+import {createLingeringFire} from './lingering-fire.mjs';
+import {executeCounteract} from './counteract-spells.mjs';
 const outcomes=['criticalFailure','failure','success','criticalSuccess'];
 export async function executeSpellOutcomes(adapter,spell,entry,choice,definition,{valid,attackNumber=1}){
- const healing=definition.kind==='heal',support=healing||definition.kind==='ward',target=choice.area?null:support?adapter.liveSpellTarget?.(choice.targetId):adapter.liveTarget(choice.targetId);
+ const healing=definition.kind==='heal',support=healing||['ward','buff','counteract'].includes(definition.kind),target=choice.area?null:support?adapter.liveSpellTarget?.(choice.targetId):adapter.liveTarget(choice.targetId);
  if(!choice.area&&(!target||!valid()))return {resolved:true,note:'Spell lost its target after commitment.'};
+ if(definition.kind==='buff')return applySupportSpell({actor:adapter.actor,token:adapter.token},target,spell,definition);
+ if(definition.kind==='counteract')return executeCounteract(adapter,spell,entry,choice);
  const region=choice.area?spellRegion(choice.area.shapes,adapter.token):null;
+ if(definition.kind==='lingering'){
+  const commitment=definition.sustained?await beginSustainedCast({actor:adapter.actor,token:adapter.token},spell,adapter.liveTarget(choice.targetId),undefined,{maxDuration:definition.duration}):null;
+  return createLingeringFire(adapter,spell,entry,choice,definition,{castId:commitment?.id});
+ }
  const targets=region?canvas.tokens.placeables.filter(t=>t.actor?.isOfType?.('creature')&&sameSpellLevel(adapter.token,t)&&inSpellArea(t,region)&&clearAttackPath(adapter.token,t)):
   (choice.targetIds??[target.id]).map(id=>support?adapter.liveSpellTarget?.(id):adapter.liveTarget(id)).filter(t=>t&&clearAttackPath(adapter.token,t));
  let commitment=null,wardEnemy=null;
@@ -26,6 +36,7 @@ export async function executeSpellOutcomes(adapter,spell,entry,choice,definition
   const range=spell.system.range?.value==='touch'?Math.max(5,adapter.actor.getReach({action:'attack'})):definition.range??Number.parseFloat(spell.system.range?.value??'0');
   if(!choice.area&&Number.isFinite(range)&&adapter.targetAt(adapter.originCell(),subject,[],adapter.actualWaypoint()).distance>range)continue;
   if(subject.actor.isImmuneTo?.(spell)||definition.living&&subject.actor.modeOfBeing&&subject.actor.modeOfBeing!=='living')continue;
+  if(definition.domination&&(dominateImmune(subject.actor,adapter.token.id)||subject.actor.hasCondition('blinded')||adapter.actor.hasCondition('blinded')))continue;
   if(!choice.area&&!await concealmentCheck(adapter.token,subject,{valid}))continue;
   if(definition.sustained&&!commitment)commitment=await beginSustainedCast({actor:adapter.actor,token:adapter.token},spell,subject,undefined,{maxDuration:definition.duration??600});
   if(definition.kind==='maneuver'){
@@ -52,6 +63,7 @@ export async function executeSpellOutcomes(adapter,spell,entry,choice,definition
  }
  let pause=false,sharedDamage=null;
  for(const {subject,degree}of affected){
+  if(definition.domination){await applyDomination({source:{actor:adapter.actor,token:adapter.token},target:subject,spell,degree,dc:entry.statistic.dc.value});continue;}
   const factor=['save','attack'].includes(definition.kind)?(definition.outcomes?.[degree]?.damage??[2,1,0.5,0][degree]):1;
   let postDamage=null;
   if(factor>0&&Object.keys(spell.system.damage??{}).length){
@@ -69,6 +81,7 @@ export async function executeSpellOutcomes(adapter,spell,entry,choice,definition
   if(!valid())throw new Error('Spell interrupted before its source-tracked effects');
   await applyDefinedSpellEffects({source:{actor:adapter.actor,token:adapter.token},target:subject,spell,definition,degree,dc:entry.statistic.dc.value,skipPersistent:postDamage===0,
    castId:commitment?.id,enemySignature:wardEnemy?.actor.signature??wardEnemy?.actor.uuid});
+  if(definition.deathAtZero&&adapter.config.applyDamage&&subject.actor.hitPoints.value<=0&&!subject.actor.hasCondition('dead'))await subject.actor.increaseCondition('dead');
  }
  return {resolved:true,pause,lastAction:{kind:'castSpell',spellId:spell.id,targetId:target?.id},
   note:`${spell.name}: ${affected.length} target(s) resolved with native casting resources and source-tracked effects.`};

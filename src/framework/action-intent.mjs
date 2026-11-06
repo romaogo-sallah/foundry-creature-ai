@@ -6,6 +6,17 @@ export function actionIntent({profileId,choice,state={}}){
   const animal=profileId==='wolf',enemy=state.enemies?.find(enemy=>enemy.id===choice.targetId);
   const retreat=choice.intent==='retreat'||choice.features?.retreat,again=(state.attacksMade??0)%2===1;
   if(retreat)return animal?'A frightened whine; the wolf looks for a way out.':'This fight is lost. Get out while we can!';
+  if(profileId.startsWith('vampire-')){
+    if(choice.kind==='castSpell')return ({dominate:'Look into my eyes. Your companions are your enemies now.',haste:'Move swiftly. Keep them occupied for me.',blur:'Let their blows pass through shadows.',invisibility:'You cannot strike what you cannot see.', 'fire-shield':'Come closer, if you dare.','wall-of-fire':'Let the flames divide them.','floating-flame':'Run. The fire will follow.','fireball':'Your formation will be your undoing.','lightning-bolt':'Stand together. Make this easy.','vision-of-death':'Look upon the end that awaits you.'})[choice.spellSlug]??'Your resistance is wearing thin.';
+    if(choice.kind==='drinkBlood')return 'Your blood will restore me.';
+    if(choice.kind==='grab')return 'Hold still. The others are closing in.';
+    if(choice.kind==='mistFly'||choice.kind==='escapeScene')return 'The vampire dissolves into mist and drifts toward a way out.';
+    if(choice.kind==='vampireForm')return choice.form==='bat'?'The vampire becomes a giant bat and spreads its wings.':'The mist gathers into the vampire’s familiar shape.';
+    if(choice.kind==='sustainSpell')return 'Keep moving. The flames are following you.';
+    if(choice.kind==='raiseFireShield')return 'A shield of fire rises between the vampire and its foes.';
+    if(['vampireEquip','vampireStow'].includes(choice.kind))return 'A different weapon for a different opening.';
+    if(choice.kind==='fly')return 'The giant bat wheels toward its foe.';
+  }
   switch(choice.kind){
     case 'fly':{
       const flyer=profileId.startsWith('manticore-')?'manticore':'eagle';
