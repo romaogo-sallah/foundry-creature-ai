@@ -1,0 +1,129 @@
+{
+  "date": "2026-11-06",
+  "version": "0.36.0",
+  "method": "Authorized native world shutdown, graceful desktop host close, relaunch into Arena and native client verification without package metadata or entry-script injection.",
+  "activation": {
+    "worldId": "arena",
+    "modules": [
+      {
+        "id": "pf2e-tactical-core",
+        "active": true,
+        "version": "0.36.0",
+        "configured": true
+      },
+      {
+        "id": "pf2e-tactical-environment",
+        "active": true,
+        "version": "0.36.0",
+        "configured": true
+      },
+      {
+        "id": "pf2e-tactical-conditions",
+        "active": true,
+        "version": "0.36.0",
+        "configured": true
+      },
+      {
+        "id": "pf2e-tactical-movement",
+        "active": true,
+        "version": "0.36.0",
+        "configured": true
+      },
+      {
+        "id": "foundry-creature-ai",
+        "active": true,
+        "version": "0.36.0",
+        "configured": true
+      }
+    ],
+    "otherModulePreferencesPreserved": true,
+    "actorsBefore": 159,
+    "actorsAfter": 159,
+    "actorsPreserved": true,
+    "beforeCombat": [
+      {
+        "id": "FLkab2aTQ1SoRyYI",
+        "round": 2,
+        "turn": 8,
+        "active": true,
+        "started": true
+      }
+    ],
+    "afterCombat": [
+      {
+        "id": "FLkab2aTQ1SoRyYI",
+        "round": 2,
+        "turn": 8,
+        "active": true,
+        "started": true
+      }
+    ],
+    "combatPreserved": true,
+    "regionsBefore": 18,
+    "regionsAfter": 18,
+    "ownedRegionScripts": 9,
+    "coreRegionScripts": 9,
+    "sharedSettings": [
+      "pf2e-tactical-conditions.conditionRestrictions",
+      "pf2e-tactical-movement.manualMovementReactions",
+      "pf2e-tactical-movement.playerStealth"
+    ],
+    "valid": true
+  },
+  "native": {
+    "version": "0.36.0",
+    "runtimeStable": true,
+    "modes": [
+      {
+        "id": "step",
+        "label": "Step",
+        "normalized": true,
+        "difficulty": 2
+      },
+      {
+        "id": "sneak",
+        "label": "Sneak",
+        "normalized": true,
+        "difficulty": 2
+      }
+    ],
+    "controls": true,
+    "costs": {
+      "up": 10,
+      "upDiagonal": 20,
+      "down": 2.5,
+      "downDiagonal": 5,
+      "level": 5
+    },
+    "owners": {
+      "manualFlatChecks": "pf2e-tactical-core",
+      "managedFlatChecks": "pf2e-tactical-core",
+      "frightened": "pf2e-automations",
+      "duplicateFrightened": false,
+      "stunned": "xdy-pf2e-workbench",
+      "persistentDamage": "xdy-pf2e-workbench"
+    },
+    "features": [
+      "conditions",
+      "environment",
+      "movement"
+    ],
+    "aiActive": true,
+    "aiAPI": true,
+    "sharedReactions": true,
+    "legacyFlagScope": true,
+    "regions": 18,
+    "combat": {
+      "id": "FLkab2aTQ1SoRyYI",
+      "round": 2,
+      "turn": 8
+    },
+    "aiSourceRequests": 79,
+    "actorCountBefore": 159,
+    "actorCountAfter": 159,
+    "newActors": 0,
+    "moduleErrors": [],
+    "valid": true
+  },
+  "configurationBackup": ".scratch/suite-activation-before.json"
+}
