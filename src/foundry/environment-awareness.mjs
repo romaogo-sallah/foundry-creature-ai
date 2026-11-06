@@ -1,8 +1,8 @@
 import { environmentBetween } from './environment-zones.mjs';
 import { detectionFor } from './stealth-awareness.mjs';
 import { clearSightPath } from './attack-path.mjs';
+import {TokenCaptions} from './token-captions.mjs';
 
-const namespace = 'foundry-creature-ai';
 export const TOKEN_GEOMETRY_FIELDS = ['x', 'y', 'elevation', 'level', 'width', 'height', 'depth', 'shape', 'hidden', 'actorId', 'actorLink'];
 
 export function environmentObserver() {
@@ -44,53 +44,32 @@ export function defenseLabel(environment, detection) {
   ].filter(Boolean).join('\n');
 }
 
-// Client-local, observer-relative display. The native tooltip reads cached text
+// Client-local, observer-relative display. The tactical text uses cached data
 // only; all geometry work happens on document/selection events, never a ticker.
 export class EnvironmentAwareness {
   constructor({ query = environmentBetween, enabled = () => true } = {}) {
     this.query = query; this.enabled = enabled; this.entries = new Map(); this.observer = null; this.sceneId = null;
     this.pending = null; this.all = false; this.moved = new Set();
-    this.rendered = new WeakMap(); this.tooltips = new Set(); this.tooltipPending = null;
+    this.captions = new TokenCaptions(); this.layouts = new Set(); this.layoutPending = null;
   }
   clear() {
-    const tokens=[...this.entries.values()].map(entry=>entry.token);
     this.entries.clear(); this.observer = null; this.sceneId = null;
-    for(const token of tokens)this.refreshLabel(token);
+    this.captions.clear();
   }
   refreshLabel(token) {
-    token.renderFlags?.set({ refreshTooltip: true });
-    // Some canvas redraws leave the tooltip empty while the cached label stays
-    // unchanged. Refresh the existing native text object on document/selection
-    // events too; no extra geometry, render ticker, or persistent actor effect.
-    if(token.tooltip&&token.tooltip.text!==token._getTooltipText?.())token._refreshTooltip?.();
-    this.restoreTooltip(token);
+    this.captions.update(token,this.label(token));
   }
-  restoreTooltip(token) {
-    const tooltip=token.tooltip;if(!tooltip||tooltip.destroyed)return;
-    // Other modules may replace the native tooltip with absolute elevation in
-    // refreshToken, after _refreshTooltip has already appended our cached text.
-    // Preserve that prefix and change only our own suffix, without geometry.
-    const label=this.enabled()?this.label(token):'',previous=this.rendered.get(token)??'';
-    let text=tooltip.text??'';
-    if(previous&&previous!==label){
-      if(text===previous)text='';
-      else if(text.endsWith(`\n${previous}`))text=text.slice(0,-previous.length-1);
-    }
-    if(label&&text!==label&&!text.endsWith(`\n${label}`))text=[text,label].filter(Boolean).join('\n');
-    if(tooltip.text!==text)tooltip.text=text;
-    if(label)this.rendered.set(token,label);else this.rendered.delete(token);
-  }
-  scheduleTooltip(token) {
-    if(!this.label(token)&&!this.rendered.has(token))return;
-    this.tooltips.add(token);
-    if(this.tooltipPending)return this.tooltipPending;
-    // Finish after every synchronous refreshToken listener, regardless of their
-    // registration order. Native render flags remain untouched: no render loop.
-    this.tooltipPending=Promise.resolve().then(()=>{
-      for(const token of this.tooltips)this.restoreTooltip(token);
-      this.tooltips.clear();this.tooltipPending=null;
+  scheduleLayout(token) {
+    if(!this.captions.get(token))return;
+    this.layouts.add(token);
+    if(this.layoutPending)return this.layoutPending;
+    // Only placement follows final native elevation text. Caption text stays
+    // untouched through the entire render cycle; no geometry or render flags.
+    this.layoutPending=Promise.resolve().then(()=>{
+      for(const token of this.layouts)this.captions.layout(token);
+      this.layouts.clear();this.layoutPending=null;
     });
-    return this.tooltipPending;
+    return this.layoutPending;
   }
   label(token) { return this.entries.get(token.id)?.label ?? ''; }
   refresh({ moved = [], all = true } = {}) {
@@ -102,7 +81,7 @@ export class EnvironmentAwareness {
     const changed = new Set(moved);
     if (changed.has(observer.id)) all = true;
     const tokens = canvas.tokens.placeables, ids = new Set(tokens.map(token => token.id));
-    for (const id of this.entries.keys()) if (!ids.has(id)) this.entries.delete(id);
+    for (const [id,entry] of this.entries) if (!ids.has(id)) {this.captions.remove(entry.token);this.entries.delete(id);}
     for (const token of tokens) {
       if (token === observer) continue;
       if (!all && !changed.has(token.id)) continue;
@@ -113,9 +92,8 @@ export class EnvironmentAwareness {
       // including when another owned observer lets the native token stay visible.
       if (!game.user.isGM && detection?.state === 'undetected') { environment = null; detection = null; }
       const label = environment ? defenseLabel(environment, detection) : '';
-      const previous = this.entries.get(token.id);
       this.entries.set(token.id, { token, environment, detection, label });
-      if (previous?.label !== label||token.tooltip?.text!==token._getTooltipText?.())this.refreshLabel(token);
+      this.refreshLabel(token);
     }
   }
   schedule(tokenId) {
@@ -127,11 +105,8 @@ export class EnvironmentAwareness {
     }).finally(() => { this.pending = null; });
     return this.pending;
   }
-  install({packageId=namespace}={}) {
+  install() {
     const awareness = this;
-    libWrapper.register(packageId, 'CONFIG.Token.objectClass.prototype._getTooltipText', function (wrapped, ...args) {
-      return [wrapped(...args), awareness.label(this)].filter(Boolean).join('\n');
-    }, 'WRAPPER');
-    globalThis.Hooks?.on('refreshToken',token=>awareness.scheduleTooltip(token));
+    globalThis.Hooks?.on('refreshToken',token=>awareness.scheduleLayout(token));
   }
 }

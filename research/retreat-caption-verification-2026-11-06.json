@@ -1,0 +1,141 @@
+{
+  "date": "2026-11-06",
+  "version": "0.37.3",
+  "battleEvidence": {
+    "previousRuntime": "0.37.2",
+    "selfHP": 47,
+    "selfMaxHP": 130,
+    "knownArcherDistances": [
+      45,
+      65
+    ],
+    "stalled": [
+      {
+        "id": "XDRKBaB53jVqj8CN",
+        "turn": "FLkab2aTQ1SoRyYI:18:Uc9ijUVTZ1bRix26",
+        "choice": "end",
+        "actionsRemaining": 3,
+        "plan": "avoiding",
+        "position": {
+          "x": 2030,
+          "y": 1260,
+          "elevation": 0,
+          "level": "defaultLevel0000",
+          "action": "walk",
+          "snapped": false
+        },
+        "reachableDestinations": 80
+      },
+      {
+        "id": "mQMFwNpvQy20ScW3",
+        "turn": "FLkab2aTQ1SoRyYI:19:Uc9ijUVTZ1bRix26",
+        "choice": "end",
+        "actionsRemaining": 3,
+        "plan": "avoiding",
+        "position": {
+          "x": 2030,
+          "y": 1260,
+          "elevation": 0,
+          "level": "defaultLevel0000",
+          "action": "walk",
+          "snapped": false
+        },
+        "reachableDestinations": 80
+      }
+    ],
+    "causes": [
+      "Withdrawal generation stopped at a fixed 30 feet despite known ranged opponents.",
+      "Approach filtering plus no additional protection benefit left only End Turn.",
+      "Weapon preparation could displace useful retreat without an immediate attack."
+    ]
+  },
+  "tests": {
+    "pass": 993,
+    "fail": 0,
+    "workers": 11,
+    "durationSeconds": 19.5
+  },
+  "native": {
+    "version": "0.37.3",
+    "galc": {
+      "active": true,
+      "version": "1.0.0"
+    },
+    "captions": {
+      "label": "Concealed (DC 5)",
+      "rendered": "Concealed (DC 5)",
+      "nativeElevation": "",
+      "captionWrites": 0,
+      "geometryQueries": 0,
+      "blankFrames": 0,
+      "separateObjects": true,
+      "aboveElevation": true,
+      "captionChildren": 1,
+      "removedOnDeselect": true,
+      "restoredOnRedraw": true,
+      "childrenAfterRedraw": 1
+    },
+    "retreat": {
+      "round": 19,
+      "position": {
+        "x": 2030,
+        "y": 1260
+      },
+      "hp": 47,
+      "plan": "avoiding",
+      "choice": "stride",
+      "id": "behavior:avoid:stride:34,18",
+      "destination": {
+        "x": 34,
+        "y": 18
+      },
+      "avoidance": true,
+      "reachable": 80,
+      "enemies": [
+        {
+          "name": "Kobold Scout",
+          "distance": 65,
+          "role": "ranged",
+          "rangeIncrement": 120
+        },
+        {
+          "name": "Kobold Scout",
+          "distance": 45,
+          "role": "ranged",
+          "rangeIncrement": 120
+        }
+      ],
+      "terms": [
+        {
+          "label": "Reduce known weapon exposure and break firing lines",
+          "contribution": 2.1000000000000005
+        },
+        {
+          "label": "Create distance from known opponents",
+          "contribution": 2.5
+        },
+        {
+          "label": "Movement risk",
+          "contribution": 0
+        }
+      ]
+    },
+    "combat": {
+      "id": "FLkab2aTQ1SoRyYI",
+      "round": 19,
+      "turn": 5
+    },
+    "actorCountBefore": 159,
+    "actorCountAfter": 159,
+    "newActors": 0,
+    "moduleErrors": [],
+    "valid": true
+  },
+  "installed": {
+    "filesVerified": 223,
+    "archiveSHA256": "2bec74f82ce26d20111b8fba21df012ff6a7b2368f4204061c1c349a59258680"
+  },
+  "serverRestarted": false,
+  "activation": "Refresh all clients with Ctrl+F5. Existing modules/settings stay enabled.",
+  "method": "Read-only battle/chat inspection and actual native canvas renders. The inactive boss preview used a detached ledger budget and did not execute any action. Caption instrumentation was client-local; no world actors were created/modified and combat stayed at round 19, turn 5."
+}

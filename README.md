@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Patch 0.37.3:** fixes wounded NPCs holding still under ranged fire because their retreat stopped at 30 feet. Avoiding now weighs known weapon range, blocked firing lines, cover and movement risk, and prioritizes an available safer retreat over unnecessary weapon preparation. Tactical captions have their own cached text object beside the native elevation tooltip, eliminating competing text writes with Global Auto Level Change. Reload every client with **Ctrl+F5**.
+
 **Patch 0.37.2:** restores stealth, cover and concealment captions when Global Auto Level Change overwrites token tooltip text. A batched post-refresh repair preserves the module's elevation display and appends cached observer-relative captions without additional geometry or render loops. Select one observer token and reload every client with **Ctrl+F5**.
 
 **Patch 0.37.1:** fixes overlapping turn/time hooks deleting the same ongoing spell effect twice (`Item does not exist`). Spell application, Sustain, End, Reset and expiry share a mutation queue; manual and unrelated effects are preserved. Movement memory reads native action configuration without invoking Foundry's deprecated teleport getter. Reload every client with **Ctrl+F5**.

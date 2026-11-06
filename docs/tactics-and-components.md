@@ -95,6 +95,10 @@ ai.behaviors.catalog();      // Registered component and plan identifiers.
 
 ## Adding behavior once
 
+Patch **0.37.3** fixes a withdrawal stall observed in the Arena Ogre/Kobold battle: a wounded Ogre Boss selected Avoiding, but rounds 18 and 19 ended with all three actions because the old withdrawal provider considered 30 feet sufficient despite two known archers still firing. Withdrawal now compares current and reachable positions using remembered visible weapon roles/range increments, physical firing paths, cover/concealment and movement risk. Breaking firing lines may justify moving somewhat closer; a longer exposed retreat is not automatically better. The bounded safety distances are tactical heuristics, not a rule that ranged attacks become impossible beyond them.
+
+When useful retreat movement exists, preparing a weapon without an immediate attack no longer displaces that movement. A trapped actor may still prepare a counterattack; a genuinely protected position may hold. Restricted Step/Stride-only actions retain their restriction. These estimates do not inspect opposing HP, remaining ammunition, saves or secret Stealth outcomes.
+
 Registered module code can use `api.behaviors.registerComponent` and `registerPlan`. A component can supply:
 
 | Hook/data | Responsibility |

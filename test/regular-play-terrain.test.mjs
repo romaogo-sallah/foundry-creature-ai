@@ -7,6 +7,7 @@ import { EnvironmentAwareness, environmentObserver } from '../src/foundry/enviro
 import { PlayerStealth } from '../src/foundry/player-stealth.mjs';
 import { detectionFor } from '../src/foundry/stealth-awareness.mjs';
 import { sneakEffects } from '../src/foundry/sneak-mode.mjs';
+import {captionRenderer} from './helpers/caption-renderer.mjs';
 
 const ns='foundry-creature-ai';
 function setup({cover='none',concealment='through',withPlayerStealth=false}={}) {
@@ -193,13 +194,13 @@ test('disabling or hiding an intervening region immediately removes its defenses
   assert.equal(environmentBetween(f.boss,f.player).concealed,false);
 });
 
-test('directional token indicators update only affected pairs and tooltip reads do no geometry work',async()=>{
+test('directional token indicators update only affected pairs and caption reads do no geometry work',async()=>{
   const f=setup({cover:'standard'}),other=f.addOgre('other',800,200);let queries=0;
   const awareness=new EnvironmentAwareness({query:(...args)=>{queries++;return environmentBetween(...args);}});
-  awareness.install();const tooltip=f.wrappers.get('CONFIG.Token.objectClass.prototype._getTooltipText');
-  for(const token of canvas.tokens.placeables)token.renderFlags={set:()=>{}};
+  captionRenderer(canvas.tokens.placeables);awareness.install();
   await awareness.schedule();assert.equal(queries,2);assert.match(awareness.label(f.player),/Cover \+2/);
-  for(let i=0;i<1000;i++)assert.match(tooltip.call(f.player,()=>'5 ft'),/^5 ft\nCover/);
+  for(let i=0;i<1000;i++)assert.match(awareness.captions.get(f.player).text,/^Cover/);
+  assert.equal(f.wrappers.has('CONFIG.Token.objectClass.prototype._getTooltipText'),false,'native elevation tooltip stays unwrapped');
   assert.equal(queries,2,'no geometry work in native tooltip/render reads');
   await Promise.all([awareness.schedule(f.player.id),awareness.schedule(f.player.id)]);assert.equal(queries,3);
   await awareness.schedule(other.id);assert.equal(queries,4);
@@ -215,62 +216,51 @@ test('indicators clear for ambiguous observers and use an assigned character whe
   awareness.refresh();assert.equal(awareness.observer,f.player);
 });
 
-test('caption refresh repairs empty native tooltip text even when the computed label did not change',async()=>{
+test('caption refresh repairs its own empty display without touching native elevation',async()=>{
   const f=setup({cover:'standard'}),awareness=new EnvironmentAwareness();
-  awareness.install();const wrapper=f.wrappers.get('CONFIG.Token.objectClass.prototype._getTooltipText');
-  for(const token of canvas.tokens.placeables){
-    token.tooltip={text:''};token.renderFlags={set:()=>{}};
-    token._getTooltipText=()=>wrapper.call(token,()=>'');
-    token._refreshTooltip=()=>{token.tooltip.text=token._getTooltipText();};
-  }
-  await awareness.schedule();assert.match(f.player.tooltip.text,/Cover \+2/);
-  f.player.tooltip.text='';await awareness.schedule(f.player.id);
-  assert.match(f.player.tooltip.text,/Cover \+2/);
+  captionRenderer(canvas.tokens.placeables);awareness.install();
+  f.player.tooltip.text='+25 ft';
+  await awareness.schedule();assert.match(awareness.captions.get(f.player).text,/Cover \+2/);
+  awareness.captions.get(f.player).text='';await awareness.schedule(f.player.id);
+  assert.match(awareness.captions.get(f.player).text,/Cover \+2/);
+  assert.equal(f.player.tooltip.text,'+25 ft');
   f.actor.conditionsSet.add('blinded');await awareness.schedule();
-  assert.match(f.player.tooltip.text,/Hidden \(observer blinded\)/);
+  assert.match(awareness.captions.get(f.player).text,/Hidden \(observer blinded\)/);
   canvas.tokens.controlled=[f.boss,f.player];await awareness.schedule();
-  assert.equal(f.player.tooltip.text,'','ambiguous observer clears the rendered caption too');
+  assert.equal(awareness.captions.get(f.player),undefined,'ambiguous observer clears the rendered caption too');
 });
 
 test('post-refresh elevation writers cannot erase cached stealth/cover captions',async()=>{
   const f=setup({cover:'standard'});let queries=0;
   const awareness=new EnvironmentAwareness({query:(...args)=>{queries++;return environmentBetween(...args);}});
-  awareness.install();const wrapper=f.wrappers.get('CONFIG.Token.objectClass.prototype._getTooltipText');
-  for(const token of canvas.tokens.placeables){
-    token.tooltip={text:''};token.renderFlags={set:()=>{}};
-    token._getTooltipText=()=>wrapper.call(token,()=>'');
-    token._refreshTooltip=()=>{token.tooltip.text=token._getTooltipText();};
-  }
+  captionRenderer(canvas.tokens.placeables);awareness.install();
   f.actor.conditionsSet.add('blinded');await awareness.schedule();const expected=awareness.label(f.player);
   assert.match(expected,/Cover \+2/);assert.match(expected,/Hidden \(observer blinded\)/);
   // Global Auto Level Change writes tooltip.text in refreshToken, after native
   // refreshTooltip. Register it AFTER our listener to exercise hook order too.
   Hooks.on('refreshToken',token=>{token.tooltip.text=token.document.elevation===0?'':`+${token.document.elevation} ft`;});
   const render=()=>{f.player._refreshTooltip();for(const callback of f.hooks.get('refreshToken')??[])callback(f.player);};
-  const before=queries;render();assert.equal(f.player.tooltip.text,'');await Promise.resolve();
-  assert.equal(f.player.tooltip.text,expected);
+  const before=queries,display=awareness.captions.get(f.player),writes=display.writes;
+  render();assert.equal(f.player.tooltip.text,'');assert.equal(display.text,expected);await Promise.resolve();
+  assert.equal(display.text,expected);
   f.player.document.elevation=15;
   for(let i=0;i<1000;i++)render();await Promise.resolve();
-  assert.equal(f.player.tooltip.text,`+15 ft\n${expected}`);
+  assert.equal(f.player.tooltip.text,'+15 ft');assert.equal(display.text,expected);
+  assert.equal(display.writes,writes,'caption text is never cleared or rewritten during token refresh');
+  assert.ok(display.y<f.player.tooltip.y-f.player.tooltip.height,'caption sits above elevation without overlap');
   assert.equal(queries,before,'render repair reads cached strings without visibility or terrain queries');
 });
 
 test('pending tooltip repair never restores captions after the observer is cleared or indicators disabled',async()=>{
   const f=setup({cover:'standard'});let enabled=true;
-  const awareness=new EnvironmentAwareness({enabled:()=>enabled});awareness.install();
-  const wrapper=f.wrappers.get('CONFIG.Token.objectClass.prototype._getTooltipText');
-  for(const token of canvas.tokens.placeables){
-    token.tooltip={text:''};token.renderFlags={set:()=>{}};
-    token._getTooltipText=()=>wrapper.call(token,()=>'');
-    token._refreshTooltip=()=>{token.tooltip.text=token._getTooltipText();};
-  }
-  await awareness.schedule();assert.notEqual(f.player.tooltip.text,'');
+  const awareness=new EnvironmentAwareness({enabled:()=>enabled});captionRenderer(canvas.tokens.placeables);awareness.install();
+  await awareness.schedule();assert.notEqual(awareness.captions.get(f.player).text,'');
   for(const callback of f.hooks.get('refreshToken')??[])callback(f.player);
   canvas.tokens.controlled=[f.boss,f.player];awareness.refresh();await Promise.resolve();
-  assert.equal(f.player.tooltip.text,'');
-  canvas.tokens.controlled=[f.boss];await awareness.schedule();assert.notEqual(f.player.tooltip.text,'');
+  assert.equal(awareness.captions.get(f.player),undefined);
+  canvas.tokens.controlled=[f.boss];await awareness.schedule();assert.notEqual(awareness.captions.get(f.player).text,'');
   for(const callback of f.hooks.get('refreshToken')??[])callback(f.player);
-  enabled=false;awareness.refresh();await Promise.resolve();assert.equal(f.player.tooltip.text,'');
+  enabled=false;awareness.refresh();await Promise.resolve();assert.equal(awareness.captions.get(f.player),undefined);
 });
 
 test('manual Strikes against a Blinded defender apply off-guard without creating a global condition',async()=>{

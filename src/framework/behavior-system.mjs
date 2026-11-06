@@ -66,10 +66,15 @@ export class BehaviorSystem {
   candidates(state, offered, selection = this.select(state)) {
     const enabled = new Set(selection.activeComponents);
     const rejected = [], candidates = [];
+    const generated=new Map([...enabled].map(id=>[id,this.components.get(id).candidates?.(state,selection)??[]]));
+    const withdrawing=selection.planId==='avoiding'&&(generated.get('withdraw')?.length??0)>0;
     for (const original of offered) {
       const component = [...this.components.values()].find(component => component.actionKinds?.includes(original.kind));
       if (component && !enabled.has(component.id) && !component.core) {
         rejected.push({id:original.id,kind:original.kind,reason:`Behavior component ${component.id} is not attached`}); continue;
+      }
+      if(withdrawing&&component?.id==='equipment'&&!state.behavior.context.immediateAttack){
+        rejected.push({id:original.id,kind:original.kind,reason:'Take an available safer retreat before preparing a weapon without an immediate attack'});continue;
       }
       if(selection.planId==='avoiding'&&!state.morale?.broken&&original.assessment?.movement&&!original.features?.avoidance){
         const move=state.moves?.find(move=>move.x===original.destination?.x&&move.y===original.destination?.y);
@@ -86,7 +91,7 @@ export class BehaviorSystem {
       }
       candidates.push(original);
     }
-    for (const id of enabled) for (const candidate of this.components.get(id).candidates?.(state,selection) ?? [])
+    for (const id of enabled) for (const candidate of generated.get(id))
       if (!candidates.some(existing => existing.id === candidate.id || ['hide','stand','endTurn'].includes(candidate.kind) && existing.kind === candidate.kind ||
         candidate.kind==='strike'&&existing.kind==='strike'&&candidate.targetId===existing.targetId&&candidate.strikeId===existing.strikeId)) candidates.push(candidate);
     const adjusted = candidates.map(candidate => {

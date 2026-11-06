@@ -11,7 +11,8 @@ export function apparentCombatRole(actor) {
   const ranged = strikes.some(action => action.item?.isRanged);
   const melee = strikes.some(action => action.item?.isMelee);
   const reach = Math.max(5, ...strikes.filter(action => action.item?.isMelee).map(action => action.item.reach ?? 5));
-  return { role: ranged ? 'ranged' : melee ? 'melee' : 'unknown', reach, speed: 25,
+  const increments=strikes.filter(action=>action.item?.isRanged).map(action=>action.item.system?.range?.increment).filter(value=>Number.isFinite(value)&&value>0);
+  return { role: ranged ? 'ranged' : melee ? 'melee' : 'unknown', reach, speed: 25,...increments.length?{rangeIncrement:Math.max(...increments)}:{},
     source: ranged || melee ? 'visible weapons; benchmark movement' : 'unknown; benchmark movement' };
 }
 

@@ -2,6 +2,7 @@ import { BehaviorSystem, chooseBehaviorAction } from './behavior-system.mjs';
 import { recoveryCandidates } from './recovery.mjs';
 import { seekCandidates } from './perception.mjs';
 import { preparedStrikeCandidates } from './strike-capability.mjs';
+import {withdrawalCandidates} from './withdrawal.mjs';
 
 const movement = candidate => candidate.assessment?.movement;
 const attack = candidate => ['strike','eagleDive','spikeVolley','castSpell','trip','knockdown','sweepingHook'].includes(candidate.kind);
@@ -41,23 +42,7 @@ tacticalBehaviors.registerComponent({id:'surround',label:'Coordinate a surround'
 tacticalBehaviors.registerComponent({id:'assist',label:'Enable allies',kind:'policy',
   adjust:candidate=>candidate.kind==='bellow'?0.75:['trip','knockdown'].includes(candidate.kind)?0.3:0});
 tacticalBehaviors.registerComponent({id:'withdraw',label:'Avoid immediate danger',kind:'policy',
-  candidates:(state,selection)=>{
-    if(selection.planId!=='avoiding'||state.self.immobile||state.self.unable||!state.actionsRemaining||state.morale?.broken)return [];
-    const nearest=Math.min(...state.enemies.map(enemy=>enemy.distance));
-    if(nearest>=(selection.goal?.desiredDistance??30))return [];
-    return (state.moves??[]).flatMap(move=>{
-      if(!move.cost||state.visited?.includes(`${move.x},${move.y}`))return [];
-      const after=Math.min(...state.enemies.map(enemy=>move.targets[enemy.id]?.distance??0));
-      const gain=Math.min(3,Math.max(0,after-nearest)*0.12),risk=(move.kind==='step'?0:move.reactionRisk??0)+(move.terrainRisk??0);
-      if(gain<=risk||!Number.isFinite(gain))return [];
-      return [{id:`behavior:avoid:${move.kind}:${move.x},${move.y}`,kind:move.kind,legal:true,actionCost:1,
-        destination:{x:move.x,y:move.y},path:move.path,movementCost:move.cost,intent:'avoid immediate danger',
-        provokes:move.kind!=='step'&&move.provokes,destinationThreatened:move.destinationThreatened,
-        features:{avoidance:true},assessment:{value:gain-risk,movement:true,fullTurnPlan:true,step:move.kind==='step',
-          nearestEnemy:move.nearestEnemy,currentNearestEnemy:state.nearestEnemy,distanceMoved:move.cost/5},
-        scoringTerms:[{label:'Create distance from known opponents',contribution:gain},{label:'Movement risk',contribution:-risk}]}];
-    });
-  }});
+  candidates:withdrawalCandidates});
 
 function objective(id,context,state,previous){
   if(['aerial-engage','aerial-disengage'].includes(id))return {kind:id,...state.flight.airCombat};
@@ -65,7 +50,9 @@ function objective(id,context,state,previous){
   const choices=[...state.enemies].sort((a,b)=>(a.distance-(a.alliesInReach??0)*2)-(b.distance-(b.alliesInReach??0)*2)||a.id.localeCompare(b.id));
   const prior=state.enemies.find(enemy=>enemy.id===previous?.goal?.targetId);
   const target=prior&&prior.distance<=(choices[0]?.distance??0)+10?prior:choices[0];
-  if(id==='avoiding')return {kind:'withdraw',label:'Create distance from known threats',fromIds:state.enemies.map(enemy=>enemy.id),desiredDistance:30};
+  if(id==='avoiding')return {kind:'withdraw',label:'Break firing lines and create distance from known threats',fromIds:state.enemies.map(enemy=>enemy.id),
+    desiredDistance:Math.max(30,...state.enemies.map(enemy=>enemy.tactics?.role==='ranged'?(enemy.tactics.rangeIncrement??60)*2+5:
+      (enemy.tactics?.reach??5)+(enemy.tactics?.speed??25)+5))};
   if(id==='defensive')return {kind:'hold-position',label:context.caster?'Hold a protected casting position':'Keep protection while remaining able to fight',anchor:previous?.planId===id?previous.goal?.anchor??state.self.cell:state.self.cell};
   if(id==='hiding')return {kind:'break-observation',label:'Hide from known observers',observerIds:state.enemies.map(enemy=>enemy.id)};
   if(id==='lay-low')return {kind:'avoid-hunter',label:'Take cover, Hide and Sneak until the hunter can be opposed',observerIds:state.groundThreats.ids};

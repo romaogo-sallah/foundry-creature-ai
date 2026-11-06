@@ -2,6 +2,7 @@ import { tacticalBehaviors, defaultBehaviorConfiguration } from '../framework/ta
 import { castingCandidates } from '../framework/spell-evaluation.mjs';
 import { casterStealthKnowledge } from './caster-stealth.mjs';
 import { casterTargetKnowledge } from './caster-target-knowledge.mjs';
+import {withdrawalPosition} from '../framework/withdrawal.mjs';
 import { clearSightPath } from './attack-path.mjs';
 import { reveal, detectionFor, STEALTH_MOVEMENT } from './stealth-awareness.mjs';
 import { executeSharedHide, executeSharedSneak, sneakSpeed, retainStepStealth, stealthAdapter } from './shared-stealth.mjs';
@@ -60,6 +61,15 @@ async function enrichState(adapter,state) {
   for(const enemy of state.enemies) enemy.tactics??=roleKnowledge.entries[enemy.id]??{role:'unknown',reach:5,speed:25};
   const hideHistory=adapter.token.document.getFlag(ns,'behaviorActions');
   const knowledge=casterStealthKnowledge(stealthAdapter(adapter),state),at=knowledge.at();
+  const positions=new Map(),projectAt=move=>{
+    const key=`${move.x},${move.y}`;
+    if(!positions.has(key))positions.set(key,knowledge.at(adapter.center(move)));
+    return positions.get(key);
+  };
+  if(adapter.actor.hitPoints.value/Math.max(1,adapter.actor.hitPoints.max)<0.4){
+    state.withdrawal=at;
+    for(const move of state.moves??[])move.withdrawal=projectAt(move);
+  }
   state.groundThreats=groundThreats(adapter,state);
   const layingLow=state.groundThreats.unanswerable;
   const canHide=Boolean(adapter.actor.getStatistic('stealth')?.check?.roll)&&!state.self.restrained;
@@ -80,7 +90,7 @@ async function enrichState(adapter,state) {
   }
   if(!['goblin-pyro','kobold-scout'].includes(adapter.profileId)&&!state.self.immobile&&state.actionsRemaining>0)for(const move of state.moves??[]){
     if(!move.cost||state.visited?.includes(`${move.x},${move.y}`))continue;
-    const after=knowledge.at(adapter.center(move)),gain=protection(after)-baseProtection;
+    const after=projectAt(move),gain=protection(after)-baseProtection;
     move.behaviorProtectedGain=gain>0.25;
     if(gain<=0.25)continue;
     const sight=movementSight(state,move),risk=(move.kind==='step'?0:move.reactionRisk??0)+(move.terrainRisk??0);
@@ -97,7 +107,7 @@ async function enrichState(adapter,state) {
   if(adapter.profileId!=='kobold-scout'&&canHide&&knowledge.priors.some(prior=>prior.unseenChance>0)&&!state.self.immobile&&state.actionsRemaining>0){
     for(const move of state.moves??[]){
       if(!move.cost||move.cost>sneakSpeed(adapter)||move.kind==='step'||state.visited?.includes(`${move.x},${move.y}`))continue;
-      const after=knowledge.at(adapter.center(move)),gain=protection(after)-baseProtection;
+      const after=projectAt(move),gain=protection(after)-baseProtection;
       const distance=Math.min(...state.enemies.map(enemy=>move.targets[enemy.id]?.distance??0))-Math.min(...state.enemies.map(enemy=>enemy.distance));
       const emergency=state.morale?.broken||adapter.actor.hitPoints.value/Math.max(1,adapter.actor.hitPoints.max)<=0.25;
       const projected=knowledge.projectSneak(adapter.center(move),move.path);
@@ -204,7 +214,11 @@ export function attachBehaviorSystem(adapter) {
     const decision=decide(state);
     adapter.lastTactic=decision.diagnostics?.tactic??null;
     if(adapter.lastTactic?.planId==='avoiding'&&decision.chosen?.kind==='endTurn'&&!state.self.immobile&&!state.self.restrained&&
-      !state.diagnostics?.movementBlocked&&!state.escapeBlocked)decision.diagnostics.turnComplete=true;
+      !state.diagnostics?.movementBlocked&&!state.escapeBlocked){
+      decision.diagnostics.turnComplete=true;
+      decision.diagnostics.noActionReason=withdrawalPosition(state).safe?'Hold this withdrawal position: known attacks are blocked or beyond the current safety distance.':
+        'No safer supported retreat remains from this position; holding until a useful action becomes available.';
+    }
     if(adapter.lastTactic?.planId==='hiding'&&decision.chosen?.kind==='endTurn'&&!state.self.immobile&&!state.self.restrained&&
       !state.diagnostics?.movementBlocked&&!state.escapeBlocked)decision.diagnostics.turnComplete=true;
     if(adapter.lastTactic?.planId==='lay-low'&&decision.chosen?.kind==='endTurn'&&!state.self.immobile&&!state.self.restrained&&
