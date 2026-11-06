@@ -1,5 +1,7 @@
 # Shared conditions and ongoing spells — 0.35.0
 
+Patch **0.37.1** serializes owned spell-effect mutations across turn/time hooks, application, Sustain, End and Reset. This prevents simultaneous expiry requests from deleting the same Laughing Fit source twice. The reaction barrier continues to await all jobs and permit nested reactions; it is not used as a mutex. Real permission or database failures still surface, and subsequent cleanup can retry.
+
 Version 0.35.0 adds separate [AI condition rules](condition-ai.md) and [manual character automation](condition-manual.md). Version **0.37.0** adds the [Confused NPC attack strategy](confused-ai.md), with random targets across alliances and ordinary attacks/basic preparation only. Confused also denies supported manual reactions. The [rules/module audit](condition-rules-audit-2026-11-06.md) records ownership, current errata, native verification and remaining manual cases. Manual flat checks fall back to this module when PF2e Automations' flat-check setting is off, as it was in the audited arena world.
 
 The world setting **Enforce action and reaction restrictions** defaults on. It connects prepared PF2e conditions and PF2e Automations 1.4.10 flags to the existing manual and AI workflows. The installed external markers use `flags.pf2e.noUseReactions` and `flags.pf2e.noActions`; effect names and imported prose are not parsed as rules.

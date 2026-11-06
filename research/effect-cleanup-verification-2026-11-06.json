@@ -1,0 +1,100 @@
+{
+  "date": "2026-11-06",
+  "version": "0.37.1",
+  "diagnosis": {
+    "effects": "Laughing Fit ongoing sources on two Ogre tokens",
+    "serverEvidence": [
+      {
+        "itemId": "03WHPv81vaJwcb67",
+        "deletedThenSecondDeleteRejectedAt": "2026-11-06 13:01:58"
+      },
+      {
+        "itemId": "toI5flXfyhNvOKtP",
+        "deletedThenSecondDeleteRejectedAt": "2026-11-06 13:03:15"
+      }
+    ],
+    "cause": "ReactionBarrier tracks concurrent work and permits nesting; turn/time/manual spell mutations were not serialized.",
+    "regressionBeforeFix": {
+      "pass": 3,
+      "fail": 2,
+      "error": "Item does not exist on overlapping deletion"
+    },
+    "movement": "Movement memory evaluated Foundry v14 post-movement deprecated teleport getter."
+  },
+  "tests": {
+    "pass": 981,
+    "fail": 0,
+    "workers": 11,
+    "durationSeconds": 20.4
+  },
+  "native": {
+    "cleanup": {
+      "concurrentCasts": 2,
+      "uniqueCastIds": 2,
+      "deprecatedGetterReads": 0,
+      "walkRemembered": true,
+      "displacementIgnored": true,
+      "realActorsMutated": false
+    },
+    "version": "0.37.1",
+    "runtimeStable": true,
+    "modes": [
+      {
+        "id": "step",
+        "label": "Step",
+        "normalized": true,
+        "difficulty": 2
+      },
+      {
+        "id": "sneak",
+        "label": "Sneak",
+        "normalized": true,
+        "difficulty": 2
+      }
+    ],
+    "controls": true,
+    "costs": {
+      "up": 10,
+      "upDiagonal": 20,
+      "down": 2.5,
+      "downDiagonal": 5,
+      "level": 5
+    },
+    "owners": {
+      "manualFlatChecks": "pf2e-tactical-core",
+      "managedFlatChecks": "pf2e-tactical-core",
+      "frightened": "pf2e-automations",
+      "duplicateFrightened": false,
+      "stunned": "xdy-pf2e-workbench",
+      "persistentDamage": "xdy-pf2e-workbench"
+    },
+    "features": [
+      "conditions",
+      "environment",
+      "movement"
+    ],
+    "aiActive": true,
+    "aiAPI": true,
+    "sharedReactions": true,
+    "legacyFlagScope": true,
+    "regions": 18,
+    "combat": {
+      "id": "FLkab2aTQ1SoRyYI",
+      "round": 5,
+      "turn": 5
+    },
+    "aiSourceRequests": 83,
+    "actorCountBefore": 159,
+    "actorCountAfter": 159,
+    "newActors": 0,
+    "moduleErrors": [],
+    "valid": true
+  },
+  "installed": {
+    "filesVerified": 221,
+    "archiveSHA256": "25db6e059468c668cd37b51fe029d9f15109c06413c37122994c0415e43e6db0"
+  },
+  "serverRestarted": false,
+  "activation": "Refresh clients with Ctrl+F5; installed sources and runtime are 0.37.1. Server package metadata remains cached until its next normal restart.",
+  "method": "Authenticated read-only world/chat/log inspection; native module queue check used detached plain actor state only. No world actors created, conditions removed, rolls made, combat turns advanced or tokens moved by diagnostics."
+}

@@ -16,10 +16,14 @@ const position = token => {
 // Until stealth actions are taught, ordinary movement preserves an already
 // known square. Teleports/undo and explicit Undetected never broadcast it.
 export function movementKnowledge(document, movement, operation = {}) {
-  if (!movement || operation.isUndo || operation.isPaste || operation.teleport ||
+  // Native post-movement operations expose a deprecated teleport getter. Read
+  // the passed action instead; only honor old flags when they are plain data.
+  const legacyTeleport=Object.getOwnPropertyDescriptor(operation,'teleport')?.value===true;
+  if (!movement || operation.isUndo || operation.isPaste || legacyTeleport ||
     !['dragging', 'keyboard', 'api'].includes(movement.method)) return null;
   const waypoints = movement.passed?.waypoints ?? [];
-  if (!waypoints.length || waypoints.some(point => !point.action || point.action === 'displace')) return null;
+  if (!waypoints.length || waypoints.some(point => !point.action || point.action === 'displace' ||
+    globalThis.CONFIG?.Token?.movement?.actions?.[point.action]?.teleport)) return null;
   return { tokenId: document.id, position: position({ document }) };
 }
 

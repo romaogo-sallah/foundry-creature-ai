@@ -9,6 +9,24 @@ const now=()=>game.time?.worldTime??0;
 const casterCasts=actor=>actor.getFlag?.(ns,'ongoingCasts')??[];
 const owned=actor=>(actor.itemTypes?.effect??[]).filter(e=>e.flags?.[ns]?.ongoingSpell);
 const gm=()=>game.user?.isGM&&game.users.activeGM?.id===game.user.id;
+const mutations=new WeakMap();
+// The reaction barrier waits for concurrent jobs; it intentionally permits
+// nesting and is not a mutex. Turn/time hooks and manual End/Reset must read
+// fresh cast/effect collections after the preceding spell mutation finishes.
+function serialize(operation){
+ const owner=game,task=(mutations.get(owner)??Promise.resolve()).catch(()=>{}).then(operation);
+ mutations.set(owner,task);
+ void task.finally(()=>{if(mutations.get(owner)===task)mutations.delete(owner);}).catch(()=>{});
+ return task;
+}
+export const beginSustainedCast=(...args)=>serialize(()=>beginCast(...args));
+export const applyConditionSpell=(...args)=>serialize(()=>applySpell(...args));
+export const sustainCast=(...args)=>serialize(()=>sustain(...args));
+export const endSustainedCast=(...args)=>serialize(()=>endCast(...args));
+export const resetOngoingSpells=(...args)=>serialize(()=>resetSpells(...args));
+export function advanceOngoingSpells({token,phase='time',round=game.combat?.round,combat=game.combat}={}){
+ return serialize(()=>advanceSpells({token,phase,round,combat}));
+}
 let requestResolver;
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function nextStart(token){
@@ -23,12 +41,12 @@ export function conditionSpellRules(slug,degree){
  if(slug==='cytillesh-stare')return [condition('dazzled'),...(degree<2?[condition('confused')]:[])];
  return [];
 }
-export async function beginSustainedCast(source,spell,target,castId=foundry.utils.randomID()){
+async function beginCast(source,spell,target,castId=foundry.utils.randomID()){
  const data={id:castId,slug:spell.slug,spellId:spell.id,sourceActor:source.actor.uuid,sourceTokenId:source.token?.id,targetId:target.id,
   combatId:game.combat?.id??null,sceneId:canvas.scene?.id,castRound:game.combat?.round??0,lastRound:game.combat?.round??0,lastTime:now(),expiresAt:now()+600};
  await source.actor.setFlag(ns,'ongoingCasts',[...casterCasts(source.actor).filter(c=>c.id!==castId),data]);return data;
 }
-export async function applyConditionSpell({source,target,spell,degree,castId}){
+async function applySpell({source,target,spell,degree,castId}){
  if(!Number.isInteger(degree)||degree<0||degree>3)throw new Error('A resolved native save is required for spell conditions');
  if(['laughing-fit','void-warp'].includes(spell.slug)&&target.actor.modeOfBeing&&target.actor.modeOfBeing!=='living')return null;
  if(degree===3&&!['cytillesh-stare','blindness'].includes(spell.slug))return null;
@@ -37,7 +55,7 @@ export async function applyConditionSpell({source,target,spell,degree,castId}){
  const data={slug:spell.slug,sourceActor:source.actor.uuid,sourceTokenId:source.token?.id,targetId:target.id,combatId:game.combat?.id??null,
   castRound:game.combat?.round??0,castId:castId??null,expiresAt:null,startDeadline:null,phaseDeadline:null};
  if(spell.slug==='laughing-fit'){
-  if(!castId)data.castId=(await beginSustainedCast(source,spell,target)).id;
+  if(!castId)data.castId=(await beginCast(source,spell,target)).id;
   if(degree===0){data.phaseDeadline=nextStart(source.token);data.phaseExpiresAt=data.phaseDeadline?null:now()+6;if(!target.actor.hasCondition('prone'))await target.actor.increaseCondition('prone');}
  }else if(spell.slug==='stupefy'){
   if(degree===2){data.startDeadline=nextStart(source.token);data.expiresAt=data.startDeadline?null:now()+6;}else data.expiresAt=now()+60;
@@ -59,7 +77,7 @@ export async function applyConditionSpell({source,target,spell,degree,castId}){
  return effect;
 }
 
-export async function sustainCast(actor,castId){
+async function sustain(actor,castId){
  const restriction=actionRestriction(actor,{purelyMental:true});if(restriction)throw new Error(restriction.reason);
  const current=game.combat?.combatant,token=canvas.tokens.get(current?.tokenId);
  if(!game.combat?.started||token?.actor.uuid!==actor.uuid)throw new Error('Sustain during the caster’s own active turn');
@@ -72,12 +90,12 @@ export async function sustainCast(actor,castId){
  await actor.setFlag(ns,'ongoingCasts',casts.map(c=>c.id===castId?{...c,lastRound:game.combat.round,lastTime:now()}:c));
  return {resolved:true,note:'Sustain: the spell continues until the end of the caster’s next turn.'};
 }
-export async function endSustainedCast(actor,castId){
+async function endCast(actor,castId){
  await actor.setFlag(ns,'ongoingCasts',casterCasts(actor).filter(c=>c.id!==castId));
  for(const token of canvas.tokens.placeables){const ids=owned(token.actor).filter(e=>e.flags[ns].ongoingSpell.castId===castId).map(e=>e.id);
   if(ids.length)await token.actor.deleteEmbeddedDocuments('Item',ids);}
 }
-export async function advanceOngoingSpells({token,phase='time',round=game.combat?.round,combat=game.combat}={}){
+async function advanceSpells({token,phase,round,combat}){
  if(!gm())return;
  for(const subject of canvas.tokens.placeables){
   for(const effect of owned(subject.actor)){
@@ -91,7 +109,7 @@ export async function advanceOngoingSpells({token,phase='time',round=game.combat
    const missedEnd=cast.combatId===combat?.id&&(round>cast.lastRound+1||round===cast.lastRound+1&&index>=0&&combat.turn>index);
    const outside=(!combat?.started||cast.combatId!==combat.id)&&now()>=cast.lastTime+12;
    if(now()>=cast.expiresAt||outside||missedEnd||phase==='end'&&cast.combatId===combat?.id&&subject.actor.uuid===token?.actor.uuid&&round>cast.lastRound)
-    await endSustainedCast(subject.actor,cast.id);
+    await endCast(subject.actor,cast.id);
   }
  }
 }
@@ -127,7 +145,7 @@ export function installOngoingSpells({reactions,onError}){
   if(token)void reactions.resolve(()=>advanceOngoingSpells({token,phase:'end',combat,round:endedRound})).catch(onError);});
  Hooks.on('updateWorldTime',()=>{void reactions.resolve(()=>advanceOngoingSpells()).catch(onError);});
 }
-export async function resetOngoingSpells(tokenIds){
+async function resetSpells(tokenIds){
  const ids=new Set(tokenIds);
  for(const token of canvas.tokens.placeables){
   const effects=owned(token.actor).filter(e=>{const d=e.flags[ns].ongoingSpell;return ids.has(d.sourceTokenId)||ids.has(d.targetId);}).map(e=>e.id);

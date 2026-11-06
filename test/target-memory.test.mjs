@@ -83,6 +83,23 @@ test('normal movement preserves an already-known square behind an obstacle, whil
   assert.equal(movementKnowledge(f.player.document,{...move,passed:{waypoints:[{action:'displace'}]}}),null);
 });
 
+test('native movement knowledge never evaluates the deprecated teleport compatibility getter',()=>{
+  const f=fixture(),operation={};
+  Object.defineProperty(operation,'teleport',{get(){throw new Error('Deprecated teleport getter was read');}});
+  const move={method:'api',passed:{waypoints:[{action:'walk'}]}};
+  assert.equal(movementKnowledge(f.player.document,move,operation).tokenId,f.player.id);
+  assert.equal(movementKnowledge(f.player.document,{...move,passed:{waypoints:[{action:'displace'}]}},operation),null);
+});
+
+test('custom native teleport actions never broadcast a new remembered square',()=>{
+  const f=fixture(),previous=globalThis.CONFIG;
+  globalThis.CONFIG={Token:{movement:{actions:{portal:{teleport:true},walk:{teleport:false}}}}};
+  try{
+    const move={method:'api',passed:{waypoints:[{action:'walk'},{action:'portal'}]}};
+    assert.equal(movementKnowledge(f.player.document,move),null);
+  }finally{globalThis.CONFIG=previous;}
+});
+
 test('target knowledge is per observer and persists when an adapter is recreated',async()=>{
   const f=fixture();await rememberTargets(f.adapter);
   f.boss.checkCollision=()=>true;f.player.document.x=900;

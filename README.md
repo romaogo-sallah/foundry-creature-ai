@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Patch 0.37.1:** fixes overlapping turn/time hooks deleting the same ongoing spell effect twice (`Item does not exist`). Spell application, Sustain, End, Reset and expiry share a mutation queue; manual and unrelated effects are preserved. Movement memory reads native action configuration without invoking Foundry's deprecated teleport getter. Reload every client with **Ctrl+F5**.
+
 **Version 0.37.0:** Confused NPCs use a random-target attack override: allies and neutrals become potential targets, with ordinary Strikes, taught offensive cantrips and simple attack preparation/movement. Normal tactics, stealth, special abilities, complex aerial plans and slot spells are excluded. See [Confused AI](docs/confused-ai.md). Reload every client with **Ctrl+F5**.
 
 **Version 0.36.2:** fixes Sneak missing from NPC movement menus. Manual Hide/Sneak now supports creature tokens, including NPCs, with the same secret checks, movement budget, removable effect and observer rules. Managed AI actions keep their existing lifecycle. Reload clients with **Ctrl+F5**.
