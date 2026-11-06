@@ -18,6 +18,8 @@ const scoped=value=>value?.combatId===game.combat?.id&&value?.sceneId===canvas.s
 export function behaviorConfiguration(adapter) {
   const actor=adapter.actor.getFlag?.(ns,'behaviors'),token=adapter.token.document.getFlag(ns,'behaviors');
   const raw={...actor,...token,parameters:{...actor?.parameters,...token?.parameters}},defaults=defaultBehaviorConfiguration(adapter.profileId);
+  if(adapter.hasSpellcasting){for(const id of ['spellcasting','spell-control','spell-damage','spell-drain','spell-support'])if(!defaults.components.includes(id))defaults.components.push(id);
+    for(const id of ['spell-control','spell-damage','spell-drain','spell-support'])if(!defaults.plans.includes(id))defaults.plans.push(id);}
   if(flySpeed(adapter.actor)){defaults.components.push('flight');defaults.plans.push('aerial-hunt','aerial-engage','aerial-disengage');}
   if(adapter.profileId==='eagle')defaults.components.push('diving');
   if(flySpeed(adapter.actor)&&raw.components&&!raw.components.includes('flight'))
@@ -29,7 +31,7 @@ export function behaviorConfiguration(adapter) {
 export function battleContext(adapter,state) {
   const roster=new Set(Array.from(game.combat.combatants).filter(c=>!c.defeated&&
     (c.sceneId??c.token?.parent?.id??canvas.scene.id)===canvas.scene.id).map(c=>c.tokenId));
-  const allies=canvas.tokens.placeables.filter(token=>token!==adapter.token&&roster.has(token.id)&&token.actor?.isAllyOf(adapter.actor)&&
+  const allies=canvas.tokens.placeables.filter(token=>token!==adapter.token&&roster.has(token.id)&&token.actor&&adapter.actor.isAllyOf(token.actor)&&
     !token.document.hidden&&token.actor.hitPoints?.value>0&&!token.actor.hasCondition('unconscious','dying','dead')&&
     detectionFor(adapter.token,token).state==='observed'&&clearSightPath(adapter.token,token));
   const known=state.enemies.length,visible=state.enemies.filter(enemy=>enemy.awareness?.state==='observed'&&enemy.lineOfSight!==false);
@@ -147,7 +149,7 @@ async function enrichState(adapter,state) {
   // A chosen tactic can activate a creature's existing forecast modules too;
   // aggressive casters no longer inherit the defensive waiting posture.
   if(state.casterDefense)state.casterDefense={...state.casterDefense,
-    enabled:['defensive','hiding','avoiding','kiting','spell-control'].includes(state.behavior.selection.planId)};
+    enabled:['defensive','hiding','avoiding','kiting','spell-control','spell-support'].includes(state.behavior.selection.planId)};
   return state;
 }
 

@@ -25,7 +25,7 @@ export function flightRoutePlanner(adapter,state){
     const p=flightPoint(adapter,point);
     return point.elevation>=bounds.bottom&&point.elevation<=bounds.top&&p.x>=rect.x&&p.y>=rect.y&&
       p.x+adapter.token.w<=rect.x+rect.width&&p.y+adapter.token.h<=rect.y+rect.height&&
-      !others.some(t=>!t.actor.isAllyOf(adapter.actor)&&volumesOverlap(tokenAt(adapter.token,p),t,{acrossLevels:true}));
+      !others.some(t=>!adapter.actor.isAllyOf(t.actor)&&volumesOverlap(tokenAt(adapter.token,p),t,{acrossLevels:true}));
   };
   const canStop=point=>canEnter(point)&&!others.some(t=>volumesOverlap(tokenAt(adapter.token,flightPoint(adapter,point)),t,{acrossLevels:true}));
   const routeClear=path=>{

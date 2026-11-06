@@ -1,12 +1,16 @@
 import {applyConditionSpell,beginSustainedCast} from './ongoing-spells.mjs';
 import {restrictionsEnabled} from './action-restrictions.mjs';
+import {spellDefinition} from '../framework/spell-definitions.mjs';
+import {applyDefinedSpellEffects} from './defined-spell-effects.mjs';
 const ns='foundry-creature-ai',query=`${ns}.conditionSpell`,supported=new Set(['laughing-fit','stupefy','blindness']);
 const has=(options,value)=>options?.has?.(value)??options?.includes?.(value)??false;
 const resolved=new Map();let resolver;
+const supports=spell=>supported.has(spell?.slug)||spellDefinition(spell)?.kind==='save'&&
+ Boolean(spellDefinition(spell).persistent||spellDefinition(spell).outcomes?.some(o=>o.conditions?.length||o.noAllies||o.noActions||o.noReactions));
 export async function wrapConditionSave(wrapped,check,context,...rest){
  const spell=context?.item;
  if(!restrictionsEnabled()||context?.type!=='saving-throw'||context.isReroll||context.createMessage===false||
-  !supported.has(spell?.slug)||has(context.options,`${ns}:managed`))return wrapped(check,context,...rest);
+  !supports(spell)||has(context.options,`${ns}:managed`))return wrapped(check,context,...rest);
  // Own only these spell conditions. The native save retains its modifiers,
  // immunity and incapacitation adjustments; external rules must not add a
  // second copy of the same outcome while this resolver is awaiting the roll.
@@ -29,11 +33,14 @@ export async function resolveManualSpellSave(data,user){
  const target=canvas.tokens.get(message.speaker.token);
  if(!target?.actor||!user.isGM&&!target.actor.testUserPermission(user,'OWNER'))throw new Error('You do not own the saving creature');
  const spell=await fromUuid(message.flags.pf2e.origin?.uuid);
- if(!supported.has(spell?.slug)||!spell.actor)throw new Error('Unsupported spell save origin');
+ if(!supports(spell)||!spell.actor)throw new Error('Unsupported spell save origin');
  const degree=message.rolls?.[0]?.degreeOfSuccess??['criticalFailure','failure','success','criticalSuccess'].indexOf(ctx.outcome);
  const sourceToken=canvas.tokens.placeables.find(t=>t.actor?.uuid===spell.actor.uuid);
  let commitment;if(spell.slug==='laughing-fit')commitment=await beginSustainedCast({actor:spell.actor,token:sourceToken},spell,target,`manual-${message.id}`);
  if(target.actor.isImmuneTo?.(spell))return null;
+ const definition=spellDefinition(spell);
+ if(definition?.resolver==='outcomes')return applyDefinedSpellEffects({source:{actor:spell.actor,token:sourceToken},target,spell,definition,degree,
+  dc:spell.spellcasting?.statistic?.dc?.value??spell.actor.itemTypes.spellcastingEntry.find(e=>e.id===spell.system.location.value)?.statistic.dc.value});
  return applyConditionSpell({source:{actor:spell.actor,token:sourceToken},target,spell,degree,castId:commitment?.id});
 }
 export function installManualConditionSpells({reactions}){

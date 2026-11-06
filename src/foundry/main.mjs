@@ -19,6 +19,8 @@ import { resetActorsToPrototype } from './actor-reset.mjs';
 import { expireSpellZones } from './spell-zones.mjs';
 import { GoblinScuttle } from './goblin-scuttle.mjs';
 import {resetOngoingSpells} from './ongoing-spells.mjs';
+import {openSpellProfiles} from './spell-profile-controls.mjs';
+import {casterCatalog} from './spell-catalog.mjs';
 import {enableSelectedFullAuto} from './bulk-controls.mjs';
 import {getRulesRuntime} from '../modules/runtime.mjs';
 let profile;
@@ -174,7 +176,7 @@ export async function openControls(token = selected()) {
       ${taught.id === 'ogre' ? `<div class="form-group"><label>Refuse remaining (including any held piece)</label><input name="refuseCount" type="number" min="0" max="999" step="1" value="${escapeHTML(config.refuseCount ?? 0)}"></div><p>Refuse uses a limited supply. Picking up a piece costs one Interact action; throwing it costs a Strike action and consumes one piece. Zero disables this attack. This ogre has no boss command, Sweeping Hook reaction, or Reactive Strike.</p>` : ''}
       ${taught.id === 'kobold-scout' ? `<div class="form-group"><label>Crossbow currently loaded</label><input name="crossbowLoaded" type="checkbox" ${adapter.loaded ? 'checked' : ''}></div><p>Reload costs one Interact; each shot consumes one bolt. Hide and Sneak use scene cover/concealment zones and separate checks against each observer's Perception DC. Use the cloud toolbar button to configure zones and the eye button to inspect or correct detection. Construct Trap remains manual. Darkness, special senses and visual cover from walls alone need GM adjudication.</p>` : ''}
       ${taught.id === 'eagle' ? '<p>The Eagle gains a safe hunting altitude, approaches from above and commits only when an attack and escape fit the remaining actions. Upward flight adds difficult-terrain cost; straight downward flight costs half. Eagle Dive costs two actions, descends at least 10 feet in a straight line, then makes one native Talon Strike. Its return climb needs another Fly action.</p>' : ''}
-      ${taught.id === 'dero-magister' ? '<p>This Dero uses Laughing Fit, Stupefy, Blindness, Void Warp, Cytillesh Stare and native staff Strikes. Ongoing effects and Sustain are tracked automatically. Other spells and Dero Medicine remain manual. The wand toolbar button opens ongoing spells for PC casters too. Confused or Blinded NPC turns still need manual adjudication.</p>' : ''}
+      ${taught.id === 'dero-magister' ? '<p>This Dero uses the shared spell library across its innate and spontaneous entries, plus Cytillesh Stare and native staff Strikes. Spell AI teaches reusable definitions; the catalog reports unresolved spells. Ongoing effects, recovery and Sustain are tracked automatically.</p>' : ''}
       ${taught.id === 'manticore-scorpion' ? '<p>This scorpion-tail Manticore uses Fly 40 ft, reach-10 Stinger with DC 22 venom, Jaws and agile Claw. It plans an approach, Strike and escape. Venom stages, poison damage and stage Enfeebled resolve automatically using native saves and effects; ongoing saves occur at the poisoned creature’s turn end. This variant has no ranged spikes.</p>' : ''}
       ${taught.id === 'manticore-quill' ? `<div class="form-group"><label>Spikes remaining (12 per 24 hours)</label><input name="quillsRemaining" type="number" min="0" max="12" step="1" value="${adapter.spikesRemaining}"></div><p>Fly 40 ft; Spike range increment 40 ft. Spike Volley costs one action and two spikes: attack two foes within 20 ft of each other at the same MAP, or attack one foe and pin it on a hit (Escape or Force Open DC 23). It shoots from safer altitude and uses melee when its spikes run out. Each spent spike regrows after 24 hours of world time.</p>` : ''}
       ${abilities.unsupported?.length ? `<p>Additional abilities need manual handling: ${abilities.unsupported.map(escapeHTML).join(', ')}.</p>` : ''}
@@ -205,6 +207,7 @@ export async function openControls(token = selected()) {
       { action: 'preview', label: 'Preview', callback: readSettings('preview') },
       { action: 'decision', label: 'Last decision', callback: () => ({ action: 'decision' }) },
       { action: 'behaviors', label: 'Tactics / behaviors', callback: () => ({ action: 'behaviors' }) },
+      ...(token.actor.itemTypes.spell?.length?[{action:'spells',label:'Spell AI',callback:()=>({action:'spells'})}]:[]),
       { action: 'step', label: 'One action', callback: readSettings('step') },
       { action: 'run', label: 'Run turn', callback: readSettings('run') },
       { action: 'stop', label: 'Stop', callback: () => ({ action: 'stop' }) },
@@ -248,6 +251,7 @@ export async function openControls(token = selected()) {
     case 'preview': return preview(token, nextConfig);
     case 'decision': return explainLast(token);
     case 'behaviors': return openBehaviorControls(token);
+    case 'spells': return openSpellProfiles(token);
     case 'step': return runTurn(token, { oneAction: true });
     case 'run': return runTurn(token);
     case 'stop': return stop(token);
@@ -370,6 +374,7 @@ Hooks.once('ready', async () => {
   if (game.system.id !== 'pf2e' || Number(game.release.generation) !== 14) return;
   await rulesRuntime.start();
   game.modules.get(MODULE_ID).api = {...rulesRuntime.rules,version:RUNTIME_VERSION,planning:{status:()=>planningWorker.status()},
+    casting:{inspect:(actor=canvas.tokens.controlled[0]?.actor)=>{const catalog=casterCatalog(actor);return {spells:catalog.descriptors,unsupported:catalog.unsupported};}},
     open:openControls,preview,explainLast,runTurn,stop,resetActors,enableFullAuto,correctLedger,tacticalMap,supportedProfiles,registerCreatureProfile};
   game.modules.get(MODULE_ID).api.behaviors = {...behaviorAPI,open:openBehaviorControls,
     inspect:(token=selected())=>({configuration:behaviorConfiguration(createCreatureAdapter(token,profile,{reactions})),

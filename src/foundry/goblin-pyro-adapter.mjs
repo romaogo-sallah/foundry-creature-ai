@@ -10,18 +10,16 @@ import { rememberedToken } from './target-memory.mjs';
 import { inGrease, greaseZones } from './spell-zones.mjs';
 import { casterTargetKnowledge } from './caster-target-knowledge.mjs';
 
-const kinds = { 'ignition': 'damage-attack', 'tangle-vine': 'control-attack', 'breathe-fire': 'basic-save', 'grease': 'ground-control' };
+import {casterCatalog} from './spell-catalog.mjs';
 export function pyroParts(actor) {
   const entry = actor.itemTypes.spellcastingEntry?.find(item => item.system.tradition.value === 'arcane' && item.system.prepared.value === 'spontaneous');
-  const spells = (actor.itemTypes.spell ?? []).filter(spell => spell.system.location.value === entry?.id && kinds[spell.slug]);
+  const catalog=casterCatalog(actor),spells=catalog.spells;
   const strike = actor.system.actions.find(action => action.type === 'strike' &&
     (action.item.slug === 'torch' || action.item.name?.toLowerCase().includes('torch')));
-  if (!entry || !strike || Object.keys(kinds).some(slug => !spells.some(spell=>spell.slug===slug)))
+  if (!entry || !strike || !spells.length)
     throw new Error('Goblin Pyro requires its torch, arcane spontaneous entry, Breathe Fire, Grease, Ignition and Tangle Vine');
-  if (spells.some(spell => spell.rank !== 1 || spell.system.time.value !== '2') || actor.level !== 1)
-    throw new Error('The first Goblin Pyro profile supports its level-1, two-action, rank-1 spell configuration');
   const torch=[...actor.items.values()].find(item=>item.type==='equipment'&&(item.slug??item.system.slug)==='torch');
-  return { strike, entry, spells, averageDamage: actor.getRollOptions(['all']).includes('lit-torch')?3.5:2.5, remaster: true,
+  return { ...catalog,strike, entry, spells, averageDamage: actor.getRollOptions(['all']).includes('lit-torch')?3.5:2.5, remaster: true,
     torchReady:torch?.system.equipped.carryType==='held'&&torch.system.equipped.handsHeld>=1,
     abilityNames: ['Torch','Breathe Fire (cone)','Grease (four squares)','Ignition (ranged/melee)','Tangle Vine','Hide','Sneak','Goblin Scuttle'],
     unsupported: ['Light and Telekinetic Hand require manual out-of-combat use'] };
@@ -68,15 +66,13 @@ export class PF2eGoblinPyroAdapter extends PF2eCreatureAdapter {
       hideAttempted: hideHistory?.turn === ledger.turn && hideHistory.hideAttempted,
       holdTurns: hideHistory?.combatId === game.combat.id && hideHistory.sceneId === canvas.scene.id ? hideHistory.holdTurns ?? 0 : 0,
       preparedGrease: greaseZones(canvas.scene).some(region => region.flags[MODULE_ID].spellZone.casterId === this.token.id) };
-    const descriptors = spells.map(spell => ({ id: spell.id, name: spell.name, slug: spell.slug, kind: kinds[spell.slug],
-      actionCost: 2, cantrip: spell.isCantrip, available: spell.isCantrip || entry.system.slots.slot1.value > 0,
-      range: spell.slug === 'breathe-fire' ? 15 : 30, bonus: entry.statistic.check.mod, dc: entry.statistic.dc.value,
-      damage: spell.slug === 'breathe-fire' ? 7 : 5, meleeDamage: 7, areas: [] }));
+    const descriptors=this.parts().descriptors;
+    state.resourcePools=Object.fromEntries(descriptors.filter(s=>s.poolId).map(s=>[s.poolId,s.resourceRemaining]));
     const bystanders = canvas.tokens.placeables.filter(token => token !== this.token && !state.enemies.some(enemy=>enemy.id===token.id) &&
       token.actor?.isOfType?.('creature') && !token.document.hidden && token.actor.hitPoints?.value > 0 &&
       this.sight(this.token.center,token) && !['undetected','unnoticed'].includes(detectionFor(this.token,token).state));
     const bystanderGrease = Object.fromEntries(bystanders.map(token => [token.id, inGrease(token).length > 0]));
-    const decorate = (descriptors,position,enemies = state.enemies) => descriptors.map(spell => spell.kind.endsWith('attack') || !spell.available ? spell :
+    const decorate = (descriptors,position,enemies = state.enemies) => descriptors.map(spell => spell.kind.endsWith('attack') || !spell.available || (!spell.area&&spell.kind!=='ground-control') ? spell :
       { ...spell, areas: describeSpellAreas(this,spell,{ ...state, enemies,
         bystanderGrease: { ...bystanderGrease, [this.token.id]: inGrease(this.token,position).length > 0 } },bystanders,position) });
     state.spells = decorate(descriptors);

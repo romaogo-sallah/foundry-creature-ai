@@ -16,13 +16,13 @@ export function inSpellArea(token, region, position) {
 export function sameSpellLevel(caster, token) {
   return token.document.level === caster.document.level && token.document.elevation === caster.document.elevation;
 }
-export function coneShapes(caster, position = caster.document) {
+export function coneShapes(caster, position = caster.document,range=15) {
   const size = canvas.grid.size, width = caster.document.width * size, height = caster.document.height * size;
   return Array.from({ length: 8 }, (_, i) => {
     const angle = i * 45, rad = angle * Math.PI / 180;
     // The cone starts at a corner on the appropriate edge of the footprint.
     const x = position.x + (Math.cos(rad) >= 0 ? width : 0), y = position.y + (Math.sin(rad) >= 0 ? height : 0);
-    return { id: `cone:${i}`, shapes: [{ type: 'cone', x, y, radius: size * 3, angle: 90, rotation: angle, gridBased: true }] };
+    return { id: `cone:${i}`, shapes: [{ type: 'cone', x, y, radius: size * range/5, angle: 90, rotation: angle, gridBased: true }] };
   });
 }
 function groundTarget(caster, x, y) {
@@ -74,16 +74,38 @@ export function greaseShapes(adapter, enemies, position = adapter.actualWaypoint
 
 export function describeSpellAreas(adapter, spell, state, bystanders, position) {
   const caster = adapter.token, origin = position ? { x: position.x + caster.w / 2, y: position.y + caster.h / 2 } : caster.center;
-  const shapes = spell.slug === 'breathe-fire' ? coneShapes(caster, position) : greaseShapes(adapter, state.enemies, position,
-    state.casterDefense?.enabled && !state.casterDefense.preparedGrease);
+  const shapes = spell.slug==='grease'?greaseShapes(adapter,state.enemies,position,state.casterDefense?.enabled&&!state.casterDefense.preparedGrease):
+    spell.area?.type==='line'?lineShapes(caster,position,spell.area.value):spell.area?.type==='burst'?burstShapes(adapter,spell,state.enemies,position):coneShapes(caster,position,spell.area?.value??15);
   return shapes.map(area => {
     const region = spellRegion(area.shapes, caster);
     const included = token => sameSpellLevel(caster, token) && inSpellArea(token, region) && clearAttackPath(caster, token, origin);
     const others=bystanders.filter(included);
-    if(spell.slug==='grease'&&inSpellArea(caster,region,position))others.push(caster);
+    if(inSpellArea(caster,region,position))others.push(caster);
     return { ...area, enemies: state.enemies.filter(enemy => enemy.awareness?.detection!=='undetected'&&included(adapter.perceivedSpellTarget(enemy))),
       bystanders: others.map(token => ({ id: token.id, prone: token.actor.hasCondition('prone'),
         immobilized: token.actor.hasCondition('immobilized'), greased: state.bystanderGrease?.[token.id] ?? false,
         airborne: token.document.movementAction === 'fly' })) };
   }).filter(area => area.enemies.length || area.approaches?.length);
+}
+
+export function lineShapes(caster,position=caster.document,range=30){
+ const unit=canvas.grid.size,start={x:position.x+caster.w/2,y:position.y+caster.h/2};
+ return Array.from({length:16},(_,index)=>{
+  const a=index*Math.PI/8,dx=Math.cos(a),dy=Math.sin(a),distance=range/5*unit,half=unit/2;
+  const x=start.x+dx*caster.w/2,y=start.y+dy*caster.h/2;
+  return {id:`line:${index}`,shapes:[{type:'polygon',hole:false,points:[x-dy*half,y+dx*half,x+dy*half,y-dx*half,x+dx*distance+dy*half,y+dy*distance-dx*half,x+dx*distance-dy*half,y+dy*distance+dx*half]}]};
+ });
+}
+export function burstShapes(adapter,spell,enemies,position=adapter.actualWaypoint()){
+ const caster=adapter.token,size=canvas.grid.size,result=new Map(),origin={x:position.x+caster.w/2,y:position.y+caster.h/2};
+ for(const enemy of enemies.filter(e=>e.awareness?.detection!=='undetected')){
+  const target=adapter.perceivedSpellTarget(enemy);
+  for(const dx of [-1,0,1])for(const dy of [-1,0,1]){
+   const x=Math.round(target.center.x/size)*size+dx*size,y=Math.round(target.center.y/size)*size+dy*size;
+   const ground=groundTarget(caster,x-size/2,y-size/2);
+   if(Math.hypot(x-origin.x,y-origin.y)/size*5>spell.range||!clearAttackPath(caster,ground,origin))continue;
+   result.set(`${x},${y}`,{id:`burst:${x},${y}`,shapes:[{type:'ellipse',x,y,radiusX:spell.area.value/5*size,radiusY:spell.area.value/5*size,rotation:0,hole:false}]});
+  }
+ }
+ return [...result.values()];
 }

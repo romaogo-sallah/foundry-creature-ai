@@ -15,6 +15,8 @@ import {PF2eManticoreQuillAdapter,MANTICORE_QUILL_SOURCE} from './manticore-quil
 import {PF2eDeroMagisterAdapter,DERO_SOURCE} from './dero-magister-adapter.mjs';
 import {attachConfusionSystem} from './confused-adapter.mjs';
 import {attachFleeingSystem} from './fleeing-adapter.mjs';
+import {PF2eSpellcasterAdapter} from './spellcaster-adapter.mjs';
+import {attachSpellcastingSystem} from './spellcasting-runtime.mjs';
 
 const profiles = [];
 export function registerCreatureProfile(profile) {
@@ -53,14 +55,16 @@ registerCreatureProfile({id:'dero-magister',label:'Dero Magister',roles:['debuff
   matches:actor=>actor?.type==='npc'&&[actor.sourceId,actor._stats?.compendiumSource,actor._stats?.duplicateSource,actor.flags?.core?.sourceId]
     .some(source=>source===DERO_SOURCE||source===DERO_SOURCE.replace('.Actor.','.'))});
 export function creatureProfile(actor) {
-  const profile = profiles.find(profile => profile.matches(actor)) ?? (actor?.type==='npc'&&basicMeleeStrikes(actor).length?
+  const profile = profiles.find(profile => profile.matches(actor)) ?? (actor?.type==='npc'&&actor.itemTypes?.spell?.length&&actor.itemTypes?.spellcastingEntry?.length?
+    {id:'spellcaster',label:'Spellcaster NPC',roles:['caster'],Adapter:PF2eSpellcasterAdapter}:null) ?? (actor?.type==='npc'&&basicMeleeStrikes(actor).length?
     {id:'basic-npc',label:'Basic NPC',roles:['combatant'],Adapter:PF2eBasicNPCAdapter}:null);
   if (!profile) throw new Error(`No taught creature profile matches this NPC. Supported profiles: ${profiles.map(profile => profile.label).join(', ')}.`);
   return profile;
 }
 export function createCreatureAdapter(token, wolfProfile, options) {
   const profile = creatureProfile(token.actor);
-  return attachFleeingSystem(attachConfusionSystem(attachBehaviorSystem(attachFlightSystem(new profile.Adapter(token, wolfProfile, options)))));
+  return attachFleeingSystem(attachConfusionSystem(attachBehaviorSystem(attachFlightSystem(attachSpellcastingSystem(new profile.Adapter(token, wolfProfile, options))))));
 }
 export function supportedProfiles() { return [...profiles.map(({ id, label, roles }) => ({ id, label, roles })),
+  {id:'spellcaster',label:'Spellcaster NPC (shared spell library)',roles:['caster']},
   {id:'basic-npc',label:'Basic NPC (prepared melee Strikes)',roles:['combatant']}]; }

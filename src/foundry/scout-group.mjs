@@ -6,7 +6,7 @@ const ns='foundry-creature-ai';
 const held=(item,hands=1)=>item.system?.equipped?.carryType==='held'&&item.system.equipped.handsHeld>=hands;
 export function scoutGroup(adapter,state){
   const combat=game.combat,roster=new Set(Array.from(combat.combatants??[]).map(c=>c.tokenId));
-  const allies=canvas.tokens.placeables.filter(ally=>ally!==adapter.token&&roster.has(ally.id)&&ally.actor?.isAllyOf(adapter.actor)&&
+  const allies=canvas.tokens.placeables.filter(ally=>ally!==adapter.token&&roster.has(ally.id)&&ally.actor&&adapter.actor.isAllyOf(ally.actor)&&
     ally.actor.canAttack&&!ally.document.hidden&&!incapacitationReason(ally)&&
     ally.document.elevation===adapter.token.document.elevation&&ally.document.level===adapter.token.document.level&&
     detectionFor(adapter.token,ally).state==='observed'&&clearSightPath(adapter.token,ally));

@@ -1,5 +1,6 @@
 import {preparedStrikeCandidates} from './strike-capability.mjs';
 import {attackValue} from '../dawnsbury/chooser.mjs';
+import {castingCandidates} from './spell-evaluation.mjs';
 // Pure action estimates; no secret defenses or live Foundry documents.
 export function spikeVolleyCandidates(state){
  const volley=state.volley;
@@ -28,4 +29,5 @@ export function spikeVolleyCandidates(state){
  }
  return result;
 }
-export const aerialAttackCandidates=state=>[...preparedStrikeCandidates(state),...spikeVolleyCandidates(state)];
+export const aerialAttackCandidates=state=>[...preparedStrikeCandidates(state),...spikeVolleyCandidates(state),
+ ...(state.spells?.length?castingCandidates({...state,spells:state.spells.filter(s=>!s.area)}).filter(c=>!c.features?.support):[])];

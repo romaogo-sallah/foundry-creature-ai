@@ -1,5 +1,6 @@
 import {actionRestriction} from './action-restrictions.mjs';
 import {manualConditionViolation,resolveConditionChecks} from './condition-actions.mjs';
+import {cleanupDefinedSpells} from './defined-spell-effects.mjs';
 const ns='foundry-creature-ai',query=`${ns}.ongoingSpell`;
 const statuses={slowed:'xYTAsEpcJE1Ccni3',stupefied:'e1XGnhKNSQIm5IXg',blinded:'XgEqL1kFApUbl5Z2',enfeebled:'MIRkyAjyBeXivMa7',dazzled:'TkIyaNPgTZFBCCuh',confused:'yblD8fOR1J8rDwEQ'};
 const condition=(slug,value=1)=>({key:'GrantItem',uuid:`Compendium.pf2e.conditionitems.Item.${statuses[slug]}`,inMemoryOnly:true,
@@ -55,9 +56,9 @@ export function conditionSpellRules(slug,degree){
  if(slug==='cytillesh-stare')return [condition('dazzled'),...(degree<2?[condition('confused')]:[])];
  return [];
 }
-async function beginCast(source,spell,target,castId=foundry.utils.randomID()){
+async function beginCast(source,spell,target,castId=foundry.utils.randomID(),{maxDuration=600,enemyId=null}={}){
  const data={id:castId,slug:spell.slug,spellId:spell.id,sourceActor:source.actor.uuid,sourceTokenId:source.token?.id,targetId:target.id,
-  combatId:game.combat?.id??null,sceneId:canvas.scene?.id,castRound:game.combat?.round??0,lastRound:game.combat?.round??0,lastTime:now(),expiresAt:now()+600};
+  combatId:game.combat?.id??null,sceneId:canvas.scene?.id,castRound:game.combat?.round??0,lastRound:game.combat?.round??0,lastTime:now(),expiresAt:now()+maxDuration,enemyId};
  await source.actor.setFlag(ns,'ongoingCasts',[...casterCasts(source.actor).filter(c=>c.id!==castId),data]);return data;
 }
 async function applySpell({source,target,spell,degree,castId}){
@@ -105,6 +106,7 @@ async function sustain(actor,castId){
  return {resolved:true,note:'Sustain: the spell continues until the end of the caster’s next turn.'};
 }
 async function endCast(actor,castId){
+ await cleanupDefinedSpells({castIds:[castId]});
  await actor.setFlag(ns,'ongoingCasts',casterCasts(actor).filter(c=>c.id!==castId));
  for(const token of canvas.tokens.placeables){const ids=owned(token.actor).filter(e=>e.flags[ns].ongoingSpell.castId===castId).map(e=>e.id);
   if(ids.length)await token.actor.deleteEmbeddedDocuments('Item',ids);}
@@ -160,6 +162,7 @@ export function installOngoingSpells({reactions,onError}){
  Hooks.on('updateWorldTime',()=>{void reactions.resolve(()=>advanceOngoingSpells()).catch(onError);});
 }
 async function resetSpells(tokenIds){
+ await cleanupDefinedSpells({resetTokenIds:tokenIds});
  const ids=new Set(tokenIds);
  for(const token of canvas.tokens.placeables){
   const effects=owned(token.actor).filter(e=>{const d=e.flags[ns].ongoingSpell;return ids.has(d.sourceTokenId)||ids.has(d.targetId);}).map(e=>e.id);

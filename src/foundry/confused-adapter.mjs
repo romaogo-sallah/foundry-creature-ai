@@ -16,6 +16,7 @@ import {reveal} from './stealth-awareness.mjs';
 import {conditionSpells} from '../framework/condition-spells.mjs';
 import {executeSpell} from './spellcasting.mjs';
 import {conditionDirective} from '../framework/condition-directives.mjs';
+import {spellBindings} from './spell-catalog.mjs';
 const ns='foundry-creature-ai',attached=new WeakSet();
 const average=strike=>Object.values(strike.item.system.damageRolls??{}).filter(p=>!p.category).reduce((sum,p)=>sum+averageFormula(p.damage),0);
 const attackKinds=['strike','castSpell'];
@@ -48,8 +49,8 @@ export class PF2eConfusedAdapter extends PF2eCreatureAdapter{
     return canContinue();
   }
   spells(){
-    const parts=this.normal.parts();return (parts.spells??[]).filter(spell=>spell.isCantrip&&['ignition','tangle-vine','void-warp'].includes(spell.slug)).map(spell=>({
-      id:spell.id,name:spell.name,slug:spell.slug,spell,entry:parts.entry,cantrip:true,actionCost:Number(spell.system.time?.value??2),
+    return spellBindings(this.actor).filter(b=>b.spell.isCantrip&&(b.definition.role==='damage'||b.definition.kind==='control-attack')&&!b.definition.area).map(({spell,entry})=>({
+      id:spell.id,name:spell.name,slug:spell.slug,spell,entry,cantrip:true,actionCost:Number(spell.system.time?.value??2),
       attack:Boolean(spell.isAttack??spell.traits?.has('attack')),range:spell.system.range?.value==='touch'?5:Number.parseFloat(spell.system.range?.value??'30'),
       damage:Object.values(spell.system.damage??{}).reduce((sum,p)=>sum+averageFormula(p.formula??'0'),0),
     })).filter(spell=>spell.entry&&Number.isInteger(spell.actionCost)&&spell.actionCost>0&&Number.isFinite(spell.range));
@@ -122,7 +123,7 @@ export class PF2eConfusedAdapter extends PF2eCreatureAdapter{
     if(['fly','hover'].includes(choice.kind))return executeFlight(this,{...choice,kind:'fly',...choice.kind==='hover'?{path:[{...this.originCell(),elevation:this.token.document.elevation}],destination:{...this.originCell(),elevation:this.token.document.elevation}}:{}},ledger,context);
     if(choice.kind==='castSpell'){
       const spell=this.spells().find(spell=>spell.id===choice.spellId);if(!spell)return {skipped:true,skipReason:'Only a supported offensive cantrip is allowed while Confused.'};
-      const binding=Object.create(this);binding.parts=()=>({entry:spell.entry,spells:[spell.spell]});
+      const binding=Object.create(this);binding.parts=()=>({...this.parts(),entry:spell.entry,spells:[spell.spell]});
       try{return await executeSpell(binding,choice,ledger,context);}finally{await reveal(this.token);}
     }
     if(choice.kind==='strike'){

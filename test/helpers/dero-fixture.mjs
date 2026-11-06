@@ -1,6 +1,7 @@
 import {readFile} from 'node:fs/promises';
 import {fixture as baseFixture} from './ogre-fixture.mjs';
 import {PF2eDeroMagisterAdapter} from '../../src/foundry/dero-magister-adapter.mjs';
+import {installSpellRegionFixture} from './spell-regions.mjs';
 export const deroData=JSON.parse(await readFile(new URL('../fixtures/dero-magister-mechanics.json',import.meta.url)));
 export function fixture({saveDegree=1,size=14}={}){
  const f=baseFixture({npcData:deroData,Adapter:PF2eDeroMagisterAdapter,footprint:1,size});f.saveDegree=saveDegree;let sequence=0;
@@ -17,6 +18,7 @@ export function fixture({saveDegree=1,size=14}={}){
   async toMessage(data){f.calls.push(['spell-damage-message',this.total,data]);}
  }
  globalThis.CONFIG={Dice:{rolls:[DamageRoll]}};
+ installSpellRegionFixture(canvas.tokens.placeables);
  globalThis.Roll=class {async evaluate(){return {total:20,toMessage:async data=>f.calls.push(['flat-message',data])};}};
  for(const actor of [f.actor,f.player.actor]){
   actor.hitPoints.temp=0;
@@ -28,9 +30,9 @@ export function fixture({saveDegree=1,size=14}={}){
   };
   actor.flags={pf2e:{}};const values=new Map(),previous=new Set(),create=actor.createEmbeddedDocuments,remove=actor.deleteEmbeddedDocuments,getCondition=actor.getCondition;
   const rebuild=()=>{
-   for(const slug of previous)actor.conditionsSet.delete(slug);previous.clear();values.clear();actor.flags.pf2e={};
+   for(const slug of previous)actor.conditionsSet.delete(slug);previous.clear();values.clear();actor.flags.pf2e={};actor.flags['foundry-creature-ai']={};
    for(const effect of actor.itemTypes.effect)for(const rule of effect.system.rules??[]){
-    if(rule.key==='ActiveEffectLike'){const key=rule.path.split('.').at(-1);actor.flags.pf2e[key]=rule.value;}
+    if(rule.key==='ActiveEffectLike'){const [,namespace,key]=rule.path.split('.');(actor.flags[namespace]??={})[key]=rule.value;}
     if(rule.key!=='GrantItem')continue;
     const names={xYTAsEpcJE1Ccni3:'slowed',e1XGnhKNSQIm5IXg:'stupefied',XgEqL1kFApUbl5Z2:'blinded',MIRkyAjyBeXivMa7:'enfeebled',TkIyaNPgTZFBCCuh:'dazzled',yblD8fOR1J8rDwEQ:'confused'};
     const slug=names[rule.uuid.split('.').at(-1)];if(slug){actor.conditionsSet.add(slug);previous.add(slug);values.set(slug,Math.max(values.get(slug)??0,rule.alterations?.[0]?.value??1));}

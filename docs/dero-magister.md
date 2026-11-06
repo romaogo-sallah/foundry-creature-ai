@@ -1,4 +1,6 @@
-# Dero Magister — 0.38.0
+# Dero Magister — 0.40.0
+
+The [shared caster framework](spellcaster-framework.md) now discovers its innate and spontaneous spells together and supports 13 unique spells: Blindness, Daze, Forbidding Ward, Force Barrage, Grim Tendrils, Laughing Fit, Paranoia, Phantom Pain, Soothe, Stupefy, Telekinetic Maneuver (Trip), Vampiric Feast and Void Warp. The detailed 0.38.0 investigation below explains the earlier limited kit; its untaught-spell list is historical. Current unresolved spells and component limits are listed in the shared framework document.
 
 The supplied `fvtt-Actor-dero-magister-F523OUefhXqIWdbS.json` is a level-5 Monster Core Dero Magister with occult spontaneous DC 24 spellcasting, 4/4/3 spell slots and a separate innate entry. Profile detection uses its compendium provenance. Imported descriptions remain data; none execute as code.
 

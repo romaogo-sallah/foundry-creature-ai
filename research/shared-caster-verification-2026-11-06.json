@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-06",
+  "version": "0.40.0",
+  "foundry": "14.369",
+  "pf2e": "8.6.1",
+  "method": "Detached native actor/token constructors, intercepted detached resource writes, native effect preparation and read-only AI preview. No live spell attack, save, damage or token movement was executed.",
+  "supported": [
+    "blindness",
+    "daze",
+    "forbidding-ward",
+    "force-barrage",
+    "grim-tendrils",
+    "laughing-fit",
+    "paranoia",
+    "phantom-pain",
+    "soothe",
+    "stupefy",
+    "telekinetic-maneuver",
+    "vampiric-feast",
+    "void-warp"
+  ],
+  "unsupported": [
+    "Nightmare",
+    "Rewrite Memory",
+    "Levitate",
+    "Darkness",
+    "Revealing Light",
+    "Detect Magic",
+    "Light",
+    "Light",
+    "Message",
+    "Read Aura"
+  ],
+  "resources": {
+    "spontaneous": {
+      "castRank": 1,
+      "consumed": true,
+      "variantRank": 1,
+      "updates": [
+        {
+          "item": "spellcastingEntry",
+          "paths": [
+            "system.slots.slot1.value"
+          ]
+        }
+      ]
+    },
+    "innate": {
+      "castRank": 1,
+      "consumed": true,
+      "variantRank": 1,
+      "updates": [
+        {
+          "item": "spell",
+          "paths": [
+            "system.location.uses.value"
+          ]
+        }
+      ]
+    },
+    "prepared": {
+      "castRank": 2,
+      "consumed": true,
+      "variantRank": 2,
+      "updates": [
+        {
+          "item": "spellcastingEntry",
+          "paths": [
+            "system.slots.slot2.prepared"
+          ]
+        }
+      ]
+    },
+    "focus": {
+      "castRank": 3,
+      "consumed": true,
+      "variantRank": 3,
+      "updates": [
+        {
+          "item": "actor",
+          "paths": [
+            "system.resources.focus.value"
+          ]
+        }
+      ]
+    }
+  },
+  "effects": {
+    "paranoia": {
+      "prepared": {
+        "noAllies": true,
+        "hostileReactions": true
+      },
+      "treatsSameSideAsAlly": false,
+      "hostileToSameSide": true
+    },
+    "soothe": {
+      "rule": {
+        "key": "FlatModifier",
+        "selector": [
+          "saving-throw"
+        ],
+        "type": "status",
+        "value": 2,
+        "predicate": [
+          "item:trait:mental"
+        ],
+        "slug": null,
+        "priority": 100,
+        "ignored": false,
+        "requiresEquipped": null,
+        "requiresInvestment": null,
+        "force": false,
+        "hideIfDisabled": false,
+        "fromEquipment": true,
+        "critical": null,
+        "removeAfterRoll": false,
+        "battleForm": false
+      }
+    },
+    "ward": {
+      "predicate": [
+        "origin:signature:fa37dead-8fda-5b2d-ba18-f06eff6460ad"
+      ],
+      "matching": true,
+      "unrelated": false,
+      "enemySignature": "fa37dead-8fda-5b2d-ba18-f06eff6460ad",
+      "otherSignature": "a8918064-a591-5a0e-8505-250e63ee010e"
+    },
+    "phantom": {
+      "sickened": true,
+      "persistent": true,
+      "sourceRank": 1
+    }
+  },
+  "forceBarrageRoll": {
+    "formula": "3d4 + 3 force"
+  },
+  "preview": {
+    "profile": "spellcaster",
+    "spellCount": 15,
+    "choice": "castSpell",
+    "spell": "force-barrage"
+  },
+  "lineShapes": 16,
+  "actorCountBefore": 159,
+  "actorCountAfter": 159,
+  "newActors": 0,
+  "moduleErrors": [],
+  "valid": true,
+  "tests": {
+    "passed": 1055,
+    "failed": 0,
+    "workers": 11,
+    "log": ".scratch/release-0.40.0-tests.log"
+  },
+  "installation": {
+    "packages": 5,
+    "verifiedFiles": 242
+  },
+  "release": {
+    "file": "releases/pf2e-tactical-suite-0.40.0.zip",
+    "sha256": "39fd9fe9fd43cad20a8f3211dc7251a0fcbf39632601c4a79503015ea5ca3645"
+  }
+}

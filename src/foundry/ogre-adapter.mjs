@@ -72,7 +72,7 @@ export class PF2eOgreAdapter extends PF2eCreatureAdapter {
     const ownLanguages = this.actor.system.details.languages.value;
     // Treat the command as audible across the encounter: no acoustic, wall,
     // elevation, level or silence-effect simulation, per the GM's preference.
-    return canvas.tokens.placeables.filter(token => token !== this.token && token.actor?.isAllyOf(this.actor) && isOgre(token.actor) &&
+    return canvas.tokens.placeables.filter(token => token !== this.token && token.actor&&this.actor.isAllyOf(token.actor) && isOgre(token.actor) &&
       !incapacitationReason(token) && !token.actor.hasCondition('deafened', 'quickened') &&
       !token.actor.attributes.immunities.some(immunity => ['mental', 'emotion', 'fear', 'auditory', 'linguistic'].includes(immunity.type)) &&
       token.actor.system.details.languages.value.some(language => ownLanguages.includes(language)) &&

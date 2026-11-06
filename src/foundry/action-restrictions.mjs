@@ -86,7 +86,7 @@ export async function guardCast(wrapped,spell,options){
 }
 export async function guardItemMessage(wrapped,event,options={}){
   if(options.actualUse||options.actualCast){
-    const action=nativeRuleAction(this,{targetIds:[...game.user?.targets??[]].map(token=>token.id)});
+    const action=nativeRuleAction(this,{targetIds:options[`${ns}:targets`]??[...game.user?.targets??[]].map(token=>token.id)});
     const reason=options.create!==false&&restrictionsEnabled()&&manualConditionViolation(this.actor,action);
     const restriction=(this.actionCost?.type==='reaction'?reactionRestriction(this.actor):actionRestriction(this.actor))??(reason?{kind:'condition-rule',reason}:null);
     if(restriction){notifyRestriction(this.actor,restriction);return;}

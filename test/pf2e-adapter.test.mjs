@@ -70,7 +70,7 @@ function fixture({ remaster = true, applyDamage = true, hit = 2, outcome = 'succ
     },
     decreaseCondition: async c => { conditions.delete(c); calls.push(['selfRemove', c]); },
     increaseCondition: async c => { conditions.add(c); calls.push(['selfCondition', c]); },
-    getReach: () => 5, isEnemyOf: other => other === targetActor, isAllyOf: () => false,
+    getReach: () => 5, isEnemyOf: other => other === targetActor, isAllyOf: other => actor.alliance != null && actor !== other && actor.alliance === other.alliance,
     getStatistic: slug => ({ check: { mod: slug === 'athletics' ? 6 : 7 }, dc: { value: slug === 'athletics' ? 16 : 17 } }),
     getRollOptions: () => packActive ? ['pack-attack'] : [], getSelfRollOptions: prefix => [`${prefix}:trait:animal`],
     toggleRollOption: async (domain, option, id, value) => { assert.equal(domain, 'damage'); assert.equal(option, 'pack-attack'); assert.equal(id, 'pack'); packActive = value; calls.push(['pack', value]); },
@@ -1169,8 +1169,8 @@ test('another module advancing on death does not cause a second nextTurn request
 
 test('an ally defeated with HP still present no longer supplies Pack Attack support', () => {
   const f = fixture();
-  const ally = addCombatTarget(f, 'defeated-ally');
-  ally.actor.isAllyOf = () => true;
+  f.actor.alliance = 'opposition';
+  const ally = addCombatTarget(f, 'defeated-ally', { alliance: 'opposition' });
   assert.ok(f.adapter.allies(f.target).includes(ally));
   game.combat.combatants.find(c => c.tokenId === ally.id).defeated = true;
   assert.equal(f.adapter.allies(f.target).includes(ally), false);
@@ -2154,7 +2154,7 @@ test('shared core installs the reaction query and AI exposes the same reaction c
   f.hooks.get('init')();
   assert.equal(typeof CONFIG.queries[`${MODULE_ID}.reactionPrompt`], 'function');
   assert.equal(typeof game.modules.get(MODULE_ID).api.reactions.openControls, 'function');
-  assert.equal(game.modules.get(MODULE_ID).api.version,'0.39.0');
+  assert.equal(game.modules.get(MODULE_ID).api.version,'0.40.0');
   assert.equal(typeof game.modules.get(MODULE_ID).api.resetActors,'function');
 });
 

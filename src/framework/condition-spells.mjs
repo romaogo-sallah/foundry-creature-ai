@@ -1,16 +1,13 @@
 import {checkProbabilities} from './math.mjs';
-export const conditionSpells={
- 'laughing-fit':{save:'will',range:30,sustained:true},
- stupefy:{save:'will',range:30},blindness:{save:'fortitude',range:30},
- 'void-warp':{save:'fortitude',range:30,damage:true},
- 'vampiric-feast':{save:'fortitude',range:5,damage:true,drain:true},
-};
+import {spellDefinitions,spellChoiceFields} from './spell-definitions.mjs';
+import {estimatedSpellSave} from './spell-knowledge.mjs';
+export const conditionSpells=Object.fromEntries(spellDefinitions().filter(d=>d.kind==='condition-save').map(d=>[d.slug,d]));
 export function conditionSpellValue(state,spell,enemy){
  if(enemy.lineOfSight===false||enemy.lineOfEffect===false||enemy.distance>spell.range||
   enemy.awareness?.searchRequired&&!enemy.awareness.allowAttackEstimate&&!enemy.awareness.attackOnSight)return 0;
  if(!spell.damage&&state.spellAttempts?.some(a=>a.targetId===enemy.id&&a.slug===spell.slug&&a.untilRound>=state.round))return 0;
  if(spell.sustained&&state.activeSustained?.some(c=>c.slug===spell.slug&&c.targetId===enemy.id))return 0;
- const p=checkProbabilities(state.self.referenceAC-10,spell.dc),role=enemy.tactics?.role;
+ const p=checkProbabilities(estimatedSpellSave(state,spell,enemy),spell.dc),role=enemy.tactics?.role;
  const flat=enemy.concealmentDC?(21-enemy.concealmentDC)/20:1;
  const denial=spell.slug==='laughing-fit'?(p.success*3+p.failure*10+p.criticalFailure*16):
   spell.slug==='stupefy'?(p.success*2+p.failure*6+p.criticalFailure*9)*(role==='caster'?1.6:0.6):
@@ -28,7 +25,7 @@ export function conditionCastingCandidates(state){
  return state.spells.flatMap(spell=>spell.available&&spell.actionCost<=state.actionsRemaining?state.enemies.flatMap(enemy=>{
   const value=conditionSpellValue(state,spell,enemy),reserve=spell.cantrip?0:1.5;
   if(value<=reserve)return [];
-  return [{id:`condition-spell:${spell.id}:${enemy.id}`,kind:'castSpell',spellId:spell.id,spellSlug:spell.slug,spellName:spell.name,
+  return [{id:`condition-spell:${spell.bindingId??spell.id}:${enemy.id}`,kind:'castSpell',spellId:spell.id,...spellChoiceFields(spell),spellSlug:spell.slug,spellName:spell.name,
    targetId:enemy.id,actionCost:spell.actionCost,mapIncreases:0,legal:true,provokes:true,
    features:{spell:true,conditionSpell:true,spellRole:spell.drain?'drain':Number(spell.damage)>0?'damage':'control',blocksForecast:spell.slug==='blindness'?[`gaze:${enemy.id}`]:[]},assessment:{value:value-reserve},
    scoringTerms:[{label:'Estimated condition or damage benefit using benchmark saves',contribution:value},{label:'Conserve native spell slots',contribution:-reserve}]}];

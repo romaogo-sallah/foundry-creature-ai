@@ -102,7 +102,7 @@ export function nativeFlightMoves(adapter,state,planner){
     const p=flightPoint(adapter,point);
     return point.elevation>=bounds.bottom&&point.elevation<=bounds.top&&p.x>=rect.x&&p.y>=rect.y&&
       p.x+adapter.token.w<=rect.x+rect.width&&p.y+adapter.token.h<=rect.y+rect.height&&
-      !others.some(other=>!other.actor.isAllyOf(adapter.actor)&&volumesOverlap(tokenAt(adapter.token,p),other,{acrossLevels:true}));
+      !others.some(other=>!adapter.actor.isAllyOf(other.actor)&&volumesOverlap(tokenAt(adapter.token,p),other,{acrossLevels:true}));
   };
   const canTraverse=(from,to)=>{
     const key=`${from.x},${from.y},${from.elevation}>${to.x},${to.y},${to.elevation}`;

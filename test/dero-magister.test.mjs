@@ -14,9 +14,9 @@ const source=f=>({actor:f.actor,token:f.boss});
 test('the supplied Dero export has a taught caster profile and complete native slot availability',async()=>{
  const f=caster(),s=await snapshot(f.adapter);
  assert.equal(creatureProfile(f.actor).id,'dero-magister');
- assert.deepEqual(s.spells.map(s=>s.slug).sort(),['blindness','laughing-fit','stupefy','vampiric-feast','void-warp']);
+ assert.deepEqual([...new Set(s.spells.map(s=>s.slug))].sort(),['blindness','daze','forbidding-ward','force-barrage','grim-tendrils','laughing-fit','paranoia','phantom-pain','soothe','stupefy','telekinetic-maneuver','vampiric-feast','void-warp']);
  assert.equal(s.spellSlots,11);assert.ok(s.spells.every(s=>s.available));
- assert.ok(f.adapter.parts().unsupported.includes('Phantom Pain'),'untaught spells must be reported explicitly');
+ assert.ok(f.adapter.parts().unsupported.some(s=>s.startsWith('Darkness:')),'untaught spells must be reported explicitly');
 });
 test('a complete Dero turn casts a native two-action spell and uses its once-per-round gaze',async()=>{
  const f=caster();f.player.document.x=300;const result=await new TurnRunner(f.adapter).run();
@@ -30,6 +30,7 @@ test('a complete Dero turn casts a native two-action spell and uses its once-per
 test('Cytillesh Stare cannot be forecast or executed three times in one turn',async()=>{
  const f=caster();for(const entry of f.actor.itemTypes.spellcastingEntry)for(const slot of Object.values(entry.system.slots))slot.value=0;
  f.actor.itemTypes.spell.find(s=>s.slug==='void-warp').system.location.value='not-prepared';
+ f.actor.itemTypes.spell.find(s=>s.slug==='daze').system.location.value='not-prepared';
  const result=await new TurnRunner(f.adapter).run();assert.equal(result.uncertain,false);
  assert.equal(f.calls.filter(c=>c[0]==='spell-save').length,1);
 });

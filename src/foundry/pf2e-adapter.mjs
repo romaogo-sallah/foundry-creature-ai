@@ -266,18 +266,19 @@ export class PF2eCreatureAdapter {
     return { id, name: target.name, target, reason: null };
   }
   liveTarget(id) { return this.assessTarget(id).target; }
+  liveSpellTarget(id){const target=canvas.tokens.get(id);return target===this.token||target?.actor&&this.actor.isAllyOf(target.actor)&&!target.document.hidden&&this.sight(this.token.center,target)?target:this.liveTarget(id);}
   activeMovementRegions() {
     return unsupportedMovementRegions(canvas.scene);
   }
   allies(target) {
-    return canvas.tokens.placeables.filter(ally => ally !== this.token && ally !== target && ally.actor?.isAllyOf(this.actor) &&
+    return canvas.tokens.placeables.filter(ally => ally !== this.token && ally !== target && ally.actor&&this.actor.isAllyOf(ally.actor) &&
       !ally.document.hidden && ally.actor.canAttack &&
       ally.document.level === target.document.level && !ally.actor.hasCondition('unconscious', 'dying', 'paralyzed') &&
       !incapacitationReason(ally) && ally.actor.hitPoints?.value > 0 && ally.distanceTo(target, { reach: ally.actor.getReach({ action: 'attack' }) }) <= ally.actor.getReach({ action: 'attack' }) &&
       clearSightPath(ally, target) && clearAttackPath(ally, target));
   }
   targetAt(cell, target, allies, position, weapon) {
-    const p = {...this.topLeft(cell),...position,elevation:position?.elevation??cell.elevation??this.token.document.elevation}, reach = this.actor.getReach({ action: 'attack', weapon });
+    const p = {...this.topLeft(cell),...position,elevation:position?.elevation??cell.elevation??this.token.document.elevation}, reach = weapon?.aiGeometryOnly?this.planningReach():this.actor.getReach({ action: 'attack', weapon });
     const proxy = tokenAt(this.token,p);
     const distance = distanceToPosition(this.token,target,p,reach);
     if (!Number.isFinite(distance)) throw new Error(`Could not measure distance to ${target.name}`);
@@ -369,7 +370,7 @@ export class PF2eCreatureAdapter {
       };
       // Same-alliance creatures are willing to let this NPC pass. Do not treat
       // them as walls or difficult terrain. Objects and other creatures still block.
-      const blocksPassage = occupied.filter(token => !(token.actor?.isOfType?.('creature') && !this.actor.hasCondition('confused') && token.actor.isAllyOf(this.actor)));
+      const blocksPassage = occupied.filter(token => !(token.actor?.isOfType?.('creature') && !this.actor.hasCondition('confused') && this.actor.isAllyOf(token.actor)));
       const canEnter = cell => onMap(cell) && !blocksPassage.some(token => overlaps(cell, token));
       // The AI plans each Stride to a clear endpoint; it does not plan the special
       // case of ending atop an ally and immediately spending another move to leave.

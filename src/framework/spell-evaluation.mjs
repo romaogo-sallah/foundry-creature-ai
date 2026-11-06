@@ -1,6 +1,8 @@
 import { checkProbabilities, expectedDamage } from './math.mjs';
 import { controlRelevance, spellReserveCost } from './caster-tactics.mjs';
 import {conditionCastingCandidates} from './condition-spells.mjs';
+import {genericCastingCandidates} from './generic-casting.mjs';
+import {spellChoiceFields} from './spell-definitions.mjs';
 
 // Native adapters establish geometry and available resources. Evaluation uses
 // the encounter benchmark, never a target's hidden saves, AC or secret rolls.
@@ -55,7 +57,7 @@ export function spellAreaValue(state, spell, area) {
 
 export function castingCandidates(state, { showcase = true } = {}) {
   if (state.self.unable || state.self.restrained || state.retreatComplete || state.morale?.broken) return [];
-  return [...conditionCastingCandidates({...state,spells:state.spells.filter(s=>s.kind==='condition-save')}),...state.spells.flatMap(spell => {
+  return [...genericCastingCandidates(state),...conditionCastingCandidates({...state,spells:state.spells.filter(s=>s.kind==='condition-save')}),...state.spells.filter(s=>s.resolver!=='outcomes').flatMap(spell => {
     if (spell.actionCost > state.actionsRemaining || !spell.available) return [];
     const reserve = spellReserveCost(state, spell);
     const show = showcase && state.style?.enabled && !state.shownSpells?.[spell.slug]
@@ -65,7 +67,7 @@ export function castingCandidates(state, { showcase = true } = {}) {
       const melee = spell.slug === 'ignition' && enemy.distance <= state.self.reachSquares * 5;
       const selected = melee ? { ...spell, damage: spell.meleeDamage } : spell;
       const value = spellTargetValue(state, selected, enemy);
-      if (value > 0) result.push({ id: `cast:${spell.id}:${enemy.id}:${melee ? 'melee' : 'ranged'}`, kind: 'castSpell', spellId: spell.id,
+      if (value > 0) result.push({ id: `cast:${spell.bindingId??spell.id}:${enemy.id}:${melee ? 'melee' : 'ranged'}`, kind: 'castSpell', spellId: spell.id,...spellChoiceFields(spell),
         spellSlug: spell.slug, spellName: spell.name, melee, targetId: enemy.id, legal: true, actionCost: spell.actionCost,
         mapIncreases: 1, provokes: true, features: { spell: true }, assessment: { value: value - reserve + show },
         scoringTerms: [{ label: 'Spell attack or control value', contribution: value }, { label: 'Save limited spell slots', contribution: -reserve },
@@ -77,7 +79,7 @@ export function castingCandidates(state, { showcase = true } = {}) {
       // Signature preferences cannot turn an ineffective or harmful area into
       // a useful cast. They also never cancel the signed friendly-fire cost.
       if (score.value <= reserve) continue;
-      result.push({ id: `cast:${spell.id}:${area.id}`, kind: 'castSpell', spellId: spell.id, spellSlug: spell.slug, spellName: spell.name,
+      result.push({ id: `cast:${spell.bindingId??spell.id}:${area.id}`, kind: 'castSpell', spellId: spell.id,...spellChoiceFields(spell),spellSlug: spell.slug, spellName: spell.name,
         area, targetId: (area.enemies[0] ?? area.approaches[0]).id, legal: true, actionCost: spell.actionCost, mapIncreases: 0, provokes: true,
         features: { spell: true, preparation: !area.enemies.length }, assessment: { value: score.value - reserve + show },
         scoringTerms: [{ label: 'Area damage or ground control', contribution: score.enemies },

@@ -25,7 +25,7 @@ export function flightWorkerSnapshot(adapter,state){
   const occupied=canvas.tokens.placeables.filter(t=>t!==adapter.token&&occupiesMovementSpace(t)&&!t.document.hidden&&
     detectionFor(adapter.token,t).state==='observed'&&clearSightPath(adapter.token,t))
     .map(t=>({x:t.document.x/size,y:t.document.y/size,elevation:t.document.elevation,width:t.w/size,height:t.h/size,
-      depth:tokenHeight(t),passable:t.actor.isAllyOf(adapter.actor)}));
+      depth:tokenHeight(t),passable:adapter.actor.isAllyOf(t.actor)}));
   const walls=(canvas.scene.walls?.contents??[]).filter(w=>w.move!==0&&w._source?.move!==0&&!(w.door>0&&w.ds===1))
     .flatMap(w=>{
       const c=w.c??w._source?.c;if(c?.length!==4)return [];

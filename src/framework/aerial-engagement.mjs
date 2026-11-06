@@ -6,7 +6,7 @@ const distance=(a,b)=>Math.max(Math.abs(a.x-b.x)*5,Math.abs(a.y-b.y)*5)+
 export function aerialEngagementCandidates(state){
   const f=state.flight,plan=f.airCombat,result=[],damage=state.self.averageDamage;
   if(plan.mode==='disengage'&&plan.protectedHere&&!f.airborne)return result;
-  const usableAttacks=s=>aerialAttackCandidates(s).filter(c=>!f.ranged||c.features?.ranged||c.kind==='spikeVolley');
+  const usableAttacks=s=>aerialAttackCandidates(s).filter(c=>!f.ranged||c.features?.ranged||c.kind==='spikeVolley'||c.kind==='castSpell');
   const attacks=usableAttacks(state),currentAttack=Math.max(0,...attacks.map(c=>c.assessment.value));
   const readyDive=state.actionsRemaining>=2&&(f.dives??[]).some(c=>c.assessment.value>0);
   const preparing=plan.mode==='setup'&&!readyDive&&!currentAttack&&f.moves.some(move=>move.diveSetupValue>0);

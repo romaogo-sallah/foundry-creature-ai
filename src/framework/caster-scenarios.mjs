@@ -1,7 +1,7 @@
 import {castingCandidates} from './spell-evaluation.mjs';
 import {casterPressure} from './caster-tactics.mjs';
 
-export const spellRole=spell=>spell?.drain?'drain':Number(spell?.damage)>0||['damage-attack','basic-save'].includes(spell?.kind)?'damage':'control';
+export const spellRole=spell=>spell?.role??(spell?.drain?'drain':Number(spell?.damage)>0||['damage-attack','basic-save'].includes(spell?.kind)?'damage':'control');
 // One move plus an affordable cast. This compares opportunities, not outcomes;
 // no hit, failed save, death or successful control is assumed for the next step.
 export function casterScenarios(state){

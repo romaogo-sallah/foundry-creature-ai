@@ -8,50 +8,35 @@ import {waitForPresentation} from './ai-presentation.mjs';
 import {applyConditionSpell,beginSustainedCast,grantVampiricTempHP} from './ongoing-spells.mjs';
 import {conditionSpells} from '../framework/condition-spells.mjs';
 import {nativeRuleAction,resolveConditionChecks,automationOwnsFlatChecks} from './condition-actions.mjs';
+import {resolveSpellBinding,spellDescriptor} from './spell-catalog.mjs';
+import {executeSpellOutcomes} from './spell-outcomes.mjs';
 
 const ns = 'foundry-creature-ai';
 const outcomes = ['criticalFailure','failure','success','criticalSuccess'];
 
-export async function spellMessage(spell,autoApply = true) {
-  const message = await spell.toMessage(null, { actualCast: true, create: false, data: { castRank: spell.rank } });
-  if (!message) throw new Error('Could not prepare the spell chat card');
-  const options = message.flags?.pf2e?.context?.options ?? [];
-  message.updateSource({ [`flags.${ns}.managed`]: true,
-    'flags.pf2e.context.options': [...new Set([...options,...SPELL_OPTIONS])],
-    'flags.xdy-pf2e-workbench.noAutoDamageRoll': true, 'flags.pf2e.suppressDamageButtons': autoApply });
-  // Automations 1.4.10's synchronous pre-create flat hook does not honor
-  // skip-handling-message. Preserve the native spell origin/casting card, but
-  // classify this managed presentation as OTHER; our awaited checks own it.
-  if(automationOwnsFlatChecks())message.updateSource({'flags.pf2e.context.type':'other'});
-  return ChatMessage.create(message.toObject());
-}
-
-export async function spellDamage(spell, caster, { target, outcome = 'success', map = 0, autoApply = true } = {}) {
-  const data = await spell.getDamage({ target: target?.document, skipDialog: true });
-  if (!data?.template?.damage?.roll) throw new Error(`No native damage roll for ${spell.name}`);
-  const doubleDice=outcome==='criticalSuccess'&&game.settings.get('pf2e','critRule')==='doubledice';
-  let roll=await (doubleDice?data.template.damage.roll.alter(2,0):data.template.damage.roll).evaluate();
-  if (outcome === 'criticalSuccess'&&!doubleDice) roll = roll.alter(2,0);
-  await roll.toMessage({ speaker: ChatMessage.getSpeaker({ token: caster.document }), flavor: spell.name,
-    flags: { [ns]: { managed: true }, 'xdy-pf2e-workbench': { noAutoDamageRoll: true },
-      pf2e: { suppressDamageButtons: autoApply, origin: spell.getOriginData(),
-        context: { type: 'damage-roll', sourceType: spell.isAttack ? 'attack' : 'save', outcome, mapIncreases: map,
-          options: [...(data.context?.options ?? []),...SPELL_OPTIONS], target: target ? { actor: target.actor.uuid, token: target.document.uuid } : null } } } });
-  return roll;
-}
-
+import {spellMessage,spellDamage} from './spell-native-rolls.mjs';
+export {spellMessage,spellDamage};
 export async function executeSpell(adapter, choice, ledger, { canContinue = () => true,signal } = {}) {
   const origin=adapter.actualWaypoint();
   const valid = () => canContinue() && adapter.turnKey() === ledger.turn && !game.paused && game.users.activeGM?.id === game.user.id &&
     canvas.ready&&canvas.tokens.get(adapter.token.id)===adapter.token&&
     ['x','y','elevation','level'].every(key=>adapter.actualWaypoint()[key]===origin[key]);
-  const parts = adapter.parts(), original = parts.spells.find(item => item.id === choice.spellId);
+  const parts = adapter.parts(),binding=resolveSpellBinding(adapter.actor,choice),original = binding?.spell??parts.spells.find(item => item.id === choice.spellId);
   if (!original) return { skipped: true, skipReason: 'The spell is no longer available' };
-  const target = choice.area ? null : adapter.liveTarget(choice.targetId);
+  if(choice.bindingId&&!binding)return {skipped:true,skipReason:'The selected casting entry or resource is no longer available'};
+  const entry=binding?.entry??parts.entry,definition=binding?.definition;
+  const targetRange=choice.melee?Math.max(5,adapter.actor.getReach({action:'attack'})):binding?spellDescriptor(binding,choice.actionCost).range:Infinity;
+  const target = choice.area ? null : ['heal','ward'].includes(definition?.kind)?adapter.liveSpellTarget?.(choice.targetId):adapter.liveTarget(choice.targetId);
+  if(['heal','ward'].includes(definition?.kind)&&(target?.actor.isDead||target?.actor.hasCondition('dead')))
+    return {skipped:true,skipReason:'A dead creature cannot receive this healing or ward'};
   if (!choice.area && (!target || !clearAttackPath(adapter.token,target))) return { skipped: true, skipReason: 'Spell target or attack path changed' };
-  if(choice.spellSlug==='vampiric-feast'&&adapter.targetAt(adapter.originCell(),target,[],origin).distance>5)
+  if(!choice.area&&binding&&adapter.targetAt(adapter.originCell(),target,[],origin).distance>targetRange)
+    return {skipped:true,skipReason:'Spell target left the selected spell range'};
+  if(choice.spellSlug==='vampiric-feast'&&adapter.targetAt(adapter.originCell(),target,[],origin).distance>targetRange)
     return {skipped:true,skipReason:'Vampiric Feast target left touch range'};
   let spell = original;
+  if(binding&&binding.castRank!==original.rank){spell=original.loadVariant?.({castRank:binding.castRank})??original;
+    if(spell.rank!==binding.castRank)throw new Error('Native heightened spell variant could not be prepared');}
   if (choice.melee) {
     const overlay = original.overlays?.contents?.find(entry => entry.system?.range?.value === 'touch');
     if (!overlay) throw new Error('The Ignition melee variant is unavailable');
@@ -59,9 +44,9 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
   }
   // Committing Cast a Spell spends its native resource even if a subsequent
   // reaction disrupts it. The action ledger has already reserved its actions.
-  if (!await parts.entry.consume(original, spell.rank)) throw new Error('The spell resource could not be spent; inspect the reserved action');
-  await spellMessage(spell,Boolean(adapter.config.applyDamage));
-  if (adapter.config.pauseForReactions !== false && adapter.reactions) {
+  if (!original.atWill&&!await entry.consume(original, spell.rank,binding?.slotId)) throw new Error('The spell resource could not be spent; inspect the reserved action');
+  await spellMessage(spell,Boolean(adapter.config.applyDamage),{targetIds:choice.targetIds??[choice.targetId].filter(Boolean)});
+  if ((spell.traits?.has?.('manipulate')??true)&&adapter.config.pauseForReactions !== false && adapter.reactions) {
     const interrupt = await adapter.reactions.action({ mover: adapter.token, kind: 'manipulate', valid, applyDamage: adapter.config.applyDamage });
     if (interrupt.endTurn || interrupt.pause) return interrupt;
     if (interrupt.disrupted) return { resolved: true, note: 'Reactive Strike disrupted the spell. Its actions and slot remain spent.' };
@@ -69,17 +54,20 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
   if (!valid() || adapter.turnEndReason()) return { resolved: true, endTurn: Boolean(adapter.turnEndReason()), incapacitationReason: adapter.turnEndReason() };
   if(!await resolveConditionChecks(adapter.actor,nativeRuleAction(spell),{token:adapter.token,valid}))
     return {resolved:true,note:'Condition flat check failed; spell actions and resources remain spent.'};
+  if(!choice.area&&(!target||!clearAttackPath(adapter.token,target)||adapter.targetAt(adapter.originCell(),target,[],adapter.actualWaypoint()).distance>targetRange))
+    return {resolved:true,note:definition?.drain?'The target left touch range during the reaction; actions and slot remain spent.':'The spell lost its target or range during a reaction; actions and resources remain spent.'};
+  if(definition?.resolver==='outcomes')return executeSpellOutcomes(adapter,spell,entry,choice,definition,{valid,attackNumber:Math.max(1,ledger.attacksMade)});
   if(choice.features?.conditionSpell){
     if(!valid()||adapter.liveTarget(choice.targetId)!==target)return {resolved:true,note:'The spell lost its target; its action and slot remain spent.'};
     const spec=conditionSpells[spell.slug];if(!spec)throw new Error('Unsupported condition spell');
-    if(spec.drain&&adapter.targetAt(adapter.originCell(),target,[],adapter.actualWaypoint()).distance>5)
+    if(spec.drain&&adapter.targetAt(adapter.originCell(),target,[],adapter.actualWaypoint()).distance>targetRange)
       return {resolved:true,note:'The target left touch range during the reaction; actions and slot remain spent.'};
     if(!await concealmentCheck(adapter.token,target,{valid}))return {resolved:true,note:'Spell targeting flat check failed; actions and slot remain spent.'};
     const source={actor:adapter.actor,token:adapter.token};
     const commitment=spell.slug==='laughing-fit'?await beginSustainedCast(source,spell,target):null;
     if(target.actor.isImmuneTo?.(spell)||['laughing-fit','void-warp','vampiric-feast'].includes(spell.slug)&&target.actor.modeOfBeing&&target.actor.modeOfBeing!=='living')
       return {resolved:true,note:'This spell cannot affect the target.'};
-    const degree=await spellDefenseCheck(target,{dc:parts.entry.statistic.dc.value,statistic:spec.save,origin:adapter.token,spell,label:spell.name});
+    const degree=await spellDefenseCheck(target,{dc:entry.statistic.dc.value,statistic:spec.save,origin:adapter.token,spell,label:spell.name});
     if(!valid())throw new Error('Combat changed during the spell save');
     let drain=null;
     if(spec.damage&&degree<3){
@@ -141,7 +129,7 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
   for (const token of affected) {
     if (!valid()) throw new Error('Casting stopped during the area saves');
     const environment = environmentBetween(adapter.token,token);
-    const degree = await spellDefenseCheck(token,{ dc: parts.entry.statistic.dc.value, origin: adapter.token, spell,
+    const degree = await spellDefenseCheck(token,{ dc: entry.statistic.dc.value, origin: adapter.token, spell,
       label: `${spell.name}: Reflex save`, cover: environment.coverBonus >= 2 ? environment.coverBonus : 0 });
     saved.push({ token, degree });
   }

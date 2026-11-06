@@ -21,6 +21,7 @@ import {advancePoisons,expirePoisons} from '../foundry/poison-effects.mjs';
 import {migrateRegionScripts} from './script-migration.mjs';
 import {registerLegacyRuleFlags} from '../foundry/legacy-rule-flags.mjs';
 import {markManagedRuleMessage} from '../foundry/managed-rule-message.mjs';
+import {spellProfilesAPI} from '../foundry/spell-profile-controls.mjs';
 
 const runtimes=new WeakMap();
 export function getRulesRuntime(){
@@ -47,7 +48,7 @@ export class RulesRuntime {
       stealth:{open:openStealthControls,detection:detectionFor,player:this.playerStealth,
         hide:token=>this.playerStealth.request('hide',token),sneak:token=>this.playerStealth.request('arm-sneak',token),stopSneak:token=>this.playerStealth.request('stop-sneak',token),
         revealAction:token=>this.playerStealth.request('reveal-action',token),reveal:token=>this.playerStealth.request('reveal',token)},
-      spells:{refresh:refreshSpellZones,expire:expireSpellZones,openOngoing:openOngoingSpells,ongoing:ongoingCasts,advance:advanceOngoingSpells,sustain:sustainCast,end:endSustainedCast},
+      spells:{refresh:refreshSpellZones,expire:expireSpellZones,openOngoing:openOngoingSpells,ongoing:ongoingCasts,advance:advanceOngoingSpells,sustain:sustainCast,end:endSustainedCast,profiles:spellProfilesAPI},
       conditions:{open:openConditionActions,owners:conditionAutomationOwners,inspect:(actor=canvas.tokens.controlled[0]?.actor)=>({actions:actionRestriction(actor),reactions:reactionRestriction(actor)})},
       poisons:{advance:token=>this.reactions.resolve(()=>advancePoisons(token)),expire:expirePoisons}};
   }

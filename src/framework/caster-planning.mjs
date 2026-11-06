@@ -4,8 +4,9 @@ import { casterPressure } from './caster-tactics.mjs';
 import { casterProtection, waitingCaster } from './caster-defense.mjs';
 
 function afterAction(state, action) {
-  const spell = state.spells.find(spell => spell.id === action.spellId);
-  const spellSlots = state.spellSlots - (spell && !spell.cantrip ? 1 : 0);
+  const spell = state.spells.find(spell => action.bindingId?spell.bindingId===action.bindingId:spell.id === action.spellId);
+  const spellSlots = state.spellSlots - (spell && !spell.cantrip ? spell.resourceCost??1 : 0);
+  const resourcePools={...state.resourcePools};if(spell?.poolId)resourcePools[spell.poolId]=Math.max(0,(resourcePools[spell.poolId]??spell.resourceRemaining??0)-(spell.resourceCost??1));
   return { ...state, actionsRemaining: state.actionsRemaining - action.actionCost,
     plannedCapabilities:[...(state.plannedCapabilities??[]),...(action.features?.onceKey?[action.features.onceKey]:[]),...(action.features?.blocksForecast??[])],
     casterDefense: { ...state.casterDefense, hideAttempted: state.casterDefense?.hideAttempted || action.kind === 'hide',
@@ -14,9 +15,10 @@ function afterAction(state, action) {
       enemy.incoming?.canHide ? Math.max(enemy.stealthChance ?? 0, enemy.hideChance ?? 0) : enemy.stealthChance ?? 0 :
       ['castSpell', 'strike'].includes(action.kind) ? 0 : enemy.stealthChance ?? 0,
       hideChance: ['castSpell', 'strike'].includes(action.kind) ? enemy.freshHideChance ?? enemy.hideChance : enemy.hideChance })),
-    attacksMade: state.attacksMade + (action.mapIncreases ?? 0), spellSlots,
+    attacksMade: state.attacksMade + (action.mapIncreases ?? 0), spellSlots,resourcePools,
     shownSpells: spell ? { ...state.shownSpells, [spell.slug]: true } : state.shownSpells,
-    spells: state.spells.map(spell => ({ ...spell, available: spell.available && (spell.cantrip || spellSlots > 0) })) };
+    spells: state.spells.map(spell => ({ ...spell, available: spell.available && (spell.poolId?
+      resourcePools[spell.poolId]>=(spell.resourceCost??1):spell.cantrip||spellSlots>0) })) };
 }
 
 function moveState(state, move) {
@@ -24,7 +26,8 @@ function moveState(state, move) {
     self: { ...state.self, cell: { x: move.x, y: move.y }, threatened: Boolean(move.destinationThreatened),
       reactionRisk:move.destinationReactionRisk??(move.destinationThreatened?state.self.reactionRisk??move.reactionRisk??0:0) },
     nearestEnemy: move.nearestEnemy, spells: (move.spells ?? state.spells).map(spell => ({ ...spell,
-      available: spell.available && (spell.cantrip || state.spellSlots > 0) })),
+      available: spell.available && (spell.poolId?(state.resourcePools?.[spell.poolId]??spell.resourceRemaining)>=(spell.resourceCost??1):spell.cantrip || state.spellSlots > 0) })),
+    casterAllies:(state.casterAllies??[]).map(ally=>({...ally,...move.supportTargets?.[ally.id]})),
     enemies: state.enemies.map(enemy => ({ ...enemy, ...move.targets[enemy.id],
       stealthChance: move.kind === 'step' && move.targets[enemy.id]?.incoming?.canHide ? enemy.stealthChance ?? 0 : 0,
       hideChance: move.kind === 'step' ? move.targets[enemy.id]?.hideChance : move.targets[enemy.id]?.freshHideChance })) };
@@ -45,7 +48,7 @@ function movementValue(state, move) {
 
 const allowedMove = (state, move) => !state.self.immobile && move.cost > 0 &&
   !state.visited?.includes(`${move.x},${move.y}`);
-const summary = action => ({ kind: action.kind, actionCost: action.actionCost,
+const summary = action => ({ kind: action.kind, actionCost: action.actionCost,bindingId:action.bindingId,
   spellSlug: action.spellSlug, targetId: action.targetId, destination: action.destination });
 
 // A small remaining-turn forecast, not a simulated roll. Effects, hits, deaths,
@@ -53,7 +56,7 @@ const summary = action => ({ kind: action.kind, actionCost: action.actionCost,
 // replans from the resulting live state, including reactions and spell terrain.
 export function casterTurnCandidates(state, { actions }) {
   function rankedActions(current) {
-    return actions(current).map(action => {
+    const ranked=actions(current).map(action => {
       const castingRisk = action.kind === 'castSpell' && current.self.threatened ? current.self.reactionRisk ?? 0 : 0;
       const reveal = ['castSpell', 'strike'].includes(action.kind) ?
         Math.max(0, casterProtection(current) - casterProtection(afterAction(current, action))) : 0;
@@ -61,7 +64,14 @@ export function casterTurnCandidates(state, { actions }) {
         scoringTerms: [...(action.scoringTerms ?? []), ...(castingRisk ? [{ label: 'Known reaction exposure while casting', contribution: -castingRisk }] : []),
           ...(reveal ? [{ label: 'Give up defensive hiding to act', contribution: -reveal }] : [])] };
     });
+    if(!state.maxForecastActions)return ranked;
+    const sorted=ranked.sort((a,b)=>b.assessment.value-a.assessment.value),selected=new Map();
+    for(const cost of [1,2,3]){const choice=sorted.find(a=>a.actionCost===cost);if(choice)selected.set(choice.id,choice);}
+    for(const choice of sorted){if(selected.size>=state.maxForecastActions)break;selected.set(choice.id,choice);}
+    return [...selected.values()];
   }
+  const planningMoves=state.maxForecastMoves?state.moves.map(move=>({move,value:movementValue(state,move).value+
+    Math.max(0,...actions(moveState(state,move)).map(a=>a.assessment.value))})).sort((a,b)=>b.value-a.value).slice(0,state.maxForecastMoves).map(e=>e.move):state.moves;
   function stationaryPlan(current) {
     let best = { value: 0, sequence: [] };
     if (current.actionsRemaining <= 0) return best;
@@ -79,7 +89,7 @@ export function casterTurnCandidates(state, { actions }) {
     // A ground-control spell changes paths and Balance checks. Do not forecast
     // movement using stale pre-cast terrain; the next real snapshot handles it.
     const changesTerrain = state.spells.find(spell => spell.id === action.spellId)?.kind === 'ground-control';
-    if (after.actionsRemaining > 0 && !changesTerrain) for (const move of state.moves) {
+    if (after.actionsRemaining > 0 && !changesTerrain) for (const move of planningMoves) {
       if (!allowedMove(after, move)) continue;
       const position = movementValue(after, move);
       const next = stationaryPlan(position.after), value = position.value + next.value;
@@ -94,7 +104,7 @@ export function casterTurnCandidates(state, { actions }) {
   });
   const moves = [];
   const canCastNextTurn = stationaryPlan({ ...state, actionsRemaining: 3 }).sequence.length > 0;
-  if (state.actionsRemaining > 0) for (const move of state.moves) {
+  if (state.actionsRemaining > 0) for (const move of planningMoves) {
     if (!allowedMove(state, move)) continue;
     const position = movementValue(state, move), follow = stationaryPlan(position.after);
     if (waitingCaster(state) && position.defense <= 0.25 && !position.escape && !position.regain.value) continue;

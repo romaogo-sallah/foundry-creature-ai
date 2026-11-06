@@ -1,5 +1,7 @@
 # Shared conditions and ongoing spells — 0.35.0
 
+Version **0.40.0** adds [shared spell components](spellcaster-framework.md), including Phantom Pain's linked Sickened/persistent damage, Daze's Stunned result, Grim Tendrils' persistent bleed and Paranoia's relationship effects. Native manual saves share these condition resolvers; damage remains with the normal manual damage workflow. AI casting also resolves Soothe and sustained Forbidding Ward. The narrower spell coverage described below records earlier releases.
+
 Version **0.39.0** implements the [GM's condition policy](condition-precedence.md): Fleeing > Confused > Controlled, a shared escape driver for taught NPCs, manual Fleeing action legality, and newest-source replacement for fascination. Earlier limitations below about universal compelled-action handling remain historical; Controlled alone still needs its controller's direction.
 
 Patch **0.37.1** serializes owned spell-effect mutations across turn/time hooks, application, Sustain, End and Reset. This prevents simultaneous expiry requests from deleting the same Laughing Fit source twice. The reaction barrier continues to await all jobs and permit nested reactions; it is not used as a mutex. Real permission or database failures still surface, and subsequent cleanup can retry.

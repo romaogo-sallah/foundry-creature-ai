@@ -47,6 +47,7 @@ await cp(new URL('docs/aerial-combat.md', root), new URL('aerial-combat.md', out
 await cp(new URL('docs/manticore-scorpion.md', root), new URL('manticore-scorpion.md', output));
 await cp(new URL('docs/manticore-quill.md', root), new URL('manticore-quill.md', output));
 await cp(new URL('docs/dero-magister.md',root),new URL('dero-magister.md',output));
+await cp(new URL('docs/spellcaster-framework.md',root),new URL('spellcaster-framework.md',output));
 await cp(new URL('docs/condition-handling.md',root),new URL('condition-handling.md',output));
 await cp(new URL('docs/condition-ai.md',root),new URL('condition-ai.md',output));
 await cp(new URL('docs/condition-manual.md',root),new URL('condition-manual.md',output));

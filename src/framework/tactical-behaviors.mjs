@@ -45,9 +45,9 @@ tacticalBehaviors.registerComponent({id:'assist',label:'Enable allies',kind:'pol
 tacticalBehaviors.registerComponent({id:'withdraw',label:'Avoid immediate danger',kind:'policy',
   candidates:withdrawalCandidates});
 
-for(const [role,label]of [['control','Control an open threat'],['damage','Exploit a damage opening'],['drain','Damage while building a temporary HP buffer']]){
+for(const [role,label]of [['control','Control an open threat'],['damage','Exploit a damage opening'],['drain','Damage while building a temporary HP buffer'],['support','Keep injured allies fighting']]){
   tacticalBehaviors.registerComponent({id:`spell-${role}`,label,kind:'policy',adjust:(candidate,state)=>scenarioBonus(role,candidate,state)});
-  tacticalBehaviors.registerPlan({id:`spell-${role}`,label:role==='control'?'Spell control':role==='damage'?'Spell assault':'Life drain',
+  tacticalBehaviors.registerPlan({id:`spell-${role}`,label:role==='control'?'Spell control':role==='damage'?'Spell assault':role==='support'?'Spell support':'Life drain',
     requires:['spellcasting'],components:[`spell-${role}`,...role==='control'?['protection']:['pressure']],
     score:(_context,state)=>state.casterScenarios?.[role]?{value:6+Math.min(6,state.casterScenarios[role].value*0.25),
       reason:role==='control'?'A supported control spell has the best local opening':role==='damage'?'An affordable damage spell can exploit the current position':'Touch damage and additional temporary HP are worth the approach risk'}:null,
@@ -104,12 +104,12 @@ for(const [id,mode,label]of [['aerial-engage',null,'Aerial engagement'],['aerial
 export const defaultBehaviorConfiguration = profileId => ({
   components:['recovery','perception','movement','strikes','control','stealth','equipment',
     ...(profileId==='manticore-quill'?['volleys']:[]),
-    ...(['goblin-pyro','dero-magister','generic'].includes(profileId)?['spellcasting']:[]),...(['ogre-boss','generic'].includes(profileId)?['leadership']:[]),
+    ...(['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spellcasting']:[]),...(['ogre-boss','generic'].includes(profileId)?['leadership']:[]),
     ...['wolf','kobold-scout'].includes(profileId)?['pack']:[],
     'pressure','advance','protection','distance','surround','assist','withdraw',
-    ...['goblin-pyro','dero-magister','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain']:[]],
+    ...['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain','spell-support']:[]],
   plans:['aggressive','defensive','avoiding','hiding','lay-low','charge','kiting','swarming','supporting',
-    ...['goblin-pyro','dero-magister','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain']:[]],
+    ...['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain','spell-support']:[]],
 });
 
 export const chooseTacticalAction = (candidates,state,options) => chooseBehaviorAction(tacticalBehaviors,candidates,state,options);
