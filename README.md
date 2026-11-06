@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Patch 0.37.2:** restores stealth, cover and concealment captions when Global Auto Level Change overwrites token tooltip text. A batched post-refresh repair preserves the module's elevation display and appends cached observer-relative captions without additional geometry or render loops. Select one observer token and reload every client with **Ctrl+F5**.
+
 **Patch 0.37.1:** fixes overlapping turn/time hooks deleting the same ongoing spell effect twice (`Item does not exist`). Spell application, Sustain, End, Reset and expiry share a mutation queue; manual and unrelated effects are preserved. Movement memory reads native action configuration without invoking Foundry's deprecated teleport getter. Reload every client with **Ctrl+F5**.
 
 **Version 0.37.0:** Confused NPCs use a random-target attack override: allies and neutrals become potential targets, with ordinary Strikes, taught offensive cantrips and simple attack preparation/movement. Normal tactics, stealth, special abilities, complex aerial plans and slot spells are excluded. See [Confused AI](docs/confused-ai.md). Reload every client with **Ctrl+F5**.

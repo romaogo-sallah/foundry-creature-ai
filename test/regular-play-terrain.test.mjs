@@ -10,7 +10,8 @@ import { sneakEffects } from '../src/foundry/sneak-mode.mjs';
 
 const ns='foundry-creature-ai';
 function setup({cover='none',concealment='through',withPlayerStealth=false}={}) {
-  const f=fixture({footprint:1}),wrappers=new Map(),wrapperTypes=new Map(),events=[];
+  const f=fixture({footprint:1}),wrappers=new Map(),wrapperTypes=new Map(),events=[],hooks=new Map();
+  globalThis.Hooks={on:(name,callback)=>hooks.set(name,[...hooks.get(name)??[],callback])};
   const region={id:'terrain',name:'Low obstacle',hidden:false,levels:new Set(['ground']),
     flags:{[ns]:{environment:{enabled:true,cover,coverMode:'intervening',concealment}}},
     testPoint:p=>p.x>=400&&p.x<=410&&p.y>=100&&p.y<=400&&p.elevation>=0&&p.elevation<10,
@@ -44,7 +45,7 @@ function setup({cover='none',concealment='through',withPlayerStealth=false}={}) 
   const context=(extra={})=>({type:'attack-roll',origin:{token:{object:f.boss}},target:{token:{object:f.player}},
     dc:{value:25,statistic:{parent:{clone:({modifiers})=>({dc:{value:25+Math.max(0,...modifiers.map(m=>m.modifier))}})}}},
     options:new Set(),...extra});
-  return {...f,region,events,flat,context,wrappers,wrapperTypes,playerStealth,wrapper:wrappers.get('game.pf2e.Check.roll')};
+  return {...f,region,events,flat,context,wrappers,wrapperTypes,playerStealth,hooks,wrapper:wrappers.get('game.pf2e.Check.roll')};
 }
 
 function playerContext(f,extra={}){
@@ -229,6 +230,47 @@ test('caption refresh repairs empty native tooltip text even when the computed l
   assert.match(f.player.tooltip.text,/Hidden \(observer blinded\)/);
   canvas.tokens.controlled=[f.boss,f.player];await awareness.schedule();
   assert.equal(f.player.tooltip.text,'','ambiguous observer clears the rendered caption too');
+});
+
+test('post-refresh elevation writers cannot erase cached stealth/cover captions',async()=>{
+  const f=setup({cover:'standard'});let queries=0;
+  const awareness=new EnvironmentAwareness({query:(...args)=>{queries++;return environmentBetween(...args);}});
+  awareness.install();const wrapper=f.wrappers.get('CONFIG.Token.objectClass.prototype._getTooltipText');
+  for(const token of canvas.tokens.placeables){
+    token.tooltip={text:''};token.renderFlags={set:()=>{}};
+    token._getTooltipText=()=>wrapper.call(token,()=>'');
+    token._refreshTooltip=()=>{token.tooltip.text=token._getTooltipText();};
+  }
+  f.actor.conditionsSet.add('blinded');await awareness.schedule();const expected=awareness.label(f.player);
+  assert.match(expected,/Cover \+2/);assert.match(expected,/Hidden \(observer blinded\)/);
+  // Global Auto Level Change writes tooltip.text in refreshToken, after native
+  // refreshTooltip. Register it AFTER our listener to exercise hook order too.
+  Hooks.on('refreshToken',token=>{token.tooltip.text=token.document.elevation===0?'':`+${token.document.elevation} ft`;});
+  const render=()=>{f.player._refreshTooltip();for(const callback of f.hooks.get('refreshToken')??[])callback(f.player);};
+  const before=queries;render();assert.equal(f.player.tooltip.text,'');await Promise.resolve();
+  assert.equal(f.player.tooltip.text,expected);
+  f.player.document.elevation=15;
+  for(let i=0;i<1000;i++)render();await Promise.resolve();
+  assert.equal(f.player.tooltip.text,`+15 ft\n${expected}`);
+  assert.equal(queries,before,'render repair reads cached strings without visibility or terrain queries');
+});
+
+test('pending tooltip repair never restores captions after the observer is cleared or indicators disabled',async()=>{
+  const f=setup({cover:'standard'});let enabled=true;
+  const awareness=new EnvironmentAwareness({enabled:()=>enabled});awareness.install();
+  const wrapper=f.wrappers.get('CONFIG.Token.objectClass.prototype._getTooltipText');
+  for(const token of canvas.tokens.placeables){
+    token.tooltip={text:''};token.renderFlags={set:()=>{}};
+    token._getTooltipText=()=>wrapper.call(token,()=>'');
+    token._refreshTooltip=()=>{token.tooltip.text=token._getTooltipText();};
+  }
+  await awareness.schedule();assert.notEqual(f.player.tooltip.text,'');
+  for(const callback of f.hooks.get('refreshToken')??[])callback(f.player);
+  canvas.tokens.controlled=[f.boss,f.player];awareness.refresh();await Promise.resolve();
+  assert.equal(f.player.tooltip.text,'');
+  canvas.tokens.controlled=[f.boss];await awareness.schedule();assert.notEqual(f.player.tooltip.text,'');
+  for(const callback of f.hooks.get('refreshToken')??[])callback(f.player);
+  enabled=false;awareness.refresh();await Promise.resolve();assert.equal(f.player.tooltip.text,'');
 });
 
 test('manual Strikes against a Blinded defender apply off-guard without creating a global condition',async()=>{

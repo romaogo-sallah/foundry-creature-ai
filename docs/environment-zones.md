@@ -43,6 +43,8 @@ This exemption suppresses only the originating zone's cover. Concealment, other 
 
 ## Regular play and directional indicators
 
+Patch **0.37.2** repairs captions after native `refreshToken` hooks finish. Global Auto Level Change replaces the tooltip with absolute elevation in those hooks, which previously erased our already-computed captions. The repair preserves that elevation text, appends each cached caption once, and clears the caption when the observer becomes ambiguous or the setting is disabled. Render hooks do no terrain or detection queries and do not request another render.
+
 No AI profile or combat encounter is needed. Select exactly one creature token, then target another token and use its normal sheet attack. Cover/concealment is calculated between the attack's actual origin and target tokens. A sack pile between A and B can grant B cover from A while leaving B exposed to C approaching from another direction. Only that attack's contextual defense changes; no persistent global Cover condition is added to B.
 
 Selecting a single observer displays **Cover +1/+2/+4** and/or **Concealed (DC 5)** above affected tokens using the native token tooltip. No selection uses the player's assigned character if it has one token in the scene. Selecting several observers clears the ambiguous indicators. These labels are local to each client, inherit native token visibility/secrecy and preserve the existing elevation label. They do not dim, hide or make otherwise invisible tokens targetable. The client setting **Show directional zone defenses** can turn them off without changing any mechanics.

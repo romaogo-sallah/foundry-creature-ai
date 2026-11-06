@@ -1,0 +1,161 @@
+{
+  "date": "2026-11-06",
+  "version": "0.37.2",
+  "diagnosis": {
+    "module": "Global Auto Level Change",
+    "moduleId": "galc",
+    "hook": "refreshToken",
+    "action": "Absolute-elevation writer replaces token.tooltip.text after the native tooltip refresh; elevation 0 replaces it with an empty string.",
+    "before": {
+      "version": "0.37.1",
+      "setting": true,
+      "labels": [
+        {
+          "name": "Dero Magister",
+          "expected": "Hidden (observer blinded)",
+          "rendered": "",
+          "visible": true
+        },
+        {
+          "name": "Dero Magister",
+          "expected": "Hidden (observer blinded)",
+          "rendered": "",
+          "visible": true
+        },
+        {
+          "name": "Ogre",
+          "expected": "Hidden (observer blinded)",
+          "rendered": "",
+          "visible": true
+        },
+        {
+          "name": "Ogre",
+          "expected": "Concealed\nHidden (observer blinded)",
+          "rendered": "",
+          "visible": true
+        },
+        {
+          "name": "Ogre Boss",
+          "expected": "Hidden (observer blinded)",
+          "rendered": "",
+          "visible": true
+        },
+        {
+          "name": "Kobold Scout",
+          "expected": "Hidden (observer blinded; LOS blocked)",
+          "rendered": "",
+          "visible": true
+        },
+        {
+          "name": "Kobold Scout",
+          "expected": "Hidden (observer blinded; LOS blocked)",
+          "rendered": "",
+          "visible": true
+        },
+        {
+          "name": "Kobold Scout",
+          "expected": "Hidden (observer blinded)",
+          "rendered": "",
+          "visible": true
+        },
+        {
+          "name": "Kobold Scout",
+          "expected": "Hidden (observer blinded)",
+          "rendered": "",
+          "visible": true
+        }
+      ]
+    }
+  },
+  "tests": {
+    "pass": 983,
+    "fail": 0,
+    "workers": 11,
+    "durationSeconds": 20.1
+  },
+  "native": {
+    "version": "0.37.2",
+    "galc": {
+      "active": true,
+      "version": "1.0.0",
+      "absoluteElevation": "on"
+    },
+    "repair": {
+      "targetId": "eIACGDMjWt5qGQxP",
+      "label": "Hidden (observer blinded)",
+      "rendered": "Hidden (observer blinded)",
+      "postRefreshQueries": 0,
+      "cleared": "",
+      "restored": "Hidden (observer blinded)",
+      "valid": true
+    },
+    "labels": [
+      {
+        "name": "Dero Magister",
+        "expected": "Hidden (observer blinded)",
+        "rendered": "Hidden (observer blinded)",
+        "visible": true
+      },
+      {
+        "name": "Dero Magister",
+        "expected": "Hidden (observer blinded)",
+        "rendered": "Hidden (observer blinded)",
+        "visible": true
+      },
+      {
+        "name": "Ogre",
+        "expected": "Hidden (observer blinded)",
+        "rendered": "Hidden (observer blinded)",
+        "visible": true
+      },
+      {
+        "name": "Ogre",
+        "expected": "Concealed\nHidden (observer blinded)",
+        "rendered": "Concealed\nHidden (observer blinded)",
+        "visible": true
+      },
+      {
+        "name": "Ogre Boss",
+        "expected": "Hidden (observer blinded)",
+        "rendered": "Hidden (observer blinded)",
+        "visible": true
+      },
+      {
+        "name": "Kobold Scout",
+        "expected": "Hidden (observer blinded; LOS blocked)",
+        "rendered": "Hidden (observer blinded; LOS blocked)",
+        "visible": true
+      },
+      {
+        "name": "Kobold Scout",
+        "expected": "Hidden (observer blinded; LOS blocked)",
+        "rendered": "Hidden (observer blinded; LOS blocked)",
+        "visible": true
+      },
+      {
+        "name": "Kobold Scout",
+        "expected": "Hidden (observer blinded)",
+        "rendered": "Hidden (observer blinded)",
+        "visible": true
+      },
+      {
+        "name": "Kobold Scout",
+        "expected": "Hidden (observer blinded)",
+        "rendered": "Hidden (observer blinded)",
+        "visible": true
+      }
+    ],
+    "actorCountBefore": 159,
+    "actorCountAfter": 159,
+    "newActors": 0,
+    "moduleErrors": [],
+    "valid": true
+  },
+  "installed": {
+    "filesVerified": 221,
+    "archiveSHA256": "c444ca4f7f953c5ddde7927a29dbd444f583cdb46b2ea25ac038bee055efde97"
+  },
+  "serverRestarted": false,
+  "activation": "Refresh clients with Ctrl+F5. Select one observer token for relative captions.",
+  "method": "Actual native canvas tooltips and screenshots before/after with GALC active, plus forced native refresh, client-local deselection/reselection and a query counter. No actor/condition changes, rolls, movement or combat advancement."
+}
