@@ -1,6 +1,8 @@
-# Local version control
+# Version control and GitHub
 
-The workspace is a Git repository on `main`. The initial commit is `4e6e7ab`, tagged **`baseline-0.28.3`**, before the Web Worker change. Source, tests, docs, build/install tools and release ZIPs are tracked. Generated `dist/`, `.scratch/`, dependencies and compiler output are ignored. No remote has been added.
+The workspace is a Git repository on `main`, with `origin` pointing to the public [GitHub repository](https://github.com/romaogo-sallah/foundry-creature-ai). The initial commit is `4e6e7ab`, tagged **`baseline-0.28.3`**, before the Web Worker change. Source, tests, docs, build/install tools and release ZIPs are tracked. Generated `dist/`, `.scratch/`, dependencies and compiler output are ignored.
+
+Completed, verified work is committed and pushed to `origin` by default, including new release tags. The project instructions in [AGENTS.md](../AGENTS.md) preserve this preference for future sessions. Pushes preserve published history; a blocked push is reported rather than silently left local.
 
 Inspect history with `git log --oneline --decorate` and local changes with `git status` / `git diff`.
 
