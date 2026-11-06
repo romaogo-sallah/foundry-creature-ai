@@ -2,6 +2,8 @@
 
 The implementation separates pure AI action rules from Foundry adapters for manual use. Numeric modifiers, IWR, native condition relationships and native effect expiration remain in PF2e. Module ownership is checked through actual enabled settings rather than assuming that an installed module has a feature turned on.
 
+The later [0.38.0 condition gap review](condition-rules-gaps-2026-11-06.md) checks Nethys against the current implementation, including flat-check grouping, precise senses, overlapping condition sources and linked spell recovery. It distinguishes confirmed gaps from module-owned behavior that still needs verification and explicit GM adjudication.
+
 ## Rules and discussions
 
 Primary rules checked: [Grabbed](https://2e.aonprd.com/Conditions.aspx?ID=77), [Deafened](https://2e.aonprd.com/Conditions.aspx?ID=66), [Fascinated](https://2e.aonprd.com/Conditions.aspx?ID=72), [Prone](https://2e.aonprd.com/Conditions.aspx?ID=88), [Sickened](https://2e.aonprd.com/Conditions.aspx?ID=91), [Stunned](https://2e.aonprd.com/Conditions.aspx?ID=93), and [Paizo FAQ/errata](https://paizo.com/pathfinder/faq). Paizo's Spring 2026 errata changes valued Stunned gained during a turn: complete the current activity, then lose remaining actions to reduce the value. Slowed/Quickened acquired during a turn do not immediately change that turn's regained budget. The same errata assigns precedence among overlapping Confused, Fleeing and Controlled conditions to GM adjudication.
