@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Patch 0.41.1:** fixes grounded vampires selecting End Turn with an action left and never auto-passing. The flight component now preserves the ordinary caster?s completion policy. The [first vampire encounter review](docs/battle-analysis-2026-11-07-vampires.md) separates the confirmed deadlock from movement/scoring weaknesses and legitimate concealment failures. Reload every client with **Ctrl+F5**.
+
 **Version 0.41.0:** adds the supplied [Vampire Guardian, Count and Mastermind](docs/vampires.md), independent mixed-group resources, Claw/Grab/Drink Blood, at-will Dominate, group buffs, lingering fire, native Fire Shield, bonded recasting and Mist Escape toward scene borders. GM controls mark sunlight, stakes and actual coffin rest. Reload every client with **Ctrl+F5**, then select an unlinked vampire and open **Alt+W**.
 
 **Patch 0.40.1:** fixes Soothe dealing damage instead of healing, shares witnessed spell attempts to avoid known temporary immunity and redundant control, estimates Incapacitation from public combat evidence, values brief Blindness by initiative timing, and applies tactical bonuses once. Healing was checked against native PF2e with detached actors. See the [caster battle review](docs/battle-analysis-2026-11-06-casters.md). Reload every client with **Ctrl+F5**.

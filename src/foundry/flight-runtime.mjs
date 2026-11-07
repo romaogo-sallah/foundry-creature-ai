@@ -13,7 +13,7 @@ const attached=new WeakSet(),ns='foundry-creature-ai';
 export function attachFlightSystem(adapter){
   if(attached.has(adapter)||!flySpeed(adapter.actor)&&!isTrueVampire(adapter.actor))return adapter;
   attached.add(adapter);
-  const snapshot=adapter.snapshot.bind(adapter),candidates=adapter.candidates.bind(adapter),execute=adapter.execute.bind(adapter),prepare=adapter.prepareTurn.bind(adapter),record=adapter.recordOutcome.bind(adapter);
+  const snapshot=adapter.snapshot.bind(adapter),candidates=adapter.candidates.bind(adapter),execute=adapter.execute.bind(adapter),prepare=adapter.prepareTurn.bind(adapter),record=adapter.recordOutcome.bind(adapter),decide=adapter.decide.bind(adapter);
   const flightSnapshot=async(ledger,options={})=>{
     const initiallyFlying=flySpeed(adapter.actor)>0&&!flightLost(adapter.token)&&!adapter.actor.hasCondition('immobilized','grabbed','restrained');
     const state=await snapshot(ledger,initiallyFlying?{...options,movement:false}:options),saved=adapter.token.document.getFlag(ns,'flight');
@@ -58,6 +58,9 @@ export function attachFlightSystem(adapter){
     .map(c=>state.flight?.airCombat?{...c,features:{...c.features,aerialPlan:state.flight.airCombat}}:c);
   adapter.candidates=offered;
   adapter.decide=state=>{
+    // Shapechangers carry the flight component even in a grounded body. Keep
+    // their ordinary driver's completion policy until a flight state exists.
+    if(!state.flight&&!state.mistEscape)return decide(state);
     const result=chooseTacticalAction(offered(state),state,{actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened});
     return {...result,diagnostics:{...state.diagnostics,...result.diagnostics,
       ...(result.chosen?.kind==='endTurn'&&(state.mistEscape||state.flight?.canFly&&(state.flight.flown||!state.flight.airborne&&state.flight.airCombat?.mode==='disengage'))?{turnComplete:true}:{} )}};

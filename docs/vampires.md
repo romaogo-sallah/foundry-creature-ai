@@ -1,5 +1,7 @@
 # Vampire profiles — 0.41.0
 
+**Patch 0.41.1:** grounded vampires retain their normal turn-completion policy through the flight component. With automatic passing enabled, selecting End Turn with unused actions can now finish and pass instead of retrying indefinitely. See the [first encounter review](battle-analysis-2026-11-07-vampires.md).
+
 Import the supplied Vampire Guardian, Vampire Count and Vampire Mastermind actors. Use **unlinked tokens**, give allied vampires the same PF2e alliance, select each token and enable its AI through **Alt+W**. The full-auto macro also works. Reload every client with **Ctrl+F5** after updating all five modules.
 
 The three profiles can share a combat, including multiple copies. Their casting pools, immunity sources, grabs, forms and escape states belong to individual creatures. Native prepared statistics preserve the exports’ elite adjustments; the AI does not substitute the base compendium HP or damage.

@@ -1,0 +1,132 @@
+{
+  "date": "2026-11-07",
+  "version": "0.41.1",
+  "battle": {
+    "world": "arena",
+    "combatId": "qOeTcZUzcQbBU7y3",
+    "rounds": [
+      9,
+      10
+    ],
+    "aiReports": 54,
+    "trackerReused": true,
+    "activeRound": 10,
+    "activeTurnIndex": 5,
+    "windowKyiv": "2026-11-07 01:57?02:02; unchanged retry at 09:08",
+    "participants": {
+      "vampireGuardian": 1,
+      "vampireMastermind": 1,
+      "vampireCount": 2,
+      "ogreBoss": 6
+    }
+  },
+  "fix": {
+    "issue": "Grounded true-vampire flight decorator discarded the ordinary caster completion marker",
+    "source": "src/foundry/flight-runtime.mjs",
+    "change": "Delegate to the underlying decide method when neither flight nor mist state exists",
+    "regressions": "test/vampire-deadlock.test.mjs",
+    "isolatedBeforeFix": {
+      "before": {
+        "kind": "endTurn",
+        "turnComplete": true
+      },
+      "after": {
+        "kind": "endTurn",
+        "turnComplete": false
+      },
+      "method": "Isolated Node fixture with a grounded Count and End Turn as the sole offered action; no live Foundry execution"
+    }
+  },
+  "native": {
+    "method": "Read-only native scene/actor inspection and full Count snapshot/decision preview; no action executed, no ledger update, no combat turn advanced",
+    "version": "0.41.1",
+    "foundry": "14.369",
+    "pf2e": "8.6.1",
+    "preview": {
+      "chosen": "endTurn",
+      "turnComplete": true,
+      "remaining": 1,
+      "reachable": 74,
+      "unchanged": true
+    },
+    "actorCountBefore": 159,
+    "actorCountAfter": 159,
+    "moduleErrors": []
+  },
+  "findings": [
+    {
+      "id": "count-progress",
+      "status": "documented; not changed",
+      "evidence": "Step/Hide/Step, then Step/Step/End; steps valued 0.24 and 0, no immediate follow-up; any-spell role classification suppresses melee identity"
+    },
+    {
+      "id": "threat-estimation",
+      "status": "documented; not changed",
+      "evidence": "Saved Ogre level estimate 0 ?2 vs native 7; observer uses final attack modifier without MAP/range/condition normalization"
+    },
+    {
+      "id": "prone-recovery",
+      "status": "scoring concern; legal behavior; not changed",
+      "evidence": "Prone Ogre chose Trip 19.72 over Stand 6.6, then Strike 4.825 over Stand 1.65"
+    },
+    {
+      "id": "vision-targeting",
+      "status": "legitimate concealment failure; report wording needs improvement",
+      "roll": 3,
+      "dc": 5
+    },
+    {
+      "id": "lightning-bolt",
+      "status": "working",
+      "damage": [
+        26,
+        13
+      ],
+      "friendlyVictims": 0
+    },
+    {
+      "id": "dominate",
+      "status": "working",
+      "initialFailedSaves": 2,
+      "subsequentRecoverySuccesses": 1
+    },
+    {
+      "id": "guardian-bow",
+      "status": "working",
+      "round10Damage": [
+        47,
+        17,
+        17
+      ]
+    }
+  ],
+  "messageReferences": {
+    "countFirstStop": "VSMGw3eMSVQgXZKE",
+    "countRetry": "858xODO61gCkLCGn",
+    "countZeroValueStep": "xKHSU2iGYj1hLpKX",
+    "visionFailedCheck": "L4LvvAhoPd9oTjRq",
+    "visionReport": "S0yEllkGt9gklWVe",
+    "lightningReport": "eIDYpCzCywkwjAps",
+    "proneTrip": "0Jy0hRFvE1IKNCL8"
+  },
+  "tests": {
+    "passed": 1108,
+    "failed": 0,
+    "workers": 11,
+    "durationSeconds": 22.1,
+    "newCompletionRegressions": 3
+  },
+  "installation": {
+    "packages": 5,
+    "verifiedFiles": 259
+  },
+  "release": {
+    "file": "releases/pf2e-tactical-suite-0.41.1.zip",
+    "sha256": "55c07027215e56e7febca60e2343bf275e22241c8ad2a60ceb9c07de206c5899"
+  },
+  "limits": [
+    "Only the completion defect is changed in this patch; other scoring/reporting improvements are recommendations.",
+    "The fight was not replayed or advanced.",
+    "No live coverage of vampire melee, Drink Blood, Mist Escape, Fire Shield or lingering fire in these two battle rounds."
+  ]
+}
