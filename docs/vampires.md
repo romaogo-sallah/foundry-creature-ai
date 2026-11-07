@@ -47,6 +47,10 @@ In token controls, the GM’s **Vampire forms / vulnerabilities** tool (droplet 
 
 Fast healing keeps the native PF2e rule as its roll source. If Workbench’s persistent-healing automation is enabled, that automation owns HP application. Otherwise the suite applies the native vampire fast-healing message. Mist, staking and full destruction prevent this fallback. The Mastermind’s exported missing mist predicate is corrected on its own Fast Healing rule.
 
+## Completed encounter review
+
+The [completed vampire encounter](battle-analysis-2026-11-07-vampires-finished.md) records **16 taught spells of 21** in the Mastermind export. Patch 0.41.2 fixes lethal Vision of Death and Drained-5 death status handling; failed Grabs now report failure explicitly. No held target resulted from the three Grabs in that fight.
+
 ## Current boundaries
 
 These are combat profiles, not unrestricted interpretation of every action description. Children of the Night does not manufacture an unlimited supply of mid-combat creatures; spawn/servitor creation, blood transfusions and weekly Drained recovery remain downtime adjudication. Detect Magic, Message, Sigil, Telekinetic Hand and unprepared Illusory Disguise remain manual utility choices. The supplied Mastermind also has one prepared rank-4 slot referencing a missing spell item; the module cannot cast that absent spell. Mixed physical/fire Shield Blocks use native shared damage allocation and require a GM correction if fire damage is assigned to the fire-immune shield. Environmental cold severity remains part of manual hazard adjudication.

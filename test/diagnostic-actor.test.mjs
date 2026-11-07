@@ -15,7 +15,7 @@ test('diagnostic actors use only in-memory construction and preserve world actor
 test('diagnostic actors reject writes, including flags, embedded items and damage',()=>{
  class NativeActor{constructor(source){this.id=source._id;}}
  const actor=createDiagnosticActor({},{ActorClass:NativeActor,actors:new Map(),randomID:()=> 'detached'});
- for(const method of ['update','delete','setFlag','unsetFlag','createEmbeddedDocuments','updateEmbeddedDocuments','deleteEmbeddedDocuments','applyDamage'])
+ for(const method of ['update','delete','setFlag','unsetFlag','createEmbeddedDocuments','updateEmbeddedDocuments','deleteEmbeddedDocuments','applyDamage','toggleStatusEffect'])
   assert.throws(()=>actor[method]({}),/cannot persist/);
 });
 test('diagnostic construction detects an unexpected insertion into the world collection',()=>{

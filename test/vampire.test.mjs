@@ -94,7 +94,7 @@ test('Drink Blood check may fail; only new victims heal and overflow creates tem
 });
 for(const kind of ['guardian','count','mastermind'])test(`${kind} keeps its exported Drained 5 death rule`,async()=>{
  const f=fixture(kind);f.player.actor.conditionsSet.add('restrained');await f.player.actor.increaseCondition('drained',{value:4});await drinkBlood(f.adapter,f.player);
- assert.equal(f.player.actor.hasCondition('dead'),kind!=='guardian');
+ assert.equal(f.player.actor.statuses.has('dead'),kind!=='guardian');assert.equal(f.player.actor.hasCondition('dead'),false);
 });
 test('Haste enables only extra Strike/Stride; Slowed uses that extra action first',async()=>{
  const f=fixture(),spell={slug:'haste',name:'Haste',rank:3,uuid:'spell.haste'};globalThis.fromUuid=async()=>({toObject:()=>({name:'Haste',type:'effect',system:{rules:[{key:'GrantItem',uuid:'Compendium.pf2e.conditionitems.Item.nlCjDvLMf2EkV2dl',inMemoryOnly:true}]}})});

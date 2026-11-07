@@ -1,0 +1,124 @@
+{
+  "date": "2026-11-07",
+  "version": "0.41.2",
+  "battle": {
+    "world": "arena",
+    "combatId": "qOeTcZUzcQbBU7y3",
+    "rounds": [
+      9,
+      14
+    ],
+    "aiReports": 141,
+    "windowMessages": 357,
+    "trackerReused": true,
+    "participants": {
+      "vampireGuardian": 1,
+      "vampireMastermind": 1,
+      "vampireCount": 2,
+      "ogreBoss": 6
+    },
+    "outcome": "All six Ogres at zero HP; vampires survive; final AI spell action uncertain before fix"
+  },
+  "fixed": [
+    {
+      "issue": "Lethal death spell and Drained-5 use nonexistent PF2e dead condition",
+      "change": "Idempotent native death status; skip corpse fear; preserve action completion",
+      "observedVictim": "ufRyl8KhWBj2qKqn",
+      "ledger": {
+        "uncertain": true,
+        "done": false,
+        "actionsRemaining": 1
+      }
+    },
+    {
+      "issue": "Grab reports imply no clear outcome",
+      "change": "Explicit failure/success note"
+    }
+  ],
+  "spellCoverage": {
+    "totalItems": 21,
+    "taught": 16,
+    "manual": [
+      "detect-magic",
+      "illusory-disguise",
+      "message",
+      "sigil",
+      "telekinetic-hand"
+    ],
+    "orphanPreparedRank4SpellId": "22ucg1ZMw7HJ7npc",
+    "fightCasts": 4,
+    "fightDistinctSpells": 3,
+    "spellsUsed": [
+      "vision-of-death",
+      "lightning-bolt",
+      "fireball"
+    ],
+    "lastCastUsedBondedRecast": true,
+    "fireball": {
+      "hostileTargets": 5,
+      "friendlyTargets": 0,
+      "resolvedDamage": [
+        0,
+        29,
+        29,
+        58,
+        58
+      ]
+    }
+  },
+  "grab": {
+    "attempts": 3,
+    "successes": 0,
+    "drinkBloodExecutions": 0
+  },
+  "openFindings": [
+    {
+      "issue": "Avoiding plan allowed offensive advance before retreat",
+      "round": 12,
+      "tokenId": "ufRyl8KhWBj2qKqn",
+      "hp": "4/130",
+      "sequence": [
+        "Bellow",
+        "restricted Stride closer for throwing range",
+        "Stride away",
+        "Stride away"
+      ]
+    },
+    {
+      "issue": "Caster forecast reuses original-budget onHitValue after spending actions",
+      "status": "Code-inspection candidate; no quantified battle counterfactual"
+    },
+    {
+      "issue": "Hybrid vampire role/positioning weaknesses",
+      "reference": "docs/battle-analysis-2026-11-07-vampires.md"
+    }
+  ],
+  "verification": {
+    "tests": {
+      "passed": 1112,
+      "failed": 0,
+      "workers": 11,
+      "durationSeconds": 22.3,
+      "exitCode": 0
+    },
+    "nativeStatusApi": "Inspected local Foundry14 actor implementation: toggleStatusEffect creates ActiveEffect; dead is not PF2e ConditionManager condition",
+    "nativeBrowser": {
+      "completed": false,
+      "reason": "Initial detached interception mismatch; active world changed before corrected check",
+      "worldActorsCreated": 0
+    },
+    "liveReplay": false,
+    "oldLedgerRepaired": false,
+    "packageTests": {
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "release": {
+    "installed": true,
+    "archiveVerified": true,
+    "filesVerified": 262,
+    "archiveSha256": "D68513BE3528D476B183208815C87F44D11AE4F42252CF93C09F5179AED1876C",
+    "tag": "v0.41.2"
+  }
+}

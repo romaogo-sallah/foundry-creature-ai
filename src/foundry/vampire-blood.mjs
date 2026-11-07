@@ -1,5 +1,6 @@
 import {vampireAbility,vampireState} from './vampire-state.mjs';
 import {concealmentCheck} from './environment-rolls.mjs';
+import {markKilled} from './death-status.mjs';
 const ns='foundry-creature-ai',conditionUUID={grabbed:'kWc1fhmv9LBiTuei',restrained:'VcDeM8A5oI6VqhbM'};
 export const bloodEligible=actor=>actor?.modeOfBeing!=='undead'&&actor?.modeOfBeing!=='construct'&&
  !(actor?.system?.traits?.value??[]).some(t=>['undead','construct','incorporeal','ooze'].includes(t));
@@ -21,7 +22,8 @@ export async function vampireGrab(adapter,target,ledger,{valid=()=>true}={}){
    flags:{[ns]:{vampireGrab:{sourceTokenId:adapter.token.id,expiresRound:game.combat.round+1},escapeDC:adapter.actor.getStatistic('athletics').dc.value}}}]);
  }
  if(check.degreeOfSuccess===0&&!adapter.actor.hasCondition('prone'))await adapter.actor.increaseCondition('prone');
- return {resolved:true,lastAction:{kind:'grab',targetId:target.id},note:check.degreeOfSuccess===0?'Grab critically failed. The target forces the vampire Prone (the automatic counter choice). MAP is unchanged.':'Native Athletics resolved Grab without applying or increasing MAP.'};
+ return {resolved:true,lastAction:{kind:'grab',targetId:target.id},note:check.degreeOfSuccess===0?'Grab critically failed. The target forces the vampire Prone (the automatic counter choice). MAP is unchanged.':
+  check.degreeOfSuccess===1?'Grab failed; no restraint was applied. MAP is unchanged.':`Grab succeeded: the target is ${check.degreeOfSuccess===3?'restrained':'grabbed'}. MAP is unchanged.`};
 }
 export async function drinkBlood(adapter,target,{valid=()=>true}={}){
  if(!bloodEligible(target.actor)||!target.actor.hasCondition('grabbed','restrained','paralyzed','unconscious'))return {skipped:true,skipReason:'Drink Blood requires a living held or helpless victim'};
@@ -45,7 +47,7 @@ export async function drinkBlood(adapter,target,{valid=()=>true}={}){
   if(temporary>(adapter.actor.hitPoints.temp??0))await adapter.actor.createEmbeddedDocuments('Item',[{name:'Drink Blood: temporary HP',type:'effect',img:'icons/svg/blood.svg',
    system:{slug:'vampire-blood-temp-hp',duration:{value:-1,unit:'unlimited',expiry:null,sustained:false},rules:[{key:'TempHP',value:temporary}]},flags:{[ns]:{vampireBlood:true}}}]);
  }
- if(adapter.vampireSpec.killAtFive&&value>=5){await target.actor.update({'system.attributes.hp.value':0});await target.actor.increaseCondition('dead');}
+ if(adapter.vampireSpec.killAtFive&&value>=5){await target.actor.update({'system.attributes.hp.value':0});await markKilled(target);}
  return {resolved:true,lastAction:{kind:'drinkBlood',targetId:target.id},note:`Drink Blood: Drained ${value}; restored ${restored} HP${temporary?`; ${temporary} temporary HP`:''}. Already-drained victims grant no healing.`};
 }
 export async function releaseVampireGrabs({phase,source,round=game.combat?.round}={}){

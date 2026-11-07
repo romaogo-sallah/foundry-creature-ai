@@ -11,6 +11,7 @@ import {applySupportSpell} from './support-spells.mjs';
 import {applyDomination,dominateImmune} from './domination.mjs';
 import {createLingeringFire} from './lingering-fire.mjs';
 import {executeCounteract} from './counteract-spells.mjs';
+import {markKilled} from './death-status.mjs';
 const outcomes=['criticalFailure','failure','success','criticalSuccess'];
 export async function executeSpellOutcomes(adapter,spell,entry,choice,definition,{valid,attackNumber=1}){
  const healing=definition.kind==='heal',support=healing||['ward','buff','counteract'].includes(definition.kind),target=choice.area?null:support?adapter.liveSpellTarget?.(choice.targetId):adapter.liveTarget(choice.targetId);
@@ -79,9 +80,9 @@ export async function executeSpellOutcomes(adapter,spell,entry,choice,definition
    }else pause=true;
   }
   if(!valid())throw new Error('Spell interrupted before its source-tracked effects');
+  if(definition.deathAtZero&&adapter.config.applyDamage&&subject.actor.hitPoints.value<=0){await markKilled(subject);continue;}
   await applyDefinedSpellEffects({source:{actor:adapter.actor,token:adapter.token},target:subject,spell,definition,degree,dc:entry.statistic.dc.value,skipPersistent:postDamage===0,
    castId:commitment?.id,enemySignature:wardEnemy?.actor.signature??wardEnemy?.actor.uuid});
-  if(definition.deathAtZero&&adapter.config.applyDamage&&subject.actor.hitPoints.value<=0&&!subject.actor.hasCondition('dead'))await subject.actor.increaseCondition('dead');
  }
  return {resolved:true,pause,lastAction:{kind:'castSpell',spellId:spell.id,targetId:target?.id},
   note:`${spell.name}: ${affected.length} target(s) resolved with native casting resources and source-tracked effects.`};

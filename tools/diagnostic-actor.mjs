@@ -14,7 +14,9 @@ export function createDiagnosticActor(data,{
     throw new Error('Diagnostic construction unexpectedly changed the world actor collection');
   // Native preparation and updateSource are in-memory operations. Persistent
   // mutations are forbidden on this object, including accidental test damage.
-  for(const method of ['update','delete','setFlag','unsetFlag','createEmbeddedDocuments','updateEmbeddedDocuments','deleteEmbeddedDocuments','applyDamage'])
+  // Native status toggles call ActiveEffect.create directly, bypassing the
+  // actor createEmbeddedDocuments guard; intercept that entry point as well.
+  for(const method of ['update','delete','setFlag','unsetFlag','createEmbeddedDocuments','updateEmbeddedDocuments','deleteEmbeddedDocuments','applyDamage','toggleStatusEffect'])
     Object.defineProperty(actor,method,{configurable:true,value(){throw new Error(`Diagnostic actors cannot persist ${method}; construct new source data instead`);}});
   return actor;
 }

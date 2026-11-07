@@ -5,6 +5,8 @@ export function fixture(options={}){
  const slugs=['sickened','stunned','clumsy','frightened','enfeebled','persistent-damage','drained','blinded','dazzled'];
  game.pf2e.ConditionManager={getCondition:slug=>slugs.includes(slug)?{sourceId:`Compendium.pf2e.conditionitems.Item.${slug}`,toObject:()=>({name:slug,type:'condition',system:{slug,value:{isValued:slug!=='persistent-damage',value:slug==='persistent-damage'?null:1}},flags:{}})}:null};
  for(const actor of [f.actor,f.player.actor]){
+  actor.statuses=new Set();actor.toggleStatusEffect=async(slug,{active,overlay}={})=>{
+   if(active)actor.statuses.add(slug);else actor.statuses.delete(slug);f.calls.push(['status',actor.id,slug,{active,overlay}]);};
   Object.defineProperty(actor.itemTypes,'condition',{get:()=>[...actor.items.values()].filter(i=>i.type==='condition')});
   const sync=()=>{for(const slug of slugs)if(actor.itemTypes.condition.some(c=>c.slug===slug))actor.conditionsSet.add(slug);else actor.conditionsSet.delete(slug);};
   const get=actor.getCondition;actor.getCondition=(slug,{all=false}={})=>{

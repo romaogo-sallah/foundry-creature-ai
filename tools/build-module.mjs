@@ -52,6 +52,10 @@ const vampireReview=await readFile(new URL('docs/battle-analysis-2026-11-07-vamp
 for(const id of ['foundry-creature-ai','pf2e-tactical-conditions'])await writeFile(path.join(dist,id,'battle-analysis-2026-11-07-vampires.md'),vampireReview
  .replaceAll('(../src/','(https://github.com/romaogo-sallah/foundry-creature-ai/blob/main/src/')
  .replaceAll('(../research/','(https://github.com/romaogo-sallah/foundry-creature-ai/blob/main/research/'));
+const finishedReview=await readFile(new URL('docs/battle-analysis-2026-11-07-vampires-finished.md',root),'utf8');
+for(const id of ['foundry-creature-ai','pf2e-tactical-conditions'])await writeFile(path.join(dist,id,'battle-analysis-2026-11-07-vampires-finished.md'),finishedReview
+ .replaceAll('(../src/','(https://github.com/romaogo-sallah/foundry-creature-ai/blob/main/src/')
+ .replaceAll('(../research/','(https://github.com/romaogo-sallah/foundry-creature-ai/blob/main/research/'));
 await cp(new URL('docs/spellcaster-framework.md',root),new URL('spellcaster-framework.md',output));
 await cp(new URL('docs/condition-handling.md',root),new URL('condition-handling.md',output));
 await cp(new URL('docs/condition-ai.md',root),new URL('condition-ai.md',output));
