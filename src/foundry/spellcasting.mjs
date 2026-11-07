@@ -2,7 +2,7 @@ import { concealmentCheck } from './environment-rolls.mjs';
 import { clearAttackPath } from './attack-path.mjs';
 import { environmentBetween } from './environment-zones.mjs';
 import { spellDefenseCheck, SPELL_OPTIONS } from './spell-checks.mjs';
-import { inSpellArea, sameSpellLevel, spellRegion } from './spell-areas.mjs';
+import { inSpellArea, sameSpellLevel, spellRegion,areaContains } from './spell-areas.mjs';
 import { createGreaseZone, applyTangleVine } from './spell-zones.mjs';
 import {waitForPresentation} from './ai-presentation.mjs';
 import {applyConditionSpell,beginSustainedCast,grantVampiricTempHP,temporarySpellImmunity} from './ongoing-spells.mjs';
@@ -12,6 +12,8 @@ import {resolveSpellBinding,spellDescriptor} from './spell-catalog.mjs';
 import {executeSpellOutcomes} from './spell-outcomes.mjs';
 import {observeSpellCast,witnessedSpellCasts} from './spell-observations.mjs';
 import {vampireForm,isTrueVampire} from './vampire-state.mjs';
+import {consumeSureStrike} from './spell-attack-buffs.mjs';
+import {resistSpellDisruption} from './spell-disruption.mjs';
 
 const ns = 'foundry-creature-ai';
 const outcomes = ['criticalFailure','failure','success','criticalSuccess'];
@@ -46,19 +48,23 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
     if (!overlay) throw new Error('The Ignition melee variant is unavailable');
     spell = original.loadVariant({ overlayIds: [overlay._id] });
   }
+  if(choice.spellSlug==='howling-blizzard'&&choice.actionCost===3){
+    const overlay=original.overlays?.contents?.find(o=>o.system?.time?.value==='3');
+    if(overlay)spell=original.loadVariant({castRank:binding.castRank,overlayIds:[overlay._id]});
+  }
   if(definition?.domination&&isTrueVampire(adapter.actor)&&!spell.traits.has('visual')&&spell.clone)
     spell=spell.clone({'system.traits.value':[...spell.traits,'visual']},{keepId:true});
   // Committing Cast a Spell spends its native resource even if a subsequent
   // reaction disrupts it. The action ledger has already reserved its actions.
   if(binding?.bonded)await binding.bonded.update({'system.frequency.value':0});
+  else if(binding?.soulCage)await binding.soulCage.update({'system.frequency.value':0});
   else if (!original.atWill&&!binding?.atWill&&!await entry.consume(original, spell.rank,binding?.slotId)) throw new Error('The spell resource could not be spent; inspect the reserved action');
   await spellMessage(spell,Boolean(adapter.config.applyDamage),{targetIds:choice.targetIds??[choice.targetId].filter(Boolean)});
+  if(await adapter.reactions?.beforeSpell?.({source:adapter.token,spell,valid})&&!await resistSpellDisruption(adapter.actor,adapter.token))return {resolved:true,note:'Counterspell disrupted the casting; its actions and resource remain spent.'};
   if ((spell.traits?.has?.('manipulate')??true)&&adapter.config.pauseForReactions !== false && adapter.reactions) {
     const interrupt = await adapter.reactions.action({ mover: adapter.token, kind: 'manipulate', valid, applyDamage: adapter.config.applyDamage });
     if (interrupt.endTurn || interrupt.pause) return interrupt;
-    if(interrupt.disrupted){const steady=adapter.actor.itemTypes.action.some(a=>(a.slug??a.name.toLowerCase().replaceAll(' ','-'))==='steady-spellcasting');
-      const roll=steady?await new Roll('1d20').evaluate():null;if(roll)await roll.toMessage({speaker:ChatMessage.getSpeaker({token:adapter.token.document}),flavor:'Steady Spellcasting: DC 15',flags:{[ns]:{managed:true}}});
-      if(!roll||roll.total<15)return {resolved:true,note:'Reactive Strike disrupted the spell. Its actions and slot remain spent.'};}
+    if(interrupt.disrupted&&!await resistSpellDisruption(adapter.actor,adapter.token))return {resolved:true,note:'Reactive Strike disrupted the spell. Its actions and slot remain spent.'};
   }
   if (!valid() || adapter.turnEndReason()) return { resolved: true, endTurn: Boolean(adapter.turnEndReason()), incapacitationReason: adapter.turnEndReason() };
   if(vampireForm(adapter.actor)==='mist')return {resolved:true,note:'Mist transformation prevented completion of the spell; its actions and resources remain spent.'};
@@ -98,13 +104,15 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
   }
   if (!choice.area) {
     if (adapter.liveTarget(choice.targetId) !== target) return { resolved: true, note: 'The spell lost its target after a reaction. Its actions and resources remain spent.' };
-    if (!await concealmentCheck(adapter.token,target,{valid})) return { resolved: true, note: 'Spell targeting flat check failed; actions and resources remain spent.' };
+    if (!await concealmentCheck(adapter.token,target,{valid,attack:true})) return { resolved: true, note: 'Spell targeting flat check failed; actions and resources remain spent.' };
     const map = Math.min(2, ledger.attacksMade - 1);
     const roll = await spell.rollAttack(null,map+1,{ target: target.actor, token: adapter.token.document, skipDialog: true,
       extraRollOptions: SPELL_OPTIONS });
+    if(roll)await consumeSureStrike(adapter.actor);
     if (!Number.isInteger(roll?.degreeOfSuccess)) throw new Error('The spell attack was cancelled or unresolved');
     if (!valid()) throw new Error('The turn changed during the spell attack');
     const hit = roll.degreeOfSuccess >= 2, outcome = outcomes[roll.degreeOfSuccess];
+    if(choice.melee)await adapter.reactions?.afterStrike?.({source:adapter.token,target,strike:{item:{type:'spell',isMelee:true,traits:spell.traits}},degree:roll.degreeOfSuccess,stage:'hit',applyDamage:adapter.config.applyDamage,valid});
     if (hit && choice.spellSlug === 'ignition') {
       const damage = await spellDamage(spell,adapter.token,{target,outcome,map,autoApply:Boolean(adapter.config.applyDamage)});
       if (adapter.config.applyDamage) {
@@ -126,7 +134,7 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
   // Only the execution layer may inspect those real positions.
   const region = spellRegion(choice.area.shapes,adapter.token);
   const affected = canvas.tokens.placeables.filter(token => (choice.spellSlug==='grease'||token !== adapter.token) && token.actor?.isOfType?.('creature') &&
-    sameSpellLevel(adapter.token,token) && inSpellArea(token,region) && clearAttackPath(adapter.token,token));
+    areaContains(adapter.token,token,choice.area) && clearAttackPath(adapter.token,token));
   if (choice.spellSlug === 'grease') {
     await createGreaseZone(adapter,spell,choice.area,affected,{valid});
     return { resolved: true, note: 'Grease covers four squares for 1 minute. Its initial checks and later ground movement are automated.' };

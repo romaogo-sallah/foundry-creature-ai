@@ -19,6 +19,9 @@ import {PF2eSpellcasterAdapter} from './spellcaster-adapter.mjs';
 import {attachSpellcastingSystem} from './spellcasting-runtime.mjs';
 import {PF2eVampireAdapter,vampireSpec,VAMPIRES} from './vampire-adapter.mjs';
 import {attachQuickenedSystem} from './quickened-runtime.mjs';
+import {PF2eCinderDragonAdapter,isCinderDragon} from './cinder-dragon-adapter.mjs';
+import {PF2eLichAdapter,isLich} from './lich-adapter.mjs';
+import {attachPitSystem} from './pit-adapter.mjs';
 
 const profiles = [];
 export function registerCreatureProfile(profile) {
@@ -27,6 +30,8 @@ export function registerCreatureProfile(profile) {
   }
   profiles.push(Object.freeze(profile));
 }
+registerCreatureProfile({id:'cinder-dragon',label:'Young Cinder Dragon (martial or spellcaster)',roles:['dragon','flying boss','area control'],Adapter:PF2eCinderDragonAdapter,matches:isCinderDragon});
+registerCreatureProfile({id:'lich',label:'Lich',roles:['caster','controller'],Adapter:PF2eLichAdapter,matches:isLich});
 registerCreatureProfile({ id: 'wolf', label: 'Wolf', roles: ['skirmisher', 'pack hunter'], Adapter: PF2eWolfAdapter,
   matches: actor => actor?.type === 'npc' && actor.system?.traits?.value?.includes('animal') &&
     actor.itemTypes?.action?.some(item => item.slug === 'knockdown') &&
@@ -67,7 +72,7 @@ export function creatureProfile(actor) {
 }
 export function createCreatureAdapter(token, wolfProfile, options) {
   const profile = creatureProfile(token.actor);
-  return attachFleeingSystem(attachConfusionSystem(attachBehaviorSystem(attachQuickenedSystem(attachFlightSystem(attachSpellcastingSystem(new profile.Adapter(token, wolfProfile, options)))))));
+  return attachFleeingSystem(attachConfusionSystem(attachBehaviorSystem(attachPitSystem(attachQuickenedSystem(attachFlightSystem(attachSpellcastingSystem(new profile.Adapter(token, wolfProfile, options))))))));
 }
 export function supportedProfiles() { return [...profiles.map(({ id, label, roles }) => ({ id, label, roles })),
   {id:'spellcaster',label:'Spellcaster NPC (shared spell library)',roles:['caster']},

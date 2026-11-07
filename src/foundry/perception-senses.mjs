@@ -15,6 +15,9 @@ export function nonvisualSense(observer, subject) {
 }
 
 export function sensoryDetection(observer, subject, detection) {
+  if(detection.state==='hidden'&&detection.source==='invisibility'&&!observer.actor?.hasCondition('blinded')&&
+   (subject.actor.flags?.['foundry-creature-ai']?.revealed||(observer.actor.itemTypes?.effect??[]).some(e=>e.slug==='spell-effect-see-the-unseen'||e.flags?.['foundry-creature-ai']?.supportSpell?.slug==='see-the-unseen')))
+   return {...detection,state:'observed',source:'revealed-invisibility'};
   if(!observer.actor?.hasCondition('blinded'))return detection;
   const sense=nonvisualSense(observer,subject);
   if(sense?.acuity==='precise')return detection;

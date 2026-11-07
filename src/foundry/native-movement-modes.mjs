@@ -8,6 +8,7 @@ export function registerMovementModes(actions=CONFIG.Token?.movement?.actions){
       document.actor.system.attributes?.speed?.total??0)>=10};
   actions.sneak??={label:'Sneak',icon:'fa-solid fa-user-ninja',order:0.2,terrainAction:'walk',
     canSelect:walking};
+  actions.jump??={label:'Leap / Long Jump',icon:'fa-solid fa-person-running',order:0.3,terrainAction:'walk',canSelect:walking};
 }
 
 export function selectedGroundAction(document,points=[]){

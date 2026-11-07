@@ -20,10 +20,17 @@ import {installDomination} from '../foundry/domination.mjs';
 import {installLingeringFire} from '../foundry/lingering-fire.mjs';
 import {installFireShield} from '../foundry/fire-shield.mjs';
 import {installVampireControls,openVampireControls} from '../foundry/vampire-controls.mjs';
+import {installMonsterAbilities} from '../foundry/monster-abilities.mjs';
+import {installMonsterReactions} from '../foundry/monster-reactions.mjs';
+import {installWeather} from '../foundry/spell-weather.mjs';
+import {installIceWalls,openIceWalls} from '../foundry/ice-wall-controls.mjs';
 getRulesRuntime().register('conditions',{
   init:()=>{registerSpellProfiles();registerConditionCompatibility();registerRulesSetting('conditionRestrictions',{name:'Enforce condition action and reaction rules',scope:'world',config:true,type:Boolean,default:true});installRestrictionMovement();},
   start:async runtime=>{
     loadSpellProfiles();Hooks.on('updateSetting',setting=>{if(setting.key?.endsWith('.spellProfiles'))loadSpellProfiles();});
+    installMonsterAbilities({reactions:runtime.reactions,onError:runtime.onError});
+    installWeather({reactions:runtime.reactions,onError:runtime.onError});installIceWalls({reactions:runtime.reactions,onError:runtime.onError});
+    installMonsterReactions({reactions:runtime.reactions,packageId:CONDITIONS_ID});
     installSpellAlliances({packageId:CONDITIONS_ID});
     installVampireLifecycle({packageId:CONDITIONS_ID,reactions:runtime.reactions,onError:runtime.onError});
     installDomination({reactions:runtime.reactions,onError:runtime.onError});
@@ -37,6 +44,7 @@ getRulesRuntime().register('conditions',{
     installActionRestrictions({packageId:CORE_ID});installGreaseTerrain({packageId:CORE_ID});installGreaseLandingHooks(options);
   },
   controls:[{name:'conditionActions',title:'Condition actions / sources',icon:'fa-solid fa-heart-pulse',order:106,run:()=>openConditionActions()},
+    {name:'iceWalls',title:'Ice walls: attack a section',icon:'fa-solid fa-icicles',order:111,run:()=>openIceWalls()},
     {name:'vampireStates',title:'Vampire forms / vulnerabilities',icon:'fa-solid fa-droplet',order:109,gmOnly:true,run:()=>openVampireControls()},
     {name:'spellProfiles',title:'Spell AI / shared definitions',icon:'fa-solid fa-book-sparkles',order:108,gmOnly:true,run:()=>openSpellProfiles()},
     {name:'ongoingSpells',title:'Ongoing spells / Sustain',icon:'fa-solid fa-wand-sparkles',order:105,run:()=>openOngoingSpells()}],

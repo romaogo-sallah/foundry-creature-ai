@@ -8,12 +8,13 @@ export async function applySupportSpell(source,target,spell,definition){
  if(definition.effectId){const native=await fromUuid(`Compendium.pf2e.spell-effects.Item.${definition.effectId}`);if(!native)throw new Error('Missing native spell effect: '+spell.name);raw=native.toObject();delete raw._id;}
  if(definition.condition){const conditions={concealed:'DmAIPqOBomZ7H95W',invisible:'zJxUflt9np0q4yML'};
   raw.system.rules=[{key:'GrantItem',uuid:`Compendium.pf2e.conditionitems.Item.${conditions[definition.condition]}`,inMemoryOnly:true}];}
+ if(definition.energyWard){if(!['acid','cold','electricity','fire','sonic'].includes(definition.energyType))throw new Error('Resist Energy requires a known energy type');raw.system.rules=[{key:'Resistance',type:definition.energyType,value:spell.rank>=7?15:spell.rank>=4?10:5}];}
  // Native Fire Shield supplies shield statistics but assumes raised. This
  // component separates the buff from the later one-action Raise a Shield.
  let shieldId;
  if(spell.slug==='fire-shield'){shieldId=await createFireShield(target.actor,spell);raw.system.rules=raw.system.rules.filter(r=>r.key==='Resistance'||r.path==='flags.system.fireShield.resistance');}
  const duration=spell.slug==='invisibility'&&spell.rank>=4?60:definition.duration;
- raw.system.duration={value:-1,unit:'unlimited',expiry:null,sustained:false};raw.system.level={value:spell.rank};
+ if(!['sure-strike','shield'].includes(spell.slug))raw.system.duration={value:-1,unit:'unlimited',expiry:null,sustained:false};raw.system.level={value:spell.rank};
  raw.system.context={origin:{actor:source.actor.uuid,token:source.token.document.uuid,item:spell.uuid,spellcasting:null,rollOptions:[]}};
  raw.flags={...raw.flags,[ns]:{supportSpell:{slug:spell.slug,sourceTokenId:source.token.id,expiresAt:game.time.worldTime+duration,rank:spell.rank,shieldId},
   definedSpell:{castId:foundry.utils.randomID(),isRoot:true,slug:spell.slug,sourceTokenId:source.token.id,targetId:target.id,expiresAt:game.time.worldTime+duration,clearWhenEmpty:false}}};

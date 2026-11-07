@@ -1,6 +1,7 @@
 import { terrainBehavior } from './terrain-contract.mjs';
 import { GREASE_SCRIPT,LEGACY_GREASE_SCRIPT } from './spell-zones.mjs';
 import {RAMP_BEHAVIOR_TYPE} from './ramp-geometry.mjs';
+import {PIT_BEHAVIOR_TYPE} from './pit-geometry.mjs';
 
 // Measurement consumes terrain annotations; it does not discover Regions itself.
 // Regionalize only new movement, preserving the recorded history's terrain and
@@ -13,7 +14,7 @@ export function terrainMovementPath(token, waypoints) {
 export function unsupportedMovementRegions(scene) {
   return (scene.regions?.contents ?? []).filter(region =>
     (region.behaviors?.contents ?? []).some(behavior => !behavior.disabled &&
-      !['defineSurface','modifyMovementCost','suppressWeather',RAMP_BEHAVIOR_TYPE].includes(behavior.type) &&
+      !['defineSurface','modifyMovementCost','suppressWeather',RAMP_BEHAVIOR_TYPE,PIT_BEHAVIOR_TYPE].includes(behavior.type) &&
       !terrainBehavior(behavior,'environment') && !terrainBehavior(behavior,'hazard') &&
       !(behavior.type==='executeScript' && [GREASE_SCRIPT,LEGACY_GREASE_SCRIPT].includes(behavior.system?.source) && behavior.flags?.['foundry-creature-ai']?.spellTerrain==='grease')));
 }

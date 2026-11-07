@@ -11,7 +11,7 @@ import {aerialTactics,recordAerialPlan} from './aerial-tactics.mjs';
 import {isTrueVampire} from './vampire-state.mjs';
 const attached=new WeakSet(),ns='foundry-creature-ai';
 export function attachFlightSystem(adapter){
-  if(attached.has(adapter)||!flySpeed(adapter.actor)&&!isTrueVampire(adapter.actor))return adapter;
+  if(attached.has(adapter)||!flySpeed(adapter.actor)&&!isTrueVampire(adapter.actor)&&!adapter.hasSpellcasting)return adapter;
   attached.add(adapter);
   const snapshot=adapter.snapshot.bind(adapter),candidates=adapter.candidates.bind(adapter),execute=adapter.execute.bind(adapter),prepare=adapter.prepareTurn.bind(adapter),record=adapter.recordOutcome.bind(adapter),decide=adapter.decide.bind(adapter);
   const flightSnapshot=async(ledger,options={})=>{

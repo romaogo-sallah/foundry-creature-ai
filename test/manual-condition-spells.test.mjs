@@ -31,7 +31,7 @@ test('manual casting uses the same resolver even when the caster is a PC rather 
 test('AI-managed saves and unrelated saves are left to their original resolver',async()=>{
  const f=setup(),calls=[];const native=(...args)=>calls.push(args);
  await wrapConditionSave(native,{}, {type:'saving-throw',item:f.spell,options:[`${ns}:managed`]});
- await wrapConditionSave(native,{}, {type:'saving-throw',item:{slug:'fear'},options:[]});
+ await wrapConditionSave(native,{}, {type:'saving-throw',item:{slug:'banishment'},options:[]});
  assert.equal(calls.length,2);assert.equal(f.player.actor.itemTypes.effect.length,0);
  assert.deepEqual(calls[1][1].options,[]);
 });

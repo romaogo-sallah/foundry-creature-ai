@@ -1,4 +1,6 @@
-# Shared caster AI — 0.40.0
+# Shared caster AI - 0.42.0
+
+Version 0.42.0 expands the shared library to **48 definitions**, including the [Cinder Dragon and Lich components](cinder-dragon-and-lich.md). Dero now recognizes Revealing Light as its fourteenth taught unique spell, preserving the supplied export's expended innate use. Darkness and Levitate still require separate handlers; the older coverage notes below describe the initial 0.40 release.
 
 NPC spellcasting is a reusable capability rather than a monster-specific spell list. An NPC with native spellcasting entries receives the generic caster fallback when it has no taught creature kit. Existing taught kits also gain the spell capability while retaining their own Strikes, abilities, movement and reactions. The Dero and Goblin Pyro use the same spell library.
 

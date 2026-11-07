@@ -1,5 +1,7 @@
 import {clearLevelWalls} from './vertical-space.mjs';
 import {flySpeed} from './flight-costs.mjs';
+import {pitBlocksRay} from './pit-geometry.mjs';
+import {iceBlocksRay} from './ice-wall-geometry.mjs';
 // Token.center is only 2D in Foundry 14. Use each token's own native ray height,
 // including for a target of a different depth and hypothetical movement origins.
 export function tokenRayPoint(token, type = 'move', center) {
@@ -13,6 +15,8 @@ export function tokenRayPoint(token, type = 'move', center) {
 
 function clearRay(attacker, target, type, center) {
   const origin = tokenRayPoint(attacker, type, center), destination = tokenRayPoint(target, type);
+  if(pitBlocksRay(attacker,target,origin,destination))return false;
+  if(iceBlocksRay(attacker.document.parent,origin,destination,attacker.document.level))return false;
   const across=flySpeed(attacker.actor)>0||flySpeed(target.actor)>0;
   if(across&&globalThis.CONFIG?.Canvas?.polygonBackends?.[type]?.testCollision){
     if(!clearLevelWalls(attacker,origin,destination,type))return false;

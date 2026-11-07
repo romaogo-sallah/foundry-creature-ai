@@ -36,7 +36,7 @@ export class PF2eVampireAdapter extends PF2eSpellcasterAdapter{
    strike.available=!linked||linked.system.equipped.carryType==='held'&&linked.system.equipped.handsHeld>=(strike.ranged?2:1);
    if(strike.ranged){strike.available&&=this.ammunition()>0;strike.rangeAversion=0.06;}
    const grab=native?.item.attackEffects?.includes?.('grab')||native?.item.system.attackEffects?.value?.includes('grab');
-   if(grab&&state.actionsRemaining>=2)strike.onHitValue=5+(state.actionsRemaining>=3?this.vampireSpec.drain*3+Math.min(6,this.actor.hitPoints.max-this.actor.hitPoints.value):0);
+   if(grab)strike.onHitBenefits=[{minimumActions:2,value:5},{minimumActions:3,value:this.vampireSpec.drain*3+Math.min(6,this.actor.hitPoints.max-this.actor.hitPoints.value)}];
    if(this.profileId==='vampire-guardian')strike.precisionDamage=3.5;
   }
   for(const enemy of state.enemies){const target=this.perceivedTarget(enemy);enemy.bloodEligible=bloodEligible(target.actor);enemy.drained=target.actor.getCondition('drained')?.value??0;
@@ -48,8 +48,8 @@ export class PF2eVampireAdapter extends PF2eSpellcasterAdapter{
  extraCasterActions(state){
   if(vampireForm(this.actor)==='mist')return [];
   const result=[],last=state.vampire?.lastStrike;
-  if(state.actionsRemaining>0&&fireShield(this.actor)&&!this.actor.attributes.shield?.raised)
-   result.push({id:'vampire:raise-shield',kind:'raiseFireShield',legal:true,actionCost:1,assessment:{value:state.self.threatened?9:4},scoringTerms:[{label:'Raise Fire Shield for AC and a blocking reaction',contribution:state.self.threatened?9:4}]});
+  if(state.actionsRemaining>0&&!state.plannedCapabilities?.includes('raise-shield')&&fireShield(this.actor)&&!this.actor.attributes.shield?.raised)
+   result.push({id:'vampire:raise-shield',kind:'raiseFireShield',legal:true,actionCost:1,features:{onceKey:'raise-shield'},assessment:{value:state.self.threatened?9:4},scoringTerms:[{label:'Raise Fire Shield for AC and a blocking reaction',contribution:state.self.threatened?9:4}]});
   const airThreat=state.enemies.some(e=>(e.awareness?.position?.elevation??this.perceivedTarget(e).document.elevation)>this.token.document.elevation+10);
   if(state.actionsRemaining>0&&state.vampire?.form==='vampire'&&airThreat&&state.enemies.every(e=>!e.inReach))
    result.push({id:'vampire:bat',kind:'vampireForm',form:'bat',legal:true,actionCost:1,assessment:{value:12},scoringTerms:[{label:'Change into a giant bat to reach airborne opponents',contribution:12}]});

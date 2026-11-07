@@ -1,5 +1,6 @@
 import {isTrueVampire,vampireAbility,vampireState,escapingMist} from './vampire-state.mjs';
 import {prepareFireShieldDamage,finishFireShieldDamage} from './fire-shield.mjs';
+import {magicShield,finishMagicShield} from './spell-attack-buffs.mjs';
 const ns='foundry-creature-ai',locks=new WeakMap(),formFlag='vampireFormEffect';
 export async function setVampireForm(token,form,{escape=false}={}){
  const actor=token.actor,previous=vampireState(actor);
@@ -43,8 +44,10 @@ export async function vampireDamage(wrapped,options,...rest){
  if(escapingMist(this))return this;
  if(isTrueVampire(this)&&vampireState(this).staked&&(typeof options.damage==='number'&&options.damage<0||options.damage?.kinds?.has('healing')))return this;
  const shield=await prepareFireShieldDamage(this,options);
+ const cantrip=options.shieldBlockRequest&&!options.final?magicShield(this):null;
  const result=await wrapped(options,...rest);
  await finishFireShieldDamage(this,shield);
+ await finishMagicShield(this,cantrip);
  const token=canvas.tokens.placeables.find(t=>t.actor===this);if(token)await ensureMistEscape(token);
  return result;
 }
@@ -56,7 +59,10 @@ export async function resolveVampireHealing(message){
  const amount=message.rolls.reduce((n,r)=>n+(r.total??0),0);if(amount>0)await actor.applyDamage({damage:-amount,token:message.token,item:message.item,rollOptions:new Set([`${ns}:managed`]),skipIWR:true});
 }
 export function installVampireLifecycle({reactions,onError,packageId}){
- if(CONFIG.Actor?.documentClass?.prototype?.applyDamage)libWrapper.register(packageId,'CONFIG.Actor.documentClass.prototype.applyDamage',vampireDamage,'MIXED');
+ if(CONFIG.Actor?.documentClass?.prototype?.applyDamage)libWrapper.register(packageId,'CONFIG.Actor.documentClass.prototype.applyDamage',async function(wrapped,options,...rest){
+  const before=(this.hitPoints?.value??0)+(this.hitPoints?.temp??0),result=await vampireDamage.call(this,wrapped,options,...rest);
+  await reactions.afterDamage?.(this,options,before,(this.hitPoints?.value??0)+(this.hitPoints?.temp??0));return result;
+ },'MIXED');
  Hooks.on('updateActor',actor=>{if(game.users.activeGM?.id!==game.user.id)return;const token=canvas.tokens.placeables.find(t=>t.actor===actor);
   if(token&&actor.hitPoints?.value<=0)void reactions.resolve(()=>ensureMistEscape(token)).catch(onError);});
  Hooks.on('createChatMessage',message=>{if(game.users.activeGM?.id===game.user.id)void reactions.resolve(()=>resolveVampireHealing(message)).catch(onError);});

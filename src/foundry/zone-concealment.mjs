@@ -1,5 +1,6 @@
 import { zoneConfig } from './environment-zones.mjs';
 import { tokenRayPoint } from './attack-path.mjs';
+import {pointInVolume} from '../shared/area-volume.mjs';
 
 const namespace = 'foundry-creature-ai';
 const marker = 'zone-concealment';
@@ -34,7 +35,8 @@ export function occupantConcealment(document, scene = document.parent) {
     const config = zoneConfig(region), levels = region.levels;
     const sameLevel = !levels || (levels.size ?? levels.length) === 0 ||
       (levels.has ? levels.has(source.level) : levels.includes(source.level));
-    return !region.hidden && config && config.concealment !== 'none' && sameLevel && region.testPoint(point);
+    const volume=region.flags?.[namespace]?.obscuring?.volume,scale=(scene.grid?.distance??5)/size;
+    return !region.hidden && config && config.concealment !== 'none' && sameLevel && (volume?pointInVolume({x:point.x*scale,y:point.y*scale,z:point.elevation},volume):region.testPoint(point));
   }).map(region => region.id).sort();
 }
 

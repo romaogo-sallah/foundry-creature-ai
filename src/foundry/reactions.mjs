@@ -10,6 +10,7 @@ import {sharesVerticalSpace} from './vertical-space.mjs';
 import {reactionRestriction} from './action-restrictions.mjs';
 import {movingMist} from './vampire-state.mjs';
 import {fireShield} from './fire-shield.mjs';
+import {magicShield,consumeSureStrike} from './spell-attack-buffs.mjs';
 
 export const REACTION_OPTION = `${MODULE_ID}:reaction`;
 export const REACTION_AUTO_DAMAGE = `${MODULE_ID}:reaction-auto-damage`;
@@ -20,7 +21,7 @@ const abilitySources = {
 };
 
 function ability(actor, slugs) {
-  if(slugs.includes('shield-block')&&fireShield(actor))return true;
+  if(slugs.includes('shield-block')&&(fireShield(actor)||magicShield(actor)))return true;
   return [...(actor.itemTypes?.feat ?? []), ...(actor.itemTypes?.action ?? [])].some(item => {
     if (slugs.includes(item.slug ?? item.system?.slug)) return true;
     // PF2e preserves nullable source slugs. Its prepared item roll options still
@@ -42,11 +43,11 @@ export function reactionCycle(token) {
   const round = combat.round - Number(index > (combat.turn ?? 0));
   return `${combat.id}:${round}:${turns[index].id ?? token.id}`;
 }
-export function shieldBlockEligible(token, damage) {
-  return Boolean(damage) && !shieldBlockReadiness(token, damage);
+export function shieldBlockEligible(token, damage,item) {
+  return Boolean(damage) && !shieldBlockReadiness(token, damage,item);
 }
 
-function shieldBlockReadiness(token, damage) {
+function shieldBlockReadiness(token, damage,item) {
   const actor = token?.actor, shield = actor?.attributes.shield;
   const checks = [
     [canReact(actor), reactionRestriction(actor)?.reason??'The creature cannot currently take reactions.'],
@@ -57,7 +58,7 @@ function shieldBlockReadiness(token, damage) {
     [Number.isFinite(shield?.hardness), 'Shield Hardness is unavailable.'],
   ];
   if (damage) checks.push([Boolean(damage.instances?.some(instance =>
-    physical.has(instance.type) && !instance.persistent && instance.total > 0)),
+    (physical.has(instance.type)||magicShield(actor)&&(item?.type==='spell'||['magical','arcane','primal','divine','occult'].some(t=>item?.traits?.has?.(t)))) && !instance.persistent && instance.total > 0)),
   'The damage roll has no positive immediate physical damage instance.']);
   return checks.find(([passed]) => !passed)?.[1] ?? null;
 }
@@ -81,14 +82,14 @@ export class ReactionEngine {
     const cycle = reactionCycle(token), state = token.actor.getFlag?.(MODULE_ID, 'reaction');
     return Boolean(cycle && canReact(token.actor) && !(state?.cycle === cycle && state.spent));
   }
-  inspectShieldBlock(token, { damage } = {}) {
+  inspectShieldBlock(token, { damage,item } = {}) {
     if (!token?.actor) return { eligible: false, reason: 'No creature was selected.' };
     const state = token.actor.getFlag?.(MODULE_ID, 'reaction'), cycle = reactionCycle(token);
     const spent = Boolean(cycle && state?.cycle === cycle && state.spent);
     const kind = state?.kind === 'reactive-strike' ? 'Reactive Strike' : state?.kind === 'shield-block' ? 'Shield Block' : state?.kind === 'sweeping-hook' ? 'Sweeping Hook' : 'a reaction';
     const reason = !cycle ? 'The creature is not an undefeated combatant in the active combat.' :
       spent ? `The ordinary reaction was already spent on ${kind}. It refreshes at this creature's next turn.` :
-        shieldBlockReadiness(token, damage);
+        shieldBlockReadiness(token, damage,item);
     const shield = token.actor.attributes.shield;
     return { eligible: !reason, reason: reason ?? (damage ? 'Shield Block is eligible for this damage.' : 'Shield Block prerequisites are ready; incoming damage has not been checked.'),
       abilityFound: ability(token.actor, ['shield-block']), reactionAvailable: this.available(token),
@@ -98,6 +99,7 @@ export class ReactionEngine {
   meleeOptions(reactor) {
     return (reactor.actor.system.actions ?? []).flatMap((base, index) => [base, ...(base.altUsages ?? [])].flatMap((strike, usage) => {
       if (strike.type !== 'strike' || !strike.item.isMelee) return [];
+      if((reactor.actor.itemTypes.action??[]).some(a=>a.slug==='reactive-strike'&&/jaws only/i.test(a.name))&&!/^jaws$/i.test(strike.item.name))return [];
       const linked = strike.item.linkedWeapon;
       const needsTwoHands = reactor.actor.type === 'npc' && reactor.document.getFlag?.(MODULE_ID, 'config')?.enabled && linked?.system.usage?.value === 'held-in-two-hands';
       const reason = needsTwoHands && (linked.system.equipped.carryType !== 'held' || linked.system.equipped.handsHeld < 2)
@@ -148,19 +150,19 @@ export class ReactionEngine {
       await token.actor.setFlag(MODULE_ID, 'reaction', { ...current, spent: false, uncertain: false });
     }
   }
-  async shieldBlock({ origin, target, damage, valid = () => true }) {
-    return this.resolve(() => this.resolveShieldBlock({ origin, target, damage, valid }));
+  async shieldBlock({ origin, target, damage,item, valid = () => true }) {
+    return this.resolve(() => this.resolveShieldBlock({ origin, target, damage,item, valid }));
   }
-  async resolveShieldBlock({ origin, target, damage, valid }) {
+  async resolveShieldBlock({ origin, target, damage,item, valid }) {
     const record = () => {
-      const check = { ...this.inspectShieldBlock(target, { damage }), origin: origin.name, damageTotal: damage.total };
+      const check = { ...this.inspectShieldBlock(target, { damage,item }), origin: origin.name, damageTotal: damage.total };
       this.lastShieldChecks.set(target.actor.uuid, check);
       return check;
     };
     if (!record().eligible) return false;
     return this.exclusive(target, async () => {
       if (!record().eligible) return false;
-      const answer = fireShield(target.actor)&&target.actor.type==='npc'&&target.document.getFlag(MODULE_ID,'config')?.enabled?'block':await this.prompts.ask({ token: target, title: `Shield Block — ${target.name}`,
+      const answer = (fireShield(target.actor)||magicShield(target.actor))&&target.actor.type==='npc'&&target.document.getFlag(MODULE_ID,'config')?.enabled?'block':await this.prompts.ask({ token: target, title: `Shield Block — ${target.name}`,
         description: `${origin.name} rolled ${damage.total} damage before resistance or immunity. ${target.name}'s raised shield has Hardness ${target.actor.attributes.shield.hardness}. Use Shield Block before damage is applied?`,
         choices: [{ id: 'block', label: 'Shield Block' }], valid });
       if (answer === 'pause' || !valid()) throw new Error('Shield Block decision paused. Damage has not been applied; resolve the damage and correct action counts before resuming.');
@@ -168,7 +170,7 @@ export class ReactionEngine {
         this.lastShieldChecks.set(target.actor.uuid, { ...record(), reason: 'The owner passed Shield Block.' });
         return false;
       }
-      if (answer !== 'block' || !shieldBlockEligible(target, damage)) throw new Error('Shield Block eligibility changed. Resolve the pending damage manually.');
+      if (answer !== 'block' || !shieldBlockEligible(target, damage,item)) throw new Error('Shield Block eligibility changed. Resolve the pending damage manually.');
       // Native PF2e applies IWR, Hardness, shield HP, breakage and actor HP together.
       // Keep this reservation uncertain until the caller confirms damage application.
       const reservation = await this.reserve(target, 'shield-block', valid);
@@ -247,13 +249,15 @@ export class ReactionEngine {
         if (!selected) throw new Error('Reactive Strike weapon or reach changed; inspect the pending action');
         const reservation = await this.reserve(reactor, 'reactive-strike', valid);
         const options = [MANAGED_OPTION, REACTION_OPTION, ...(damageAutomatically ? [REACTION_AUTO_DAMAGE] : [])];
-        if (!await concealmentCheck(reactor, mover, { valid })) {
+        if (!await concealmentCheck(reactor, mover, { valid,attack:true })) {
           await this.confirm(reactor, reservation);
           return settled({ resolved: true });
         }
         const roll = await selected.strike.variants[0].roll({ target: mover, options,
           event: automatic ? rollEvent('check') : { shiftKey: false, ctrlKey: false, metaKey: false } });
+        if(roll)await consumeSureStrike(reactor.actor);
         if (!Number.isInteger(roll?.degreeOfSuccess)) throw new Error('Reactive Strike roll was cancelled. Check the reaction and pending move counts.');
+        await this.afterStrike?.({source:reactor,target:mover,strike:selected.strike,degree:roll.degreeOfSuccess,stage:'hit',applyDamage:damageAutomatically,valid});
         if (!valid()) throw new Error('The trigger changed during Reactive Strike; inspect its roll before continuing');
         if (roll.degreeOfSuccess >= 2) {
           const damage = await selected.strike[roll.degreeOfSuccess === 3 ? 'critical' : 'damage']({
@@ -263,6 +267,7 @@ export class ReactionEngine {
           if (damageAutomatically) {
             const block = await this.shieldBlock({ origin: reactor, target: mover, damage, valid });
             if (!valid()) throw new Error('The trigger changed before reaction damage could be applied');
+            const beforeHP=mover.actor.hitPoints.value+(mover.actor.hitPoints.temp??0);
             await mover.actor.applyDamage({ damage, token: mover.document, item: selected.strike.item,
               outcome: roll.degreeOfSuccess === 3 ? 'criticalSuccess' : 'success', shieldBlockRequest: Boolean(block),
               rollOptions: new Set([...reactor.actor.getSelfRollOptions('origin'), ...mover.actor.getSelfRollOptions(),
@@ -270,6 +275,7 @@ export class ReactionEngine {
                 ...selected.strike.item.getRollOptions('item'), ...options, 'origin:enemy', 'origin:action:trait:attack',
                 `outcome:${roll.degreeOfSuccess === 3 ? 'criticalSuccess' : 'success'}`]) });
             if (block) await this.confirm(block.token, block.reservation);
+            await this.afterStrike?.({source:reactor,target:mover,strike:selected.strike,degree:roll.degreeOfSuccess,stage:'damage',damageTaken:Math.max(0,beforeHP-mover.actor.hitPoints.value-(mover.actor.hitPoints.temp??0)),applyDamage:true,valid});
           } else {
             await this.confirm(reactor, reservation);
             return { pause: true, pauseReason: 'Apply Reactive Strike damage manually before resuming. The reaction and move action are spent.' };

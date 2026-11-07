@@ -6,6 +6,7 @@ import {checkRestriction,notifyRestriction} from './action-restrictions.mjs';
 import {wrapConditionSave} from './manual-condition-spells.mjs';
 import {nativeRuleAction,resolveConditionChecks} from './condition-actions.mjs';
 import {rulesAPI} from './rules-api.mjs';
+import {sureStrike} from './spell-attack-buffs.mjs';
 
 const namespace = 'foundry-creature-ai';
 const managed = `${namespace}:managed`;
@@ -15,13 +16,16 @@ const hasOption = (options, option) => options?.has?.(option) ?? options?.includ
 
 export function concealmentDC(observer, target, environment = environmentBetween(observer, target)) {
   if (['hidden','undetected'].includes(detectionFor(observer, target).state)) return 11;
+  if(target.actor?.hasCondition('invisible')&&detectionFor(observer,target).source==='revealed-invisibility')return 5;
+  if(target.actor?.flags?.[namespace]?.revealed)return null;
   return observer.actor?.hasCondition('dazzled')||environment.concealed || target.actor && hasUnmanagedConcealment(target.actor) ? 5 : null;
 }
 
 // The caller already reserved the triggering action (and MAP). Failure spends
 // that action without an attack/maneuver roll or damage, and never grants a hit
 // follow-up. This promise remains inside the runner/reaction barrier.
-export async function concealmentCheck(observer, target, { valid = () => true, dc = concealmentDC(observer, target), manual = false } = {}) {
+export async function concealmentCheck(observer, target, { valid = () => true, dc = concealmentDC(observer, target), manual = false,attack=false } = {}) {
+  if(attack&&sureStrike(observer.actor))return true;
   if (!dc) return true;
   if (!valid()) throw new Error('The action stopped before its concealment check');
   const roll = await new Roll('1d20').evaluate();
@@ -103,7 +107,7 @@ export function installEnvironmentRolls({playerStealth=null,packageId=namespace,
         const snapshot = signature();
         const valid = () => canvas.ready && canvas.scene === scene &&
           canvas.tokens.get(observer.id) === observer && canvas.tokens.get(target.id) === target && signature() === snapshot;
-        if (!await concealmentCheck(observer, target, { dc, valid, manual: true })) {
+        if (!await concealmentCheck(observer, target, { dc, valid, manual: true,attack:context.type==='attack-roll' })) {
           const ammunition = typeof rest[1] === 'function' ? ammoCallbacks.get(rest[1]) : null;
           if (ammunition && !ammunition.spent) { ammunition.spent = true; await ammunition.weapon.consumeAmmo(); }
           const item = context.item;

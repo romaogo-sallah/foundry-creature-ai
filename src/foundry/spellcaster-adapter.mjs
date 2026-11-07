@@ -19,6 +19,9 @@ import {spellDefinition} from '../framework/spell-definitions.mjs';
 import {witnessedSpellCasts} from './spell-observations.mjs';
 import {taughtBuffs} from './support-spells.mjs';
 import {visibleDispelTargets} from './counteract-spells.mjs';
+import {translocationDestinations} from './translocation.mjs';
+import {isTrueVampire} from './vampire-state.mjs';
+import {shieldImmune} from './spell-attack-buffs.mjs';
 const ns='foundry-creature-ai';
 export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
  get profileId(){return 'spellcaster';}
@@ -40,7 +43,7 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
   const parts=this.parts(),knowledge=casterTargetKnowledge(this),attempts=this.token.document.getFlag(ns,'conditionCaster');
   // Persistent native regions continue outside the caster's turn. Do not
   // create autonomous damage sources when the GM selected rolls-only mode.
-  parts.descriptors=parts.descriptors.map(s=>s.kind==='lingering'&&!this.config.applyDamage||s.domination&&this.actor.hasCondition('blinded')?{...s,available:false}:s);
+  parts.descriptors=parts.descriptors.map(s=>s.kind==='lingering'&&s.slug!=='mist'&&!this.config.applyDamage||s.slug==='shield'&&shieldImmune(this.actor)||s.domination&&isTrueVampire(this.actor)&&this.actor.hasCondition('blinded')?{...s,available:false}:s);
   state.round=game.combat.round;state.spellAttempts=attempts?.combatId===game.combat.id?attempts.attempts??[]:[];
   state.witnessedCasts=witnessedSpellCasts(this.token);state.self.level=this.actor.level;
   state.self.hpFraction=this.actor.hitPoints.value/Math.max(1,this.actor.hitPoints.max);state.self.tempHP=this.actor.hitPoints.temp??0;
@@ -61,6 +64,9 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
    skulk:Boolean((token.actor.itemTypes.action??[]).some(a=>a.slug==='sneak-attack')),nearestEnemy:Math.min(Infinity,...state.enemies.filter(e=>e.lineOfSight!==false).map(e=>token.distanceTo(this.perceivedSpellTarget(e)))),
    hpFraction:token.actor.hitPoints.value/Math.max(1,token.actor.hitPoints.max),...token===this.token?{distance:0,lineOfSight:true,lineOfEffect:true}:this.targetAt(cell,token,[],position)});
   state.casterAllies=allies.map(t=>support(t));
+  state.teleportDestinations=parts.descriptors.some(s=>s.teleport&&s.available)?translocationDestinations(this,state):[];
+  for(const enemy of state.enemies)enemy.chainNeighbors=state.enemies.filter(e=>e.id!==enemy.id&&this.perceivedSpellTarget(enemy).distanceTo(this.perceivedSpellTarget(e))<=30).map(e=>e.id);
+  state.damageThreats=[...new Set((game.messages?.contents??[]).slice(-100).filter(m=>!m.blind&&!m.whisper?.length&&state.enemies.some(e=>e.id===m.speaker?.token)).flatMap(m=>(m.rolls??[]).flatMap(r=>(r.instances??[]).map(i=>i.type))))];
   state.dispelTargets=parts.descriptors.some(s=>s.slug==='dispel-magic'&&s.available)?visibleDispelTargets(this):[];
   state.casterDefense={enabled:true,engagementRange:Math.max(5,...parts.descriptors.filter(s=>s.kind!=='heal').map(s=>s.range))};
   const bystanders=allies.filter(t=>t!==this.token); // Add other visible neutrals as friendly-fire risks too.

@@ -1,4 +1,5 @@
 import { tokenRayPoint } from './attack-path.mjs';
+import {pointInVolume} from '../shared/area-volume.mjs';
 import { terrainBehavior, environmentBehavior } from './terrain-contract.mjs';
 
 import {rulesAPI} from './rules-api.mjs';
@@ -39,6 +40,9 @@ function relevantLevel(region, level) {
 // Native region geometry respects holes, rotated/polygonal shapes and elevation.
 // Environment scripts refresh derived state only; they do not redefine surfaces.
 function crosses(region, origin, destination) {
+  const volume=region.flags?.['foundry-creature-ai']?.obscuring?.volume;
+  if(volume){const scale=(region.parent?.grid?.distance??5)/(region.parent?.grid?.size??canvas.grid.size),length=Math.hypot(destination.x-origin.x,destination.y-origin.y)*scale,n=Math.max(2,Math.ceil(length));
+    for(let i=0;i<=n;i++){const f=i/n;if(pointInVolume({x:(origin.x+(destination.x-origin.x)*f)*scale,y:(origin.y+(destination.y-origin.y)*f)*scale,z:origin.elevation+(destination.elevation-origin.elevation)*f},volume))return true;}return false;}
   if (region.testPoint(origin) || region.testPoint(destination)) return true;
   const segments = region.segmentizeMovementPath([origin, destination], [{ x: 0, y: 0 }]);
   return segments.some(segment => Math.hypot(segment.to.x - segment.from.x, segment.to.y - segment.from.y,
@@ -62,11 +66,13 @@ export function environmentBetween(observer, target, { origin, destination, scen
     const firingBypass = grantsCover && COVER_BONUS[config.cover] > 0 &&
       withinFiringRadius(region, from, config.firingRadius, scene) && !withinFiringRadius(region, to, config.firingRadius, scene);
     const bonus = grantsCover && !firingBypass ? COVER_BONUS[config.cover] : 0;
-    const obscures = config.concealment === 'through' ? crossing : config.concealment === 'occupants' && insideTarget;
+    const smokeVision=region.flags?.['foundry-creature-ai']?.obscuring?.smoke&&(observer.actor?.itemTypes?.action??[]).some(a=>(a.slug??a.name.toLowerCase().replaceAll(' ','-'))==='smoke-vision');
+    const obscures = !smokeVision&&(config.concealment === 'through' ? crossing : config.concealment === 'occupants' && insideTarget);
     if (bonus || obscures || firingBypass) sources.push({ id: region.id, name: region.name, coverBonus: bonus, concealed: Boolean(obscures),
       ...(firingBypass ? { firingBypass: true, firingRadius: config.firingRadius } : {}) });
     coverBonus = Math.max(coverBonus, bonus); concealed ||= Boolean(obscures);
   }
+  if(target.actor?.flags?.['foundry-creature-ai']?.revealed)concealed=Boolean(target.actor.hasCondition('invisible'));
   return { coverBonus, concealed, flatCheckDC: concealed ? 5 : null, canHide: coverBonus >= 2 || concealed,
     stealthBonus: coverBonus >= 2 ? coverBonus : 0, sources };
 }

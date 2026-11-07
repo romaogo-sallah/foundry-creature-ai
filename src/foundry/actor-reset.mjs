@@ -1,8 +1,9 @@
+import {resetAdvancedZones} from './spell-weather.mjs';
 const namespace = 'foundry-creature-ai';
 const transientFlags = [
   'ledger', 'scoutGear', 'ogreGear', 'ogreAttacks', 'scoutActions', 'scoutShown', 'pyroShown', 'pyroActions','flight','eagleShown','aerialPlan','manticoreHunts','quillShown',
   'scoutThreats', 'casterTargets', 'spellObservations', 'behaviorState', 'behaviorActions', 'conditionCaster', 'scoutFocus', 'scoutMotion', 'targetMemory', 'stealth',
-  'stealthBelief', 'perception', 'playState', 'retreated', 'scampering', 'sneakNextMove','vampireLastStrike','vampireActions',
+  'stealthBelief', 'perception', 'playState', 'retreated', 'scampering', 'sneakNextMove','vampireLastStrike','vampireActions','pyreRecharge',
 ];
 
 /** Restore selected unlinked token actors to their current world-actor baseline.
@@ -36,7 +37,8 @@ export async function resetActorsToPrototype({ tokens = canvas.tokens.controlled
         // re-prepares data and does not reset saved resources.
         await document.delta.restore();
         const restored = document.actor;
-        for(const key of ['reaction','ongoingCasts'])if(restored.getFlag(namespace,key)!==undefined)await restored.unsetFlag(namespace,key);
+        for(const key of ['reaction','ongoingCasts','frightfulImmunities'])if(restored.getFlag(namespace,key)!==undefined)await restored.unsetFlag(namespace,key);
+        await resetAdvancedZones([token.id]);
         const changes = {};
         for (const key of transientFlags) if (document.getFlag(namespace, key) !== undefined)
           changes[`flags.${namespace}.-=${key}`] = null;

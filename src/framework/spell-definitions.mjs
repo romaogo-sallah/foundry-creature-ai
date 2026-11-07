@@ -81,6 +81,23 @@ for(const data of [
  {slug:'floating-flame',kind:'lingering',save:'reflex',range:30,duration:60,sustained:true,outcomes:basic},
  {slug:'wall-of-fire',kind:'lingering',range:120,duration:60,wall:true},
  {slug:'dispel-magic',kind:'counteract',range:120},
+ {slug:'chain-lightning',kind:'save',save:'reflex',chain:true,maxTargets:12,outcomes:basic},
+ {slug:'vampiric-exsanguination',kind:'save',save:'fortitude',living:true,deathAtZero:true,drain:true,role:'drain',area:{type:'cone',value:30},outcomes:basic},
+ {slug:'howling-blizzard',kind:'save',save:'reflex',actionCosts:[2,3],area:{type:'cone',value:60},outcomes:basic,blizzard:true},
+ {slug:'toxic-cloud',kind:'lingering',save:'fortitude',duration:60,cloud:true,actionCosts:[3],outcomes:basic},
+ {slug:'mist',kind:'lingering',duration:60,cloud:true,role:'support'},
+ {slug:'wall-of-ice',kind:'lingering',duration:60,wall:true,ice:true,actionCosts:[3]},
+ {slug:'fear',kind:'save',save:'will',role:'control',outcomes:[{conditions:[{slug:'frightened',value:3},{slug:'fleeing'}],conditionDurations:{fleeing:6}},
+  {conditions:[{slug:'frightened',value:2}]},{conditions:[{slug:'frightened',value:1}]},{}]},
+ {slug:'revealing-light',kind:'save',save:'reflex',role:'control',reveal:true,outcomes:[{conditions:[{slug:'dazzled'}],duration:600},{conditions:[{slug:'dazzled'}],duration:60},{conditions:[{slug:'dazzled'}],duration:12},{}]},
+ {slug:'mountain-resilience',kind:'buff',duration:1200,effectId:'JHpYudY14g0H4VWU'},
+ {slug:'fly',kind:'buff',duration:300,effectId:'MuRBCiZn5IKeaoxi'},
+ {slug:'false-vitality',kind:'buff',selfOnly:true,duration:28800,effectId:'PANUWN5xXC20WBg2'},
+ {slug:'resist-energy',kind:'buff',duration:600,energyWard:true},
+ {slug:'see-the-unseen',kind:'buff',selfOnly:true,duration:600,effectId:'T5bk6UH7yuYog1Fp'},
+ {slug:'sure-strike',kind:'buff',selfOnly:true,duration:6,actionCosts:[1],effectId:'fpGDAz2v5PG0zUSl'},
+ {slug:'shield',kind:'buff',selfOnly:true,duration:6,actionCosts:[1],effectId:'Jemq5UknGdMO7b73'},
+ {slug:'translocate',kind:'buff',selfOnly:true,teleport:true},
 ])registerSpellDefinition(data);
 const builtinDefinitions=new Map(definitions);
 

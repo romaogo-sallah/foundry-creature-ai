@@ -14,8 +14,8 @@ const source=f=>({actor:f.actor,token:f.boss});
 test('the supplied Dero export has a taught caster profile and complete native slot availability',async()=>{
  const f=caster(),s=await snapshot(f.adapter);
  assert.equal(creatureProfile(f.actor).id,'dero-magister');
- assert.deepEqual([...new Set(s.spells.map(s=>s.slug))].sort(),['blindness','daze','forbidding-ward','force-barrage','grim-tendrils','laughing-fit','paranoia','phantom-pain','soothe','stupefy','telekinetic-maneuver','vampiric-feast','void-warp']);
- assert.equal(s.spellSlots,11);assert.ok(s.spells.every(s=>s.available));
+ assert.deepEqual([...new Set(s.spells.map(s=>s.slug))].sort(),['blindness','daze','forbidding-ward','force-barrage','grim-tendrils','laughing-fit','paranoia','phantom-pain','revealing-light','soothe','stupefy','telekinetic-maneuver','vampiric-feast','void-warp']);
+ assert.equal(s.spellSlots,11);assert.ok(s.spells.filter(s=>s.slug!=='revealing-light').every(s=>s.available));assert.equal(s.spells.find(s=>s.slug==='revealing-light').available,false,'the exported innate Revealing Light is already expended');
  assert.ok(f.adapter.parts().unsupported.some(s=>s.startsWith('Darkness:')),'untaught spells must be reported explicitly');
 });
 test('a complete Dero turn casts a native two-action spell and uses its once-per-round gaze',async()=>{

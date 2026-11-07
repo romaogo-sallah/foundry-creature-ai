@@ -81,7 +81,10 @@ export class BehaviorSystem {
       if(withdrawing&&component?.id==='equipment'&&!state.behavior.context.immediateAttack){
         rejected.push({id:original.id,kind:original.kind,reason:'Take an available safer retreat before preparing a weapon without an immediate attack'});continue;
       }
-      if(selection.planId==='avoiding'&&!state.morale?.broken&&original.assessment?.movement&&!original.features?.avoidance){
+      if(withdrawing&&original.kind==='bellow'){
+        rejected.push({id:original.id,kind:original.kind,reason:'Complete an available retreat before spending an action commanding allies'});continue;
+      }
+      if(selection.planId==='avoiding'&&!state.morale?.broken&&(original.assessment?.movement||['stride','step','crawl','escapeStride','fly'].includes(original.kind))&&!original.features?.avoidance){
         const move=state.moves?.find(move=>move.x===original.destination?.x&&move.y===original.destination?.y);
         const before=Math.min(...state.enemies.map(enemy=>enemy.distance));
         const after=move&&Math.min(...state.enemies.map(enemy=>move.targets[enemy.id]?.distance??0));

@@ -7,7 +7,7 @@ export function outcomeSpellValue(state,spell,target,{area=false}={}){
  if(!area&&(target.lineOfSight===false||target.lineOfEffect===false||target.distance>spell.range||
    target.awareness?.searchRequired&&!target.awareness.allowAttackEstimate&&!target.awareness.attackOnSight))return 0;
  if(knownSpellImmunity(state,spell,target))return 0;
- if(spell.domination&&target.knownConditions?.includes('blinded'))return 0;
+ if(spell.domination&&spell.traits?.includes('visual')&&target.knownConditions?.includes('blinded'))return 0;
  if(spell.domination&&state.spellAttempts?.some(a=>a.slug===spell.slug&&a.targetId===target.id&&a.untilRound>=state.round))return 0;
  const flat=area?1:target.concealmentDC?(21-target.concealmentDC)/20:1;
  if(spell.kind==='maneuver'){
@@ -37,13 +37,21 @@ export function genericCastingCandidates(state){
    if(effect.distance>spell.range||effect.value<=reserve)continue;
    result.push({...base,id:`dispel:${spell.bindingId}:${effect.id}`,targetId:effect.targetId,effectUuid:effect.uuid,
     assessment:{value:effect.value-reserve},scoringTerms:[{label:'Remove an observed taught magical advantage or harmful control',contribution:effect.value-reserve}]});
+  }else if(spell.teleport){
+   for(const d of state.teleportDestinations??[])if(d.value>reserve)result.push({...base,id:`teleport:${spell.bindingId}:${d.position.x},${d.position.y}`,targetId:state.casterAllies?.find(a=>a.self)?.id,destination:d.position,
+    features:{...base.features,onceKey:'teleport'},assessment:{value:d.value-reserve},scoringTerms:[{label:'Escape known melee pressure without crossing intervening squares',contribution:d.value-reserve}]});
   }else if(spell.kind==='buff')for(const ally of state.casterAllies??[]){
    if(spell.selfOnly&&!ally.self||ally.distance>spell.range&&!ally.self||ally.lineOfEffect===false||ally.lineOfSight===false||ally.buffs?.includes(spell.slug))continue;
    const exposed=ally.threatened||ally.nearestEnemy<=35,ownDanger=ally.hpFraction<0.5;
-   const value=spell.slug==='haste'?4+(ally.martialPower??8)*0.7+(exposed?3:0):spell.slug==='blur'?exposed?7+(ownDanger?3:0):1:
+   const energyType=spell.energyWard?(state.damageThreats??[]).find(t=>['acid','cold','electricity','fire','sonic'].includes(t)):null;
+   const value=spell.slug==='sure-strike'?state.actionsRemaining>=2&&state.enemies.some(e=>e.inReach)?7:0:spell.slug==='shield'?exposed?5:0:
+    spell.slug==='false-vitality'?Math.max(0,10+(spell.castRank-2)*3-(state.self.tempHP??0))*0.7:
+    spell.slug==='see-the-unseen'?state.enemies.some(e=>e.awareness?.detection==='undetected'||e.awareness?.detection==='hidden')?10:0:
+    spell.slug==='fly'?state.enemies.some(e=>e.airborne)||state.pit?12:2:spell.energyWard?energyType?9:0:
+    spell.slug==='mountain-resilience'?exposed?12:3:spell.slug==='haste'?4+(ally.martialPower??8)*0.7+(exposed?3:0):spell.slug==='blur'?exposed?7+(ownDanger?3:0):1:
     spell.slug==='invisibility'?ownDanger?12:ally.skulk?8:2:spell.slug==='fleet-step'?state.nearestEnemy>25?6:0:exposed?8:1;
    if(value<=reserve)continue;
-   result.push({...base,id:`spell:${spell.bindingId}:${ally.id}`,targetId:ally.id,features:{...base.features,support:true,onceKey:`buff:${spell.slug}:${ally.id}`},assessment:{value:value-reserve},
+   result.push({...base,id:`spell:${spell.bindingId}:${ally.id}`,targetId:ally.id,energyType,features:{...base.features,support:true,onceKey:`buff:${spell.slug}:${ally.id}`},assessment:{value:value-reserve},
     scoringTerms:[{label:'Expected group benefit from '+spell.name,contribution:value},{label:'Reserve limited casting resources',contribution:-reserve}]});
   }else if(spell.kind==='ward')for(const ally of state.casterAllies??[]){
    if(ally.self||ally.distance>spell.range||ally.lineOfEffect===false||ally.lineOfSight===false)continue;
@@ -60,9 +68,18 @@ export function genericCastingCandidates(state){
    result.push({...base,id:`spell:${spell.bindingId}:${ally.id}`,targetId:ally.id,features:{...base.features,support:true,onceKey:`heal:${ally.id}`},
     assessment:{value:value-reserve},scoringTerms:[{label:'Restore allied HP; prioritize allies in danger',contribution:value},{label:'Reserve limited casting resources',contribution:-reserve}]});
   }else if(spell.area||spell.kind==='lingering')for(const area of spell.areas??[]){
-   const value=area.enemies.reduce((n,e)=>n+(spell.wall?spell.damage:outcomeSpellValue(state,spell,e,{area:true})),0)*(spell.kind==='lingering'?1.4:1)-area.bystanders.reduce((n,e)=>n+2*(spell.wall?spell.damage:outcomeSpellValue(state,spell,e,{area:true})),0);
+   const value=spell.slug==='mist'?(area.defensiveValue??0):area.enemies.reduce((n,e)=>n+(spell.wall?spell.ice?12:spell.damage:outcomeSpellValue(state,spell,e,{area:true})),0)*(spell.kind==='lingering'?1.4:1)-area.bystanders.filter(e=>!e.unaffected).reduce((n,e)=>n+2*(spell.wall?spell.ice?12:spell.damage:outcomeSpellValue(state,spell,e,{area:true})),0);
    if(value>reserve)result.push({...base,id:`spell:${spell.bindingId}:${area.id}`,area,targetId:area.enemies[0]?.id,assessment:{value:value-reserve},
     scoringTerms:[{label:'Area benefit minus friendly fire and resource cost',contribution:value-reserve}]});
+  }else if(spell.chain){
+   for(const first of state.enemies){
+    let current=first,value=0,continuation=1;const path=[];
+    while(current&&path.length<spell.maxTargets){const benefit=outcomeSpellValue(state,spell,current,{area:path.length>0});if(benefit<=0)break;
+     path.push(current.id);value+=benefit*continuation;continuation*=1-spellSaveProbabilities(state,spell,current).criticalSuccess;
+     current=state.enemies.filter(e=>!path.includes(e.id)&&current.chainNeighbors?.includes(e.id)&&e.lineOfEffect!==false&&e.lineOfSight!==false).sort((a,b)=>outcomeSpellValue(state,spell,b,{area:true})-outcomeSpellValue(state,spell,a,{area:true}))[0];
+    }
+    if(value>reserve)result.push({...base,id:`chain:${spell.bindingId}:${path.join(',')}`,targetId:first.id,targetIds:path,assessment:{value:value-reserve},scoringTerms:[{label:'Connected hostile targets; account for a critical save ending the chain',contribution:value-reserve}]});
+   }
   }else if(spell.maxTargets>1){
    const targets=state.enemies.map(enemy=>({enemy,value:outcomeSpellValue(state,spell,enemy)})).filter(e=>e.value>0).sort((a,b)=>b.value-a.value).slice(0,spell.maxTargets);
    const value=targets.reduce((n,t)=>n+t.value,0);

@@ -1,4 +1,8 @@
 import { clearAttackPath, clearSightPath } from './attack-path.mjs';
+import {volumeContains,volumeAreas} from './spell-volumes.mjs';
+import {segmentHitsBox} from './ice-wall-geometry.mjs';
+export function areaContains(caster,token,area,position){return token.document.level===caster.document.level&&
+ (area.volume?volumeContains(token,area.volume,position):sameSpellLevel(caster,token)&&inSpellArea(token,spellRegion(area.shapes,caster),position));}
 
 // Temporary RegionDocuments use Foundry 14's own grid/coverage geometry. They
 // are never saved by planning; execution saves only the selected spell area.
@@ -74,18 +78,41 @@ export function greaseShapes(adapter, enemies, position = adapter.actualWaypoint
 
 export function describeSpellAreas(adapter, spell, state, bystanders, position) {
   const caster = adapter.token, origin = position ? { x: position.x + caster.w / 2, y: position.y + caster.h / 2 } : caster.center;
-  const shapes = ['wall-of-fire','floating-flame'].includes(spell.slug)?fireAreaShapes(adapter,spell,state.enemies,position):spell.slug==='grease'?greaseShapes(adapter,state.enemies,position,state.casterDefense?.enabled&&!state.casterDefense.preparedGrease):
+  if(spell.ice)return iceWallAreas(adapter,state,bystanders,position);
+  if(spell.slug==='mist')return [{id:'mist:defense',shapes:[{type:'ellipse',x:origin.x,y:origin.y,radiusX:canvas.grid.size*4,radiusY:canvas.grid.size*4,rotation:0,hole:false}],
+    enemies:[],bystanders:[],defensiveValue:state.self.threatened||state.self.hpFraction<0.5?10:0}];
+  const useVolume=spell.area&&spell.slug!=='grease'&&(spell.volumetric||state.enemies.some(e=>adapter.perceivedSpellTarget(e).document.elevation!==(position?.elevation??caster.document.elevation)));
+  const shapes = useVolume?volumeAreas(adapter,spell,state.enemies,position):['wall-of-fire','floating-flame','wall-of-ice'].includes(spell.slug)?fireAreaShapes(adapter,spell,state.enemies,position):spell.slug==='grease'?greaseShapes(adapter,state.enemies,position,state.casterDefense?.enabled&&!state.casterDefense.preparedGrease):
     spell.area?.type==='line'?lineShapes(caster,position,spell.area.value):spell.area?.type==='burst'?burstShapes(adapter,spell,state.enemies,position):coneShapes(caster,position,spell.area?.value??15);
+  const nativeItem=caster.actor.items?.get?.(spell.id)??caster.actor.itemTypes.action.find(a=>(a.slug??a.name.toLowerCase().replaceAll(' ','-'))===spell.slug);
+  const types=spell.slug==='pyre-breath'?['fire']:[...new Set(Object.values(nativeItem?.system.damage??{}).map(d=>d.type))];
+  const unaffected=token=>{
+    if(token!==caster&&!caster.actor.isAllyOf(token.actor))return false;
+    if((spell.living||spell.slug==='toxic-cloud')&&token.actor.modeOfBeing&&token.actor.modeOfBeing!=='living')return true;
+    if(nativeItem&&token.actor.isImmuneTo?.(nativeItem))return true;
+    return types.length>0&&types.every(type=>(token.actor.attributes?.immunities??[]).some(i=>i.type===type));
+  };
   return shapes.map(area => {
     const region = spellRegion(area.shapes, caster);
-    const included = token => sameSpellLevel(caster, token) && inSpellArea(token, region) && clearAttackPath(caster, token, origin);
+    const included = token => areaContains(caster,token,area) && clearAttackPath(caster, token, origin);
     const others=bystanders.filter(included);
-    if(inSpellArea(caster,region,position))others.push(caster);
+    if(areaContains(caster,caster,area,position))others.push(caster);
     return { ...area, enemies: state.enemies.filter(enemy => enemy.awareness?.detection!=='undetected'&&included(adapter.perceivedSpellTarget(enemy))),
-      bystanders: others.map(token => ({ id: token.id, prone: token.actor.hasCondition('prone'),
+      bystanders: others.map(token => ({ id: token.id,unaffected:unaffected(token),prone: token.actor.hasCondition('prone'),
         immobilized: token.actor.hasCondition('immobilized'), greased: state.bystanderGrease?.[token.id] ?? false,
         airborne: token.document.movementAction === 'fly' })) };
   }).filter(area => area.enemies.length || area.approaches?.length);
+}
+function iceWallAreas(adapter,state,bystanders,position=adapter.actualWaypoint()){
+ const size=canvas.grid.size,result=[],source={x:position.x+adapter.token.w/2,y:position.y+adapter.token.h/2,elevation:position.elevation??adapter.token.document.elevation};
+ for(const enemy of state.enemies.filter(e=>e.lineOfSight!==false&&e.distance<=120))for(const horizontal of [true,false]){
+  const target=adapter.perceivedSpellTarget(enemy),x=Math.round((source.x+target.center.x)/2/size)*size,y=Math.round((source.y+target.center.y)/2/size)*size,
+   shape={type:'rectangle',x:horizontal?x-6*size:x,y:horizontal?y:y-6*size,width:horizontal?12*size:size/5,height:horizontal?size/5:12*size},box={...shape,bottom:source.elevation,top:source.elevation+10};
+  if(canvas.tokens.placeables.some(t=>t.document.elevation<box.top&&t.document.elevation+5>box.bottom&&t.document.x<shape.x+shape.width&&t.document.x+t.w>shape.x&&t.document.y<shape.y+shape.height&&t.document.y+t.h>shape.y))continue;
+  const blocks=t=>segmentHitsBox(source,{...t.center,elevation:t.document.elevation+2.5},box);
+  const affected=state.enemies.filter(e=>blocks(adapter.perceivedSpellTarget(e)));if(!affected.length)continue;
+  result.push({id:`ice:${x},${y}:${horizontal}`,shapes:[shape],enemies:affected,bystanders:bystanders.filter(blocks).map(t=>({id:t.id}))});
+ }return result;
 }
 export function fireAreaShapes(adapter,spell,enemies,position=adapter.actualWaypoint()){
  const size=canvas.grid.size,result=[],rect=canvas.dimensions.sceneRect;

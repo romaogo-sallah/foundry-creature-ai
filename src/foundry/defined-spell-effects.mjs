@@ -26,6 +26,7 @@ export function applyDefinedSpellEffects({source,target,spell,definition,degree,
   const weakness=definition.weakness&&degree===definition.weakness.degree;
   if(!children.length&&!weakness&&!definition.mentalDefense&&!definition.wardBonus&&!outcome.noAllies&&!outcome.noActions&&!outcome.noReactions)return null;
   const rules=definition.mentalDefense?[{key:'FlatModifier',selector:'saving-throw',type:'status',value:definition.mentalDefense,predicate:['item:trait:mental']}]:[];
+  if(definition.reveal&&degree<3){rules.push({key:'ActiveEffectLike',mode:'override',path:`flags.${ns}.revealed`,value:true});metadata.clearWhenEmpty=false;}
   if(weakness){rules.push({key:'Weakness',type:definition.weakness.type,value:spell.rank*definition.weakness.perRank});metadata.clearWhenEmpty=false;
    metadata.deadline=phaseDeadline(definition.weakness.until,source,target);metadata.expiresAt=metadata.deadline?null:game.time.worldTime+6;metadata.fallbackExpiresAt=game.time.worldTime+6;}
   if(definition.wardBonus){if(!enemySignature)throw new Error('Ward needs a native enemy signature');rules.push({key:'FlatModifier',selector:['ac','saving-throw'],type:'status',value:spell.rank>=6?2:definition.wardBonus,predicate:[`origin:signature:${enemySignature}`]});}

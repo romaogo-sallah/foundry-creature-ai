@@ -3,6 +3,7 @@ import {tokenHeight} from './vertical-geometry.mjs';
 import {sceneLevels} from './vertical-space.mjs';
 import {flySpeed} from './flight-costs.mjs';
 import {rampConfig} from './ramp-geometry.mjs';
+import {pitAt} from './pit-geometry.mjs';
 export function flightBounds(token){
   const ranges=sceneLevels(token.document.parent,token.document.level).map(l=>l.elevation??{});
   return {bottom:Math.min(0,token.document.elevation,...ranges.map(r=>r.bottom).filter(Number.isFinite)),
@@ -24,7 +25,7 @@ export function ceilingAbove(token,position=token.document._source??token.docume
 }
 export function floorBelow(token,position=token.document._source??token.document){
   const size=canvas.grid.size,point={x:position.x+token.document.width*size/2,y:position.y+token.document.height*size/2};
-  let floor=flightBounds(token).bottom;
+  const pit=pitAt(token.document,position);let floor=pit?pit.bottom:flightBounds(token).bottom;
   for(const region of token.document.parent.regions?.contents??[]){
     if(region.hidden||!surfaceContains(region,point))continue;
     const elevations=platformElevations(region);

@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.42.0:** teaches the supplied [Young Cinder Dragons and Lich](docs/cinder-dragon-and-lich.md), their distinct martial/caster kits, shared Counterspell, Siphon Life, Frightful Presence, 3D areas and sixteen additional spell components. Adds editable [pits, Climb and crossing jumps](docs/pits.md) for manual play and AI, including the two marked Stadium pits. Fixes restricted retreat movement and unaffordable Strike follow-up scoring. Restart Foundry to discover the Pit behavior type, then reload clients with **Ctrl+F5**.
+
 **Patch 0.41.2:** fixes lethal Vision of Death and Drained-5 Drink Blood trying to create a nonexistent Dead condition. Native death status is preserved and the spell action can finish normally. Failed Grab reports now state the outcome. The [completed vampire review](docs/battle-analysis-2026-11-07-vampires-finished.md) records 16/21 Mastermind spell coverage, good area targeting and remaining retreat/caster-planning weaknesses. Reload every client with **Ctrl+F5**.
 
 **Patch 0.41.1:** fixes grounded vampires selecting End Turn with an action left and never auto-passing. The flight component now preserves the ordinary caster?s completion policy. The [first vampire encounter review](docs/battle-analysis-2026-11-07-vampires.md) separates the confirmed deadlock from movement/scoring weaknesses and legitimate concealment failures. Reload every client with **Ctrl+F5**.

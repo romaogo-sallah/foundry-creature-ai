@@ -1,3 +1,4 @@
+import {iceBlocksMovement} from './ice-wall-geometry.mjs';
 import {flySpeed} from './flight-costs.mjs';
 
 export function sceneLevels(scene,fallbackId){
@@ -36,6 +37,7 @@ export function clearLevelWalls(token,origin,destination,type){
   {type,mode:'any',level:segment.level,source:type==='sight'?token.vision:undefined}));
 }
 export function clearFlightSurfaces(token,from,to,height){
+ if(iceBlocksMovement(token,from,to,height))return false;
  const scene=token.document.parent,size=globalThis.canvas.grid.size;
  const point=(p,z)=>({x:p.x+token.document.width*size/2,y:p.y+token.document.height*size/2,elevation:p.elevation+z});
  for(const [z,side]of [[0,'below'],[height,'above'],[height/2,'below']]){

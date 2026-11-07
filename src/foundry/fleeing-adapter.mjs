@@ -11,6 +11,7 @@ import {isAirborne} from './flight-surfaces.mjs';
 import {simpleFlightMoves} from './simple-flight-moves.mjs';
 import {executeFlight} from './flight-execution.mjs';
 import {allianceSide} from './targeting.mjs';
+import {pitActionChoices,executePitAction} from './pit-actions.mjs';
 const ns='foundry-creature-ai',attached=new WeakSet();
 const position=t=>({x:t.document.x,y:t.document.y,elevation:t.document.elevation??0});
 const sourceVisible=(observer,source)=>source&&!source.document.hidden&&detectionFor(observer,source).state==='observed'&&clearSightPath(observer,source);
@@ -72,6 +73,8 @@ export class PF2eFleeingAdapter extends PF2eCreatureAdapter{
       return {...move,destination,movementCost:move.cost,actionCost:move.kind==='escapeStride'||bonus?0:1,bonusActionCost:bonus?1:0,
         progress:distance({...this.topLeft(move),elevation:move.elevation??start.elevation})-distance(start)};
     });
+    for(const action of pitActionChoices(this.token,state))mapped.push({...action,destination:action.destination??this.originCell(),progress:['climb','pitStow'].includes(action.kind)?10:
+      distance(action.destination)-distance(start),features:{...action.features,pitAction:true,pitChoiceId:action.id}});
     const recovery=recoveryCandidates(state).filter(a=>a.kind==='stand'||a.kind==='escape'&&state.self.immobile).map(a=>({...a,assessment:{value:1000}}));
     state.fleeing={stamp:this.stamp(),sources:sources.map(s=>({id:s.id,kind:s.kind})),moves:mapped,recovery};
     if(flying&&isAirborne(this.token)&&!mapped.some(m=>m.progress>0)){
@@ -89,6 +92,7 @@ export class PF2eFleeingAdapter extends PF2eCreatureAdapter{
   async execute(choice,ledger,context={}){
     if(conditionDirective(this.actor)!=='fleeing'||!choice.features?.fleeing||choice.features.fleeingStamp!==this.stamp())return {skipped:true,skipReason:'Fleeing changed; choose the current condition strategy again.'};
     await reveal(this.token);
+    if(choice.features.pitAction)return executePitAction(this.token,{...choice,id:choice.features.pitChoiceId},{reactions:this.reactions,valid:()=>conditionDirective(this.actor)==='fleeing'&&(context.canContinue?.()??true)&&this.turnKey()===ledger.turn});
     if(choice.kind==='fly')return executeFlight(this,choice,ledger,context);
     return super.execute(choice,ledger,context);
   }

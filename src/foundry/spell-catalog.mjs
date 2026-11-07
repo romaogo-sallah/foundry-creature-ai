@@ -26,6 +26,12 @@ export function spellBindings(actor){
    for(const r of ranks)binding(r,`${entry.id}:slot${r}`,entry.system.slots?.[`slot${r}`]?.value??0);
   }
  }
+ const cage=(actor.itemTypes.action??[]).find(a=>(a.slug??a.system?.slug)==='lich-drain-soul-cage');
+ if(cage?.system.frequency?.value>0)for(const spell of actor.itemTypes.spell??[]){
+  const entry=actor.itemTypes.spellcastingEntry.find(e=>e.id===spell.system.location.value),definition=spellDefinition(spell),rank=spell.rank??spell.system.level.value;
+  const highest=entry?Math.max(0,...Object.entries(entry.system.slots??{}).filter(([,s])=>s.max>0||Object.keys(s.prepared??{}).length).map(([key])=>Number(key.replace('slot','')))):0;
+  if(entry?.system.tradition?.value==='arcane'&&definition&&!spell.isCantrip&&rank<=highest)result.push({spell,entry,definition,castRank:highest,poolId:'soul-cage',remaining:1,cantrip:false,soulCage:cage});
+ }
  return result;
 }
 export function averageSpellDamage(spell,rank){
@@ -36,15 +42,15 @@ export function averageSpellDamage(spell,rank){
 }
 export function spellDescriptor(binding,actionCost){
  const {spell,entry,definition,castRank,remaining,poolId,slotId,cantrip}=binding;
- const area=definition.area??spell.system.area;
+ const area=spell.slug==='howling-blizzard'&&actionCost===3?{type:'burst',value:30}:definition.area??spell.system.area;
  const rangeText=spell.system.range?.value??'',touchRange=rangeText==='touch'?Math.max(5,spell.actor?.getReach?.({action:'attack'})??5):null,range=touchRange??Number.parseFloat(rangeText);
  const shards=definition.shards?actionCost*(1+Math.floor((castRank-1)/2)):1;
  const damage=averageSpellDamage(spell,castRank)*shards;
  return {...definition,id:spell.id,name:spell.name,slug:spell.slug??spell.system.slug,entryId:entry.id,castRank,slotId,
-  bindingId:`${entry.id}:${spell.id}:${castRank}:${slotId??'-'}:${actionCost}${binding.bonded?':bonded':''}`,poolId,resourceRemaining:Number.isFinite(remaining)?remaining:null,
-  actionCost,resourceCost:binding.focus?(spell.system.cast?.focusPoints??1):1,cantrip,unlimited:!poolId,available:remaining>=(binding.focus?(spell.system.cast?.focusPoints??1):1),range:touchRange??definition.range??(Number.isFinite(range)?range:area?.value??0),
-  maxTargets:definition.maxTargets??Math.min(12,Number.parseInt(spell.system.target?.value?.match(/\d+/)?.[0]??'1')),
-  area,bonus:entry.statistic.check?.mod??0,dc:entry.statistic.dc.value,damage,meleeDamage:spell.slug==='ignition'?damage*1.4:damage,
+  bindingId:`${entry.id}:${spell.id}:${castRank}:${slotId??'-'}:${actionCost}${binding.bonded?':bonded':binding.soulCage?':soul-cage':''}`,poolId,resourceRemaining:Number.isFinite(remaining)?remaining:null,
+  actionCost,reservePremium:binding.soulCage?4:0,resourceCost:binding.focus?(spell.system.cast?.focusPoints??1):1,cantrip,unlimited:!poolId,available:remaining>=(binding.focus?(spell.system.cast?.focusPoints??1):1),range:touchRange??definition.range??(Number.isFinite(range)?range:area?.value??0),
+  maxTargets:spell.slug==='fear'&&castRank>=3?5:definition.maxTargets??Math.min(12,Number.parseInt(spell.system.target?.value?.match(/\d+/)?.[0]??'1')),
+  area,...spell.slug==='howling-blizzard'&&actionCost===3?{range:500}:{},bonus:entry.statistic.check?.mod??0,dc:entry.statistic.dc.value,damage,meleeDamage:spell.slug==='ignition'?damage*1.4:damage,
   traits:[...new Set([...spell.traits??spell.system.traits?.value??[],...definition.domination&&isTrueVampire(spell.actor)?['visual']:[]])],areas:[]};
 }
 export function casterCatalog(actor){
@@ -57,5 +63,6 @@ export function casterCatalog(actor){
 export function resolveSpellBinding(actor,choice){
  return spellBindings(actor).find(b=>b.spell.id===choice.spellId&&(!choice.entryId||b.entry.id===choice.entryId)&&
   Boolean(b.bonded)===Boolean(choice.bindingId?.endsWith(':bonded'))&&
+  Boolean(b.soulCage)===Boolean(choice.bindingId?.endsWith(':soul-cage'))&&
   (choice.castRank==null||b.castRank===choice.castRank)&&(choice.slotId==null||b.slotId===choice.slotId)&&b.remaining>=(b.focus?(b.spell.system.cast?.focusPoints??1):1));
 }

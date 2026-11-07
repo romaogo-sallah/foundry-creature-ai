@@ -48,6 +48,9 @@ await cp(new URL('docs/manticore-scorpion.md', root), new URL('manticore-scorpio
 await cp(new URL('docs/manticore-quill.md', root), new URL('manticore-quill.md', output));
 await cp(new URL('docs/dero-magister.md',root),new URL('dero-magister.md',output));
 await cp(new URL('docs/vampires.md',root),new URL('vampires.md',output));
+const challengeGuide=await readFile(new URL('docs/cinder-dragon-and-lich.md',root),'utf8');
+for(const id of ['foundry-creature-ai','pf2e-tactical-conditions'])await writeFile(path.join(dist,id,'cinder-dragon-and-lich.md'),challengeGuide.replaceAll('(../research/','(https://github.com/romaogo-sallah/foundry-creature-ai/blob/main/research/'));
+for(const id of ['foundry-creature-ai','pf2e-tactical-movement'])await cp(new URL('docs/pits.md',root),path.join(dist,id,'pits.md'));
 const vampireReview=await readFile(new URL('docs/battle-analysis-2026-11-07-vampires.md',root),'utf8');
 for(const id of ['foundry-creature-ai','pf2e-tactical-conditions'])await writeFile(path.join(dist,id,'battle-analysis-2026-11-07-vampires.md'),vampireReview
  .replaceAll('(../src/','(https://github.com/romaogo-sallah/foundry-creature-ai/blob/main/src/')

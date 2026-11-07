@@ -1,0 +1,270 @@
+{
+  "date": "2026-11-08",
+  "version": "0.42.0",
+  "scope": "Three supplied young Cinder Dragon/Lich exports and shared manual/AI pit traversal",
+  "tests": {
+    "command": "npm test",
+    "passed": 1137,
+    "failed": 0,
+    "workers": 11,
+    "seconds": 21,
+    "coverage": [
+      "Complete Lich turn",
+      "Complete airborne dragon turn with offense",
+      "Martial-only Frenzy/Momentum and increasing MAP",
+      "Pyre shared damage, persistent fire, smoke and recharge",
+      "Frightful Presence source immunity and remaster outcomes",
+      "Counterspell matching slot and reaction consumption",
+      "Soul Cage independent daily resource",
+      "Chain critical-save termination",
+      "Siphon Life temporary HP and Drained cap",
+      "3D areas and ice height/hardness",
+      "Sure Strike targeting/consumption",
+      "Shield cantrip magical blocking",
+      "Toxic Cloud turn deduplication/drift",
+      "Blizzard source-turn expiration",
+      "Pit walk/floor/ray geometry",
+      "Leap crossing without a check",
+      "Failed Long Jump fall/damage",
+      "Repeated Climb progress and exit"
+    ]
+  },
+  "native": {
+    "foundry": "14.369",
+    "pf2e": "8.6.1",
+    "valid": true,
+    "actorCountBefore": 161,
+    "actorCountAfter": 161,
+    "newDirectoryActors": 0,
+    "moduleErrors": [],
+    "records": [
+      {
+        "key": "lich",
+        "profile": "lich",
+        "level": 12,
+        "spells": 26,
+        "taught": 22,
+        "unresolved": [
+          "Locate",
+          "Detect Magic",
+          "Message",
+          "Telekinetic Hand"
+        ],
+        "nativeStrikes": [
+          {
+            "name": "Hand",
+            "bonus": 24,
+            "reach": 5
+          }
+        ],
+        "nativeDamage": "{8d12[electricity]}",
+        "frenzy": false,
+        "momentum": false,
+        "cageUses": 1
+      },
+      {
+        "key": "dragon",
+        "profile": "cinder-dragon",
+        "level": 10,
+        "spells": 0,
+        "taught": 0,
+        "unresolved": [],
+        "nativeStrikes": [
+          {
+            "name": "Claw",
+            "bonus": 23,
+            "reach": 5
+          },
+          {
+            "name": "Horn",
+            "bonus": 21,
+            "reach": 10
+          },
+          {
+            "name": "Jaws",
+            "bonus": 23,
+            "reach": 10
+          },
+          {
+            "name": "Tail",
+            "bonus": 21,
+            "reach": 15
+          },
+          {
+            "name": "Wing",
+            "bonus": 21,
+            "reach": 10
+          }
+        ],
+        "frenzy": true,
+        "momentum": true
+      },
+      {
+        "key": "dragonCaster",
+        "profile": "cinder-dragon",
+        "level": 10,
+        "spells": 17,
+        "taught": 11,
+        "unresolved": [
+          "Cleanse Cuisine",
+          "Detect Magic",
+          "Message",
+          "Read Aura",
+          "Sigil",
+          "Ventriloquism"
+        ],
+        "nativeStrikes": [
+          {
+            "name": "Claw",
+            "bonus": 23,
+            "reach": 5
+          },
+          {
+            "name": "Horn",
+            "bonus": 21,
+            "reach": 10
+          },
+          {
+            "name": "Jaws",
+            "bonus": 23,
+            "reach": 10
+          },
+          {
+            "name": "Tail",
+            "bonus": 21,
+            "reach": 15
+          },
+          {
+            "name": "Wing",
+            "bonus": 21,
+            "reach": 10
+          }
+        ],
+        "nativeDamage": "{6d6[fire]}",
+        "frenzy": false,
+        "momentum": false
+      }
+    ],
+    "effects": {
+      "flySpeed": 25,
+      "shieldHardness": 15,
+      "mountainPhysicalResistance": [
+        5
+      ],
+      "sureStrikeRollTwice": 1
+    },
+    "savedCombat": {
+      "id": "qOeTcZUzcQbBU7y3",
+      "round": 14,
+      "turn": 1
+    },
+    "savedCombatPreserved": true,
+    "liveCombatReplayed": false,
+    "method": "Fresh normal login and isolated native Actor/TokenDocument instances guarded against persistence; native getDamage inspection, not live attacks. Server restarted with Arena using existing user authorization. No browser session credentials extracted."
+  },
+  "pits": {
+    "world": "arena",
+    "scene": "OTt3o0SfJZTLAc3r",
+    "regionCountBefore": 18,
+    "regionCountAfter": 20,
+    "installedRegionIds": [
+      "HnCYXofbcVtOvsYX",
+      "PrENWMUcQ4JreQXQ"
+    ],
+    "depth": 10,
+    "climbDC": 20,
+    "native": {
+      "bottom": -10,
+      "floor": -10,
+      "climbs": 5,
+      "jumps": [
+        {
+          "actions": 2,
+          "distance": 15
+        }
+      ],
+      "nativeClimbConstrained": false,
+      "climbEnd": {
+        "x": 1750,
+        "y": 1330,
+        "elevation": -5,
+        "width": 1,
+        "height": 1,
+        "depth": 1,
+        "shape": 4,
+        "level": "defaultLevel0000",
+        "action": "climb",
+        "terrain": null,
+        "snapped": false,
+        "explicit": false,
+        "checkpoint": false,
+        "intermediate": false
+      },
+      "nativeFallConstrained": false,
+      "fallEnd": {
+        "x": 1750,
+        "y": 1330,
+        "elevation": -10,
+        "width": 1,
+        "height": 1,
+        "depth": 1,
+        "shape": 4,
+        "level": "defaultLevel0000",
+        "action": "displace",
+        "terrain": null,
+        "snapped": false,
+        "explicit": false,
+        "checkpoint": false,
+        "intermediate": false
+      },
+      "type": "pf2e-tactical-movement.pit"
+    },
+    "idempotentInstallCreated": 0,
+    "manualModes": [
+      "climb",
+      "jump"
+    ],
+    "behavior": "pf2e-tactical-movement.pit",
+    "creationDoesNotDamageExistingOccupants": true
+  },
+  "policies": [
+    "Pit walls DC 20, editable",
+    "Support determined by token center",
+    "3D volumes test occupied five-foot cube centers",
+    "Counterspell recognition requires observed identical prepared spell and clear sight/effect",
+    "Steady Spellcasting may resist a Counterspell treated as disruption",
+    "Wall of Ice heightening follows supplied description over inconsistent structured interval",
+    "No secret outcome knowledge used for planning"
+  ],
+  "boundaries": [
+    "Lich utility spells Locate, Detect Magic, Message, Telekinetic Hand remain manual",
+    "Dragon utility spells Cleanse Cuisine, Detect Magic, Message, Read Aura, Sigil, Ventriloquism remain manual",
+    "Lich staff, potion, scroll and campaign Rejuvenation remain manual",
+    "Young 9d6 Pyre kit only; no automatic scaling to other dragon ages",
+    "Straight grounded ice walls only; manual native weapon tool for section attacks; AI routes around or over walls",
+    "Exceptional jumping feats and arbitrary cliffs/ladders/multilevel ground navigation require further handlers",
+    "Manual player action counting remains with the player",
+    "No real three-creature encounter was replayed during verification"
+  ],
+  "fixtureHashes": {
+    "lich": "0777545638f5b340799fc6075e00b3fc10882d70e888d54e47a5ccc0695c923e",
+    "dragon": "56657a24c75864ee78a20c2c88944b4f98af391b52b5170b41ecb5c7a4d42ae1",
+    "dragonCaster": "09afb827a0fe4a86718877f91d0dff62c386dda9455a1c32b392aaa1d9e19ac0"
+  },
+  "sources": [
+    "https://2e.aonprd.com/Monsters.aspx?ID=4345",
+    "https://2e.aonprd.com/Monsters.aspx?ID=3082",
+    "https://2e.aonprd.com/MonsterAbilities.aspx?ID=64",
+    "https://2e.aonprd.com/Actions.aspx?ID=2374",
+    "https://2e.aonprd.com/Actions.aspx?ID=2378",
+    "https://2e.aonprd.com/Actions.aspx?ID=2313"
+  ],
+  "release": {
+    "archive": "releases/pf2e-tactical-suite-0.42.0.zip",
+    "archiveMatchesBuild": true,
+    "installedMatchesBuild": true,
+    "filesVerified": 282,
+    "version": "0.42.0",
+    "sha256": "A05A2D78FFA65389140ECA0358589EA89A52F3FB6230A0BB64D02FCE7D8E4ABF"
+  }
+}

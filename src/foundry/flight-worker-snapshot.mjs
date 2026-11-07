@@ -34,6 +34,8 @@ export function flightWorkerSnapshot(adapter,state){
         low:l.elevation?.bottom??-Infinity,high:l.elevation?.top??Infinity})):[{x1:c[0]/size,y1:c[1]/size,x2:c[2]/size,y2:c[3]/size}];
     });
   const surfaces=[];
+  for(const region of canvas.scene.regions?.contents??[])if(!region.hidden)for(const s of region.flags?.['foundry-creature-ai']?.iceWall?.segments??[])if(s.hp>0)
+   for(const [x1,y1,x2,y2]of [[s.x,s.y,s.x+s.width,s.y],[s.x+s.width,s.y,s.x+s.width,s.y+s.height],[s.x+s.width,s.y+s.height,s.x,s.y+s.height],[s.x,s.y+s.height,s.x,s.y]])walls.push({x1:x1/size,y1:y1/size,x2:x2/size,y2:y2/size,low:s.bottom,high:s.top});
   for(const region of canvas.scene.regions?.contents??[]){
     if(region.hidden)continue;
     for(const behavior of region.behaviors?.contents??[])if(behavior.type==='defineSurface'&&!behavior.disabled&&behavior.system.move){

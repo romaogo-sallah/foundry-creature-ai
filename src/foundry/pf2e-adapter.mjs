@@ -19,7 +19,9 @@ import { approachNavigation } from './approach-navigation.mjs';
 import { greaseExtraCost, prepareGreaseMove, withGreaseMode, inGrease } from './spell-zones.mjs';
 import { settleGreaseSlip, finishGreaseFall } from './grease-landing.mjs';
 import { sameSurfaceElevation } from './surface-terrain.mjs';
-import { distanceToPosition, rayAt, tokenAt } from './vertical-geometry.mjs';
+import {pitWalkable} from './pit-geometry.mjs';
+import {iceBlocksMovement} from './ice-wall-geometry.mjs';
+import { distanceToPosition, rayAt, tokenAt,tokenHeight } from './vertical-geometry.mjs';
 import { nonvisualSense } from './perception-senses.mjs';
 import {conditionFacts,resolveConditionChecks,nativeRuleAction,manualConditionViolation} from './condition-actions.mjs';
 import {initialActionBudget,settleStunned,valuedStunned} from './action-economy.mjs';
@@ -371,7 +373,7 @@ export class PF2eCreatureAdapter {
       // Same-alliance creatures are willing to let this NPC pass. Do not treat
       // them as walls or difficult terrain. Objects and other creatures still block.
       const blocksPassage = occupied.filter(token => !(token.actor?.isOfType?.('creature') && !this.actor.hasCondition('confused') && this.actor.isAllyOf(token.actor)));
-      const canEnter = cell => onMap(cell) && !blocksPassage.some(token => overlaps(cell, token));
+      const canEnter = cell => onMap(cell) && pitWalkable(this.token.document,this.topLeft(cell)) && !blocksPassage.some(token => overlaps(cell, token));
       // The AI plans each Stride to a clear endpoint; it does not plan the special
       // case of ending atop an ally and immediately spending another move to leave.
       const canStop = cell => onMap(cell) && !occupied.some(token => overlaps(cell, token));
@@ -383,6 +385,7 @@ export class PF2eCreatureAdapter {
       };
       const canTraverse = (from, to) => {
         const start = from.path?.length === 1 ? this.actualWaypoint() : this.waypoint(from);
+        if(iceBlocksMovement(this.token,start,this.waypoint(to),tokenHeight(this.token)))return false;
         // Shared vertical route planning is taught separately. A ground-only
         // plan must not unexpectedly change elevation during execution.
         try{if(!sameSurfaceElevation(this.token.document,[start,this.waypoint(to)]))return false;}catch{return false;}
@@ -651,8 +654,8 @@ export class PF2eCreatureAdapter {
       ...this.actor.getRollOptions(['all', 'damage']).filter(option => !/^(self|target):/.test(option)),
       ...(item?.getRollOptions('item') ?? []), MANAGED_OPTION, `outcome:${outcome}`];
     const damageValid = () => valid() && canvas.tokens.get(target.id) === target;
-    const block = this.config.pauseForReactions !== false && this.reactions
-      ? await this.reactions.shieldBlock({ origin: this.token, target, damage, valid: damageValid }) : false;
+      const block = this.config.pauseForReactions !== false && this.reactions
+        ? await this.reactions.shieldBlock({ origin: this.token, target, damage,item, valid: damageValid }) : false;
     if (!damageValid()) throw new Error('Automation stopped before damage application. Resolve the rolled damage and correct action counts before resuming.');
     const apply=()=>target.actor.applyDamage({ damage, token: target.document, item, rollOptions: new Set(flags), outcome, shieldBlockRequest: Boolean(block) });
     const result=captureDamage?await captureAppliedDamage(target.actor,apply):await apply();
