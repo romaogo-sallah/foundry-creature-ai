@@ -1,0 +1,461 @@
+{
+  "date": "2026-11-08",
+  "analysisOnly": true,
+  "gameplayCodeChanged": false,
+  "installedCode": "0.43.0",
+  "battleCode": [
+    "0.42.0"
+  ],
+  "battle": {
+    "world": "arena",
+    "combatId": "w2gVjB2d2sXRz7mL",
+    "rounds": [
+      1,
+      12
+    ],
+    "savedTurn": 3,
+    "aiReports": 109,
+    "windowMessages": 377,
+    "firstUTC": "2026-11-08T11:49:36.840Z",
+    "lastUTC": "2026-11-08T12:02:10.973Z",
+    "participants": {
+      "lich": 1,
+      "vampireCount": 2,
+      "vampireGuardian": 1,
+      "vampireMastermind": 1
+    },
+    "outcome": "Unfinished: Lich stalled in round 12; surviving hostile vampires remain"
+  },
+  "findings": [
+    {
+      "id": "frightful-presence-immunity",
+      "priority": 1,
+      "status": "Confirmed storage/rule bug",
+      "saves": 56,
+      "saveMessageIdsByTarget": {
+        "k5NKf8cXgWOB0ES6": [
+          "w6Dz6UgsmYOSYCn4",
+          "wy5mjoN95Y4Ar52V",
+          "YWnLvAm4AYfxRlbD",
+          "qd3sZDCECakXArgS",
+          "kv4hfpIRxKNi6QYH",
+          "a08NbMJHXNLQVRyx",
+          "HN0Z0CAWS2FRJUcj",
+          "MRbHzjQjfCUUswho",
+          "k4pnODMZAzEkvQxC",
+          "o3FV91M0jYWd6NwD",
+          "PF37Mu02jqWfvx1s",
+          "xVsedBOyDmF1584q",
+          "wiwC3ZdfQjk2URbS",
+          "UgXswlJ5nJ4omWpT",
+          "y748YMD9Ve9cdZNO",
+          "FpLKsqOSXKaehp9U",
+          "xgzxuWC94sKSDyHG",
+          "971UKrsWpSd2vO3g",
+          "egGw5Dc3lANRTOJd",
+          "ohRjoxc12EUg0xCb",
+          "pcP7Qu5g9OndOxOy",
+          "nKa4D8iEzQvhcZQN",
+          "dHKoHkzYws6i7ICD",
+          "1nv9yVSyTcF1bvdv",
+          "QGTccUkpegxKOCeX",
+          "Jy884gLrpQc25xGC",
+          "6rYRgvMVHL2I4rPn"
+        ],
+        "m7a0nArXQAMqT8zN": [
+          "YRxf7Bu5lT105Zxf",
+          "I3Oai9X6UoxSWix5",
+          "qtF5WdbWlns5wps8",
+          "w8RSzxTt3c3CAhse",
+          "xADPZZAScI937oHT",
+          "FV4D3B62nLzVE8vl",
+          "F9q4uF3LnIutwJ0n",
+          "CNehsylwwCmwZBzX",
+          "0UEgsbJXYYZgCZt6",
+          "PSqrlayCGKCibewP",
+          "l8El3yYLv17rDEpB",
+          "XiLzdcMsTSX1MkYs",
+          "ghvNXWWSEVCNvWCa",
+          "OqjhsX2cS9JC6Jjh",
+          "YDxzSEwABUG0ijaR",
+          "S42U2lE9BDSmupVD",
+          "3S2o2hfLHNcM2GVc",
+          "4WlcZ96zRmcerZw1",
+          "xev12A33jQ5dfPSN",
+          "nf1hB2q4JY3fayVs",
+          "BApDlznjUXRO4yxa"
+        ],
+        "VBFIb1ChziA56NDR": [
+          "Xi1iY93Swf87LGoe",
+          "QVDh4GwRxL4jrTG4",
+          "VZTtEbOqC6xPo4O5",
+          "XJFHePfMaAbnc5w0",
+          "Jy7S9F6iTvNl2Hws",
+          "zg6ZxGmRc9cV5SRt",
+          "zBIZN3mVueq9YeEu",
+          "eVFbPI4jXTORkJww"
+        ]
+      },
+      "reason": "Dotted UUID map keys expand into nested saved flags; flat UUID lookup fails",
+      "source": "src/foundry/monster-abilities.mjs",
+      "persistedShape": "frightfulImmunities.Scene.<scene>.Token.<token> = expiry",
+      "expectedRule": "One-minute source immunity after any save result",
+      "subsecondMastermindExamples": [
+        "a08NbMJHXNLQVRyx",
+        "HN0Z0CAWS2FRJUcj",
+        "MRbHzjQjfCUUswho",
+        "k4pnODMZAzEkvQxC"
+      ]
+    },
+    {
+      "id": "dispel-skip-loop",
+      "priority": 1,
+      "status": "Confirmed deadlock and target-contract mismatch",
+      "round": 12,
+      "count": 16,
+      "durationSeconds": 73.666,
+      "messageIds": [
+        "ZGKqgMCW0969ybJg",
+        "W0U7HjiIFe7j9XX0",
+        "ALTo3gkZZYYkbcbu",
+        "sSSpEcfdOlWjfruK",
+        "Spoft3Voo5gSNorw",
+        "tdj90yx3fL9TgSZn",
+        "ky144zbRxNhYYSW1",
+        "BFkn0vjRBVm7wpkm",
+        "6OCyRLAVqVY5ODwZ",
+        "2bvGeISqjLsHM4jM",
+        "7BCnWGWArmuhEF1Y",
+        "zHnlzTta0FlEUvoh",
+        "RyHEH32vMbnLraCZ",
+        "JQ5YRfmYxmEcgaVu",
+        "QqICVg5YoMz2sjqb",
+        "YMjR3BS25mlFvwsu"
+      ],
+      "target": "m7a0nArXQAMqT8zN",
+      "effect": "3qSn5Spg0Ykdmr0j",
+      "allAttemptsPreserveThreeActions": true,
+      "reason": "Planner offers Haste on a 0-HP mist Guardian; execution resolves enemy through ordinary liveTarget and rejects it; unchanged skipped candidate returns",
+      "sources": [
+        "src/foundry/counteract-spells.mjs",
+        "src/foundry/spellcasting.mjs",
+        "src/framework/turn-runner.mjs"
+      ]
+    },
+    {
+      "id": "ineligible-undead-spells",
+      "priority": 2,
+      "status": "Confirmed ineffective casts and incomplete target/observation modeling",
+      "casts": [
+        {
+          "messageId": "0bi5pVZ02sz3qqoY",
+          "round": 1,
+          "caster": "Vampire Mastermind",
+          "spell": "Vision of Death",
+          "target": "1kkunLFpgYhYzS5H"
+        },
+        {
+          "messageId": "tUMr4KASip6YpU8u",
+          "round": 2,
+          "caster": "Vampire Mastermind",
+          "spell": "Vision of Death",
+          "target": "1kkunLFpgYhYzS5H"
+        },
+        {
+          "messageId": "6Obct7qQsVG0EBCq",
+          "round": 5,
+          "caster": "Lich",
+          "spell": "Vampiric Exsanguination",
+          "target": "m7a0nArXQAMqT8zN"
+        },
+        {
+          "messageId": "nIVANRZtmefjjNu8",
+          "round": 7,
+          "caster": "Lich",
+          "spell": "Vampiric Feast",
+          "target": "m7a0nArXQAMqT8zN"
+        }
+      ],
+      "toxicCloud": {
+        "round": 3,
+        "castingMessage": "jK8XiBJWzpN9uuyQ",
+        "saveRolls": 0,
+        "qualification": "Cloud still supplies concealment; not all utility is zero"
+      },
+      "additionalVoidHand": {
+        "round": 10,
+        "noDamageMessage": "F9mGLzl1UIXmshPC"
+      },
+      "knowledgeBoundary": "Use legitimate target-category knowledge and publicly observed effect/immunity evidence; do not expose secret saves or all enemy statistics"
+    },
+    {
+      "id": "hybrid-count-indefinite-wait",
+      "priority": 2,
+      "status": "Confirmed tactical failure; generic waiting/role-inference cause supported by code",
+      "token": "VBFIb1ChziA56NDR",
+      "wholeTurnRounds": [
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "unspentActions": 26,
+      "attacksAndCasts": 0,
+      "examples": [
+        {
+          "messageId": "4R9ouKDuGfRtydUs",
+          "round": 1,
+          "actions": 2,
+          "reachable": 44,
+          "enemies": [
+            {
+              "id": "1kkunLFpgYhYzS5H",
+              "distance": 90,
+              "inReach": false,
+              "flanked": false,
+              "lineOfSight": false,
+              "physicalPath": false
+            }
+          ]
+        },
+        {
+          "messageId": "aNO4WRtnO3j6rKyD",
+          "round": 3,
+          "actions": 3,
+          "reachable": 77,
+          "enemies": [
+            {
+              "id": "1kkunLFpgYhYzS5H",
+              "distance": 65,
+              "inReach": false,
+              "flanked": false,
+              "lineOfSight": true,
+              "physicalPath": true
+            }
+          ]
+        },
+        {
+          "messageId": "nbzsTQjMClVWHHZo",
+          "round": 4,
+          "actions": 3,
+          "reachable": 78,
+          "enemies": [
+            {
+              "id": "1kkunLFpgYhYzS5H",
+              "distance": 65,
+              "inReach": false,
+              "flanked": false,
+              "lineOfSight": true,
+              "physicalPath": true
+            }
+          ]
+        },
+        {
+          "messageId": "deEduoyOvj5bklRK",
+          "round": 6,
+          "actions": 3,
+          "reachable": 43,
+          "enemies": [
+            {
+              "id": "1kkunLFpgYhYzS5H",
+              "distance": 70,
+              "inReach": false,
+              "flanked": false,
+              "lineOfSight": true,
+              "physicalPath": true
+            }
+          ]
+        },
+        {
+          "messageId": "hmSmfWpMSSTauC1V",
+          "round": 7,
+          "actions": 3,
+          "reachable": 34,
+          "enemies": [
+            {
+              "id": "1kkunLFpgYhYzS5H",
+              "distance": 75,
+              "inReach": false,
+              "flanked": false,
+              "lineOfSight": true,
+              "physicalPath": true
+            }
+          ]
+        },
+        {
+          "messageId": "KXRAQ2lbAERSFSzx",
+          "round": 8,
+          "actions": 3,
+          "reachable": 43,
+          "enemies": [
+            {
+              "id": "1kkunLFpgYhYzS5H",
+              "distance": 60,
+              "inReach": false,
+              "flanked": false,
+              "lineOfSight": true,
+              "physicalPath": true
+            }
+          ]
+        },
+        {
+          "messageId": "wDJhKVkldXcnp6Bf",
+          "round": 9,
+          "actions": 3,
+          "reachable": 43,
+          "enemies": [
+            {
+              "id": "1kkunLFpgYhYzS5H",
+              "distance": 60,
+              "inReach": false,
+              "flanked": false,
+              "lineOfSight": true,
+              "physicalPath": true
+            }
+          ]
+        },
+        {
+          "messageId": "yXJahmhnkcjHncBG",
+          "round": 10,
+          "actions": 3,
+          "reachable": 43,
+          "enemies": [
+            {
+              "id": "1kkunLFpgYhYzS5H",
+              "distance": 60,
+              "inReach": false,
+              "flanked": false,
+              "lineOfSight": true,
+              "physicalPath": true
+            }
+          ]
+        },
+        {
+          "messageId": "mh1KhbhCadKUOeK7",
+          "round": 11,
+          "actions": 3,
+          "reachable": 42,
+          "enemies": [
+            {
+              "id": "1kkunLFpgYhYzS5H",
+              "distance": 60,
+              "inReach": false,
+              "flanked": false,
+              "lineOfSight": true,
+              "physicalPath": true
+            }
+          ]
+        }
+      ],
+      "reason": "A single innate spell attaches caster defense; waitingCaster has no generic persisted holdTurns; public ranged casting does not update the apparent melee role"
+    },
+    {
+      "id": "mist-escape-no-movement",
+      "priority": 2,
+      "status": "Confirmed symptom; exact native runtime cause needs reproduction",
+      "subjects": [
+        {
+          "tokenId": "zsFfklz7Ikd6Tn5e",
+          "name": "Vampire Count",
+          "lastLedgerRound": 2,
+          "state": {
+            "form": "mist",
+            "escape": true,
+            "escapeTriggered": true,
+            "escaped": false,
+            "expiresAt": 94846
+          },
+          "lastPosition": {
+            "x": 2240,
+            "y": 1050,
+            "elevation": 0
+          }
+        },
+        {
+          "tokenId": "m7a0nArXQAMqT8zN",
+          "name": "Vampire Guardian",
+          "lastLedgerRound": 7,
+          "state": {
+            "form": "mist",
+            "escape": true,
+            "escapeTriggered": true,
+            "escaped": false,
+            "expiresAt": 94882
+          },
+          "lastPosition": {
+            "x": 2310,
+            "y": 1330,
+            "elevation": 0
+          }
+        }
+      ],
+      "escapeActions": 0,
+      "qualification": "Moving-mist incapacitation exceptions already exist and native PF2e startTurn emits its hook; do not claim a missing 0-HP exception without tracing the failure"
+    },
+    {
+      "id": "long-jump-runup",
+      "priority": 3,
+      "status": "Confirmed aborted activity; animation timing suspected",
+      "messageId": "mgVAXFuwtGvzxxKc",
+      "round": 2,
+      "actor": "Vampire Guardian",
+      "actionsSpent": 2,
+      "start": {
+        "x": 2170,
+        "y": 1330
+      },
+      "takeoffAndNextTurnPosition": {
+        "x": 1890,
+        "y": 1330
+      },
+      "jumpCheckMade": false,
+      "reason": "Run-up document.move is followed by immediate coordinate validation without awaiting settled animation; a genuine constraint or transient condition is not entirely excluded"
+    }
+  ],
+  "positives": {
+    "chainLightningCasts": 2,
+    "howlingBlizzardCasts": 2,
+    "soulCageUsed": true,
+    "mastermindHasteUsed": true,
+    "counterspellBlur": {
+      "checkMessage": "etfsaegDCChDORXE",
+      "steadyCheck": 13,
+      "disrupted": true
+    },
+    "counterspellDominate": {
+      "checkMessage": "8kDV2gAKjKhKVcvx",
+      "steadyCheckMessage": "0TYL2doSQxvgGnik",
+      "steadyCheck": 16,
+      "protected": true
+    }
+  },
+  "dataLimits": [
+    "Chat is not a client-console trace",
+    "Review uses copied offline collections and the prior native world snapshot",
+    "Raw source HP can differ from prepared elite/weak maximum HP; no over-max-HP bug inferred from raw values",
+    "No encounter replay, native action simulation, restart or saved-state repair performed",
+    "Worker responsiveness work does not constitute fixes for these gameplay findings"
+  ],
+  "sources": [
+    "https://2e.aonprd.com/MonsterAbilities.aspx?ID=64",
+    "https://2e.aonprd.com/Spells.aspx?ID=1742",
+    "https://2e.aonprd.com/Spells.aspx?ID=1735",
+    "https://2e.aonprd.com/Spells.aspx?ID=1736",
+    "https://2e.aonprd.com/Spells.aspx?ID=1722",
+    "https://2e.aonprd.com/Monsters.aspx?ID=3082",
+    "https://2e.aonprd.com/Monsters.aspx?ID=3226"
+  ],
+  "verification": {
+    "evidenceCountsChecked": true,
+    "gameplayTestsRun": false,
+    "reason": "Documentation and evidence review only; no gameplay code changes",
+    "originalWorldDatabasesOpenedForWrite": false,
+    "worldActorsCreated": 0,
+    "combatAdvanced": false,
+    "savedStateChanged": false
+  }
+}
