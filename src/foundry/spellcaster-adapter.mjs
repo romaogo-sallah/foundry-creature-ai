@@ -12,14 +12,14 @@ import {stealthAdapter} from './shared-stealth.mjs';
 import {executeSpell} from './spellcasting.mjs';
 import {ongoingCasts,sustainCast} from './ongoing-spells.mjs';
 import {conditionSpells} from '../framework/condition-spells.mjs';
-import {describeSpellAreas} from './spell-areas.mjs';
+import {describeSpellAreasAsync} from './spell-areas.mjs';
 import {detectionFor} from './stealth-awareness.mjs';
 import {inGrease} from './spell-zones.mjs';
 import {spellDefinition} from '../framework/spell-definitions.mjs';
 import {witnessedSpellCasts} from './spell-observations.mjs';
 import {taughtBuffs} from './support-spells.mjs';
 import {visibleDispelTargets} from './counteract-spells.mjs';
-import {translocationDestinations} from './translocation.mjs';
+import {translocationDestinationsAsync} from './translocation.mjs';
 import {isTrueVampire} from './vampire-state.mjs';
 import {shieldImmune} from './spell-attack-buffs.mjs';
 const ns='foundry-creature-ai';
@@ -37,9 +37,9 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
  perceivedSpellTarget(enemy){return this.perceivedTarget(enemy);}
  extraCasterActions(){return [];}
  async snapshot(ledger,options){
-  return this.enrichCasterState(await super.snapshot(ledger,options),ledger);
+  return this.enrichCasterState(await super.snapshot(ledger,options),ledger,options);
  }
- async enrichCasterState(state,ledger){
+ async enrichCasterState(state,ledger,options={}){
   const parts=this.parts(),knowledge=casterTargetKnowledge(this),attempts=this.token.document.getFlag(ns,'conditionCaster');
   // Persistent native regions continue outside the caster's turn. Do not
   // create autonomous damage sources when the GM selected rolls-only mode.
@@ -64,21 +64,31 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
    skulk:Boolean((token.actor.itemTypes.action??[]).some(a=>a.slug==='sneak-attack')),nearestEnemy:Math.min(Infinity,...state.enemies.filter(e=>e.lineOfSight!==false).map(e=>token.distanceTo(this.perceivedSpellTarget(e)))),
    hpFraction:token.actor.hitPoints.value/Math.max(1,token.actor.hitPoints.max),...token===this.token?{distance:0,lineOfSight:true,lineOfEffect:true}:this.targetAt(cell,token,[],position)});
   state.casterAllies=allies.map(t=>support(t));
-  state.teleportDestinations=parts.descriptors.some(s=>s.teleport&&s.available)?translocationDestinations(this,state):[];
+  state.teleportDestinations=parts.descriptors.some(s=>s.teleport&&s.available)?await translocationDestinationsAsync(this,state,options.budget):[];
   for(const enemy of state.enemies)enemy.chainNeighbors=state.enemies.filter(e=>e.id!==enemy.id&&this.perceivedSpellTarget(enemy).distanceTo(this.perceivedSpellTarget(e))<=30).map(e=>e.id);
   state.damageThreats=[...new Set((game.messages?.contents??[]).slice(-100).filter(m=>!m.blind&&!m.whisper?.length&&state.enemies.some(e=>e.id===m.speaker?.token)).flatMap(m=>(m.rolls??[]).flatMap(r=>(r.instances??[]).map(i=>i.type))))];
   state.dispelTargets=parts.descriptors.some(s=>s.slug==='dispel-magic'&&s.available)?visibleDispelTargets(this):[];
   state.casterDefense={enabled:true,engagementRange:Math.max(5,...parts.descriptors.filter(s=>s.kind!=='heal').map(s=>s.range))};
   const bystanders=allies.filter(t=>t!==this.token); // Add other visible neutrals as friendly-fire risks too.
   for(const t of canvas.tokens.placeables)if(t!==this.token&&!bystanders.includes(t)&&!state.enemies.some(e=>e.id===t.id)&&t.actor?.isOfType?.('creature')&&!t.document.hidden&&this.sight(this.token.center,t)&&detectionFor(this.token,t).state==='observed')bystanders.push(t);
-  const decorate=(position,enemies)=>parts.descriptors.map(spell=>spell.available&&(spell.area||['ground-control','lingering'].includes(spell.kind))?
-   {...spell,areas:describeSpellAreas(this,spell,{...state,enemies,bystanderGrease:Object.fromEntries(bystanders.map(t=>[t.id,inGrease(t).length>0]))},bystanders,position)}:spell);
-  state.spells=decorate(undefined,state.enemies);
-  for(const move of state.moves){const defense=stealth.at(this.center(move));move.spells=parts.descriptors;
+  const areaCache=new Map();
+  const decorate=async(position,enemies)=>{
+   const decorated=[];
+   for(const spell of parts.descriptors){
+    await options.budget?.checkpoint();
+    if(!spell.available||!spell.area&&!['ground-control','lingering'].includes(spell.kind)){decorated.push(spell);continue;}
+    // Slot and Soul Cage bindings share geometry, not resource availability.
+    const key=JSON.stringify([position,spell.slug,spell.area,spell.range,spell.living,spell.ice]);
+    if(!areaCache.has(key))areaCache.set(key,await describeSpellAreasAsync(this,spell,{...state,enemies,bystanderGrease:Object.fromEntries(bystanders.map(t=>[t.id,inGrease(t).length>0]))},bystanders,position,options.budget));
+    decorated.push({...spell,areas:areaCache.get(key)});
+   }return decorated;
+  };
+  state.spells=await decorate(undefined,state.enemies);
+  for(const move of state.moves){await options.budget?.checkpoint();const defense=stealth.at(this.center(move));move.spells=parts.descriptors;
    for(const enemy of state.enemies)Object.assign(move.targets[enemy.id],defense[enemy.id]);
    move.supportTargets=Object.fromEntries(allies.map(t=>[t.id,support(t,move,this.topLeft(move))]));}
   if(ledger.actionsRemaining>=3)for(const move of [...state.moves].sort((a,b)=>(a.nearestEnemy??0)-(b.nearestEnemy??0)).slice(0,12))
-   move.spells=decorate(this.topLeft(move),state.enemies.map(e=>({...e,...move.targets[e.id]})));
+   move.spells=await decorate(this.topLeft(move),state.enemies.map(e=>({...e,...move.targets[e.id]})));
   state.activeSustained=ongoingCasts(this.actor);state.sustained=state.activeSustained.filter(c=>c.lastRound<game.combat.round);
   state.diagnostics={...state.diagnostics,manualAbilities:parts.unsupported,witnessedSpellCasts:state.witnessedCasts.map(c=>({slug:c.slug,targetId:c.targetId,immunity:c.immunity})),castingEntries:parts.entries.map(e=>({id:e.id,name:e.name,mode:e.system.prepared.value})),spellCatalog:parts.descriptors.map(s=>({name:s.name,rank:s.castRank,actions:s.actionCost,available:s.available,pool:s.poolId}))};
   return state;

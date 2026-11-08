@@ -10,6 +10,7 @@ import { configureEscapes } from './escape.mjs';
 import { rememberTargets, movementKnowledge } from './target-memory.mjs';
 import { RUNTIME_VERSION } from './runtime-version.mjs';
 import {planningWorker} from './planning-worker.mjs';
+import {decisionWorker} from './decision-runtime.mjs';
 import { behaviorAPI, behaviorConfiguration, behaviorCatalog, configureBehaviors } from './behavior-runtime.mjs';
 import { AIPresentation, registerPresentationSettings, applyAIRollPrivacy, applyAIDiceSuppression } from './ai-presentation.mjs';
 import { registerPerceptionSettings } from './npc-perception.mjs';
@@ -71,7 +72,7 @@ export async function preview(token = selected(), config) {
   await adapter.assertReady();
   const ledger = await adapter.readLedger(adapter.turnKey());
   if (ledger.uncertain) throw new Error('Correct the interrupted action ledger first');
-  const decision = adapter.decide(await adapter.snapshot(ledger));
+  const state=await adapter.snapshot(ledger),decision=await adapter.planDecision(state);
   const estimate = decision.chosen?.estimate;
   await foundry.applications.api.DialogV2.wait({
     window: { title: `Creature AI — ${token.name}` },
@@ -328,6 +329,9 @@ export async function tacticalMap(token=selected()){
 }
 
 Hooks.once('init', () => {
+  game.settings.register(MODULE_ID,'decisionPlanningBackend',{name:'Decision planning engine',scope:'world',config:true,type:String,default:'worker',
+    choices:{worker:'Background Web Worker',native:'Main thread (compatibility mode)'},
+    hint:'Run target scoring, tactics and remaining-turn forecasts in a worker. A worker failure pauses AI without silently running expensive calculations on the interface thread.'});
   game.settings.register(MODULE_ID,'flightPlanningBackend',{name:'Flight planning engine',scope:'world',config:true,type:String,default:'worker',
     choices:{worker:'Background Web Worker',native:'Native planner (compatibility fallback)'},
     hint:'The worker proposes routes and Dive setups; Foundry validates native geometry and costs. Unsupported or failed workers fall back automatically.'});
@@ -373,7 +377,7 @@ Hooks.on('preCreateChatMessage', message => {
 Hooks.once('ready', async () => {
   if (game.system.id !== 'pf2e' || Number(game.release.generation) !== 14) return;
   await rulesRuntime.start();
-  game.modules.get(MODULE_ID).api = {...rulesRuntime.rules,version:RUNTIME_VERSION,planning:{status:()=>planningWorker.status()},
+  game.modules.get(MODULE_ID).api = {...rulesRuntime.rules,version:RUNTIME_VERSION,planning:{status:()=>({...planningWorker.status(),decisions:decisionWorker.status()})},
     casting:{inspect:(actor=canvas.tokens.controlled[0]?.actor)=>{const catalog=casterCatalog(actor);return {spells:catalog.descriptors,unsupported:catalog.unsupported};}},
     open:openControls,preview,explainLast,runTurn,stop,resetActors,enableFullAuto,correctLedger,tacticalMap,supportedProfiles,registerCreatureProfile};
   game.modules.get(MODULE_ID).api.behaviors = {...behaviorAPI,open:openBehaviorControls,
@@ -414,7 +418,7 @@ Hooks.on('pf2e.startTurn', (combatant) => {
     automatic: true, expectedTurn: `${game.combat.id}:${game.combat.round}:${combatant.id}`,
   }).catch(showError);
 });
-Hooks.on('canvasTearDown', () => { stop(); planningWorker.close('Scene changed'); runners.clear(); });
+Hooks.on('canvasTearDown', () => { stop(); planningWorker.close('Scene changed');decisionWorker.close('Scene changed'); runners.clear(); });
 Hooks.on('deleteCombat', combat => { stop(); expireCommands({ combat, removeAll: true }).catch(showError); });
 Hooks.on('pf2e.endTurn', (combatant, combat) => { expireCommands({ combat, endedTokenId: combatant.tokenId,
   endedRound: combatant.flags?.pf2e?.roundOfLastTurnEnd ?? combat.round }).catch(showError); });

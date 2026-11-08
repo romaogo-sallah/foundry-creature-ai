@@ -3,9 +3,10 @@ import {clearSightPath} from './attack-path.mjs';
 import {pitAt} from './pit-geometry.mjs';
 import {MANAGED_MOVEMENT} from './movement-options.mjs';
 import {occupiesMovementSpace} from './combat-state.mjs';
-export function translocationDestinations(adapter,state){
+function* translocationSteps(adapter,state){
  const source=adapter.token,size=canvas.grid.size,rect=canvas.dimensions.sceneRect,result=[];
  for(const feet of [30,60,90,120])for(let i=0;i<16;i++){
+  yield;
   const a=i*Math.PI/8,p={x:Math.round((source.document.x+Math.cos(a)*feet/5*size)/size)*size,y:Math.round((source.document.y+Math.sin(a)*feet/5*size)/size)*size,elevation:source.document.elevation,level:source.document.level};
   if(!rect.contains(p.x,p.y)||!rect.contains(p.x+source.w-1,p.y+source.h-1)||pitAt(source.document,p)||
    canvas.tokens.placeables.some(t=>t!==source&&occupiesMovementSpace(t)&&t.document.elevation===p.elevation&&p.x<t.document.x+t.w&&p.x+source.w>t.document.x&&p.y<t.document.y+t.h&&p.y+source.h>t.document.y))continue;
@@ -16,6 +17,8 @@ export function translocationDestinations(adapter,state){
  }
  return result.sort((a,b)=>b.value-a.value).slice(0,4);
 }
+export function translocationDestinations(...args){const iterator=translocationSteps(...args);let step;do{step=iterator.next();}while(!step.done);return step.value;}
+export async function translocationDestinationsAsync(adapter,state,budget){const iterator=translocationSteps(adapter,state);let step;do{await budget?.checkpoint();step=iterator.next();}while(!step.done);return step.value;}
 export async function executeTranslocate(adapter,spell,choice){
  // Recheck the exact endpoint, independently of the planner's shortlist/rank.
  const p=choice.destination,proxy=p&&tokenAt(adapter.token,p);

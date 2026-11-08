@@ -28,7 +28,7 @@ export class PF2eEagleAdapter extends PF2eBasicNPCAdapter{
       unsupported:parts.unsupported.filter(name=>name!==dive.name)};
   }
   candidates(state){return [...super.candidates(state),...(state.flight?.dives??[])];}
-  async enrichFlight(state,planner,{signal}={}){
+  async enrichFlight(state,planner,{signal,budget}={}){
     if(!state.flight?.canFly)return;
     const endpoints=[],bounds=flightBounds(this.token),talon=this.parts().talon;
     if(!state.flight.airCombat){
@@ -37,6 +37,7 @@ export class PF2eEagleAdapter extends PF2eBasicNPCAdapter{
     }
     const threats=flightThreats(this,state,enemy=>perceivedFlightTarget(this,enemy));
     for(const enemy of state.enemies){
+      await budget?.checkpoint();
       const target=perceivedFlightTarget(this,enemy),cell=this.cell(target.document);
       const top=target.document.elevation+tokenHeight(target);
       for(const elevation of [...new Set([target.document.elevation,Math.max(target.document.elevation,top-5),top])])
@@ -88,6 +89,7 @@ export class PF2eEagleAdapter extends PF2eBasicNPCAdapter{
     if(flightWorldStamp(this)!==stamp)throw new Error('Battlefield changed while planning a Dive; retry before acting');
     const selected=response.result??rankDiveSetups(payload);
     for(const [index,move] of state.flight.moves.entries()){
+      await budget?.checkpoint();
       const shortlist=(selected[index]??[]).map(i=>endpoints[i]).filter(Boolean);
       let dive=shortlist.map(end=>build({x:move.x,y:move.y,elevation:move.elevation},end,3,{fresh:true})).filter(Boolean);
       // Preserve a route around unusual native geometry when the cheap

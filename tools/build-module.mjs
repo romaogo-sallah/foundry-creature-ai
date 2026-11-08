@@ -36,6 +36,8 @@ await cp(new URL('docs/ogre-foundry.md', root), new URL('ogre-foundry.md', outpu
 await cp(new URL('docs/creature-framework.md', root), new URL('creature-framework.md', output));
 await cp(new URL('docs/tactics-and-components.md', root), new URL('tactics-and-components.md', output));
 await cp(new URL('docs/flight-worker.md', root), new URL('flight-worker.md', output));
+const decisionGuide=await readFile(new URL('docs/decision-worker.md',root),'utf8');
+await writeFile(new URL('decision-worker.md',output),decisionGuide.replaceAll('(../research/','(https://github.com/romaogo-sallah/foundry-creature-ai/blob/main/research/'));
 await cp(new URL('docs/target-memory.md', root), new URL('target-memory.md', output));
 await cp(new URL('docs/npc-perception.md', root), new URL('npc-perception.md', output));
 await cp(new URL('docs/environment-zones.md', root), new URL('environment-zones.md', output));

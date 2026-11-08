@@ -114,13 +114,15 @@ export class TurnRunner {
         let state;
         const planningOptions={signal:this.abortController.signal};
         try{state=await this.adapter.snapshot(ledger,planningOptions);}
-        catch(error){if(this.cancelled||this.abortController.signal.aborted||this.adapter.turnKey()!==turn)return ledger;throw error;}
+        catch(error){if(this.cancelled||this.abortController.signal.aborted||this.adapter.turnKey()!==turn)return ledger;if(error.name==='StalePlanningError')continue;throw error;}
         if(this.cancelled||this.adapter.turnKey()!==turn)return ledger;
         const endedAfterRefresh = await this.completeIfIncapacitated(ledger, { oneAction }, turn);
         if (endedAfterRefresh) return endedAfterRefresh;
         const encounterEndAfterRefresh = await this.completeIfEncounterOver(ledger, turn);
         if (encounterEndAfterRefresh) return encounterEndAfterRefresh;
-        const decision = await this.adapter.decide(state);
+        let decision;
+        try{decision=await (this.adapter.planDecision?.(state,planningOptions)??this.adapter.decide(state));}
+        catch(error){if(this.cancelled||this.abortController.signal.aborted||this.adapter.turnKey()!==turn)return ledger;if(error.name==='StalePlanningError')continue;throw error;}
         const choice = decision.chosen;
         if (!choice || choice.kind === 'endTurn') {
           ledger = { ...ledger, done: ledger.actionsRemaining === 0 || Boolean(decision.diagnostics?.turnComplete || decision.diagnostics?.retreatComplete || decision.diagnostics?.encounterComplete || decision.diagnostics?.escapeExhausted),
@@ -134,6 +136,7 @@ export class TurnRunner {
         try { await this.adapter.revalidate(choice, ledger,planningOptions); }
         catch (error) {
           if(this.cancelled||this.abortController.signal.aborted||this.adapter.turnKey()!==turn)return ledger;
+          if(error.name==='StalePlanningError')continue;
           const encounterEnd = await this.completeIfEncounterOver(ledger, turn);
           if (encounterEnd) return encounterEnd;
           const terminal = await this.completeIfIncapacitated(ledger, { oneAction }, turn);
@@ -156,7 +159,7 @@ export class TurnRunner {
           // The pause is before reservation. Recheck the original choice against
           // live state without rerolling its tie or spending a stale action.
           try{await this.adapter.revalidate(choice,ledger,planningOptions);}
-          catch(error){if(this.cancelled||this.abortController.signal.aborted||this.adapter.turnKey()!==turn)return ledger;const terminal=await this.completeIfEncounterOver(ledger,turn)??await this.completeIfIncapacitated(ledger,{oneAction},turn);if(terminal)return terminal;throw error;}
+          catch(error){if(this.cancelled||this.abortController.signal.aborted||this.adapter.turnKey()!==turn)return ledger;if(error.name==='StalePlanningError')continue;const terminal=await this.completeIfEncounterOver(ledger,turn)??await this.completeIfIncapacitated(ledger,{oneAction},turn);if(terminal)return terminal;throw error;}
           if(!canContinue())return ledger;
         }
         const encounterEndBeforeReservation=await this.completeIfEncounterOver(ledger,turn);

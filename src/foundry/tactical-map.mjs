@@ -1,3 +1,4 @@
+import {decisionWorker} from './decision-runtime.mjs';
 import {buildTacticalField,cellKey} from '../framework/tactical-field.mjs';
 import {occupiesMovementSpace} from './combat-state.mjs';
 import {clearSightPath} from './attack-path.mjs';
@@ -5,7 +6,7 @@ import {detectionFor} from './stealth-awareness.mjs';
 import {terrainMovementPath} from './movement-regions.mjs';
 
 const ns='foundry-creature-ai';
-export function scoutTacticalMap(adapter,state){
+function* scoutTacticalSteps(adapter,state){
   if(adapter.token.document.width!==1||adapter.token.document.height!==1)return null;
   const rect=canvas.dimensions.sceneRect,size=canvas.grid.size,origin=state.self.cell;
   if(!Number.isFinite(rect.width)||!Number.isFinite(rect.height))return null;
@@ -23,6 +24,7 @@ export function scoutTacticalMap(adapter,state){
   if(!graph){graph=new Map();
     for(let x=first.x;x<=last.x;x++)for(let y=first.y;y<=last.y;y++)graph.set(`${x},${y}`,{x,y,edges:[]});
     for(const node of graph.values())for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+      yield;
       if(!dx&&!dy)continue;const next={x:node.x+dx,y:node.y+dy},to=cellKey(next);if(!graph.has(to))continue;
       if(adapter.token.constrainMovementPath([adapter.waypoint(node),adapter.waypoint(next)],{ignoreWalls:false,ignoreCost:true})[1])continue;
       const measured=adapter.token.measureMovementPath(terrainMovementPath(adapter.token,[adapter.waypoint(node),adapter.waypoint(next)])).cost;
@@ -58,7 +60,7 @@ export function scoutTacticalMap(adapter,state){
   // Sampling does not depend on live hidden-token collisions in native route
   // generation. A remembered opponent moving secretly cannot change this field.
   const needed=[...local.values()].filter(cell=>Math.max(Math.abs(cell.x-origin.x),Math.abs(cell.y-origin.y))<=radius);
-  const field=buildTacticalField(local,{origin,threats,speed:adapter.groundSpeed(),needed});
+  const field=yield {graph:local,options:{origin,threats,speed:adapter.groundSpeed(),needed}};
   field.cropped=cropped;field.bounds={first,last};field.threats=threats;field.round=game.combat.round;field.sceneId=scene.id;
   field.barriers=[];
   for(const node of graph.values())for(const [dx,dy]of [[1,0],[0,1]]){
@@ -73,4 +75,15 @@ export function scoutTacticalMap(adapter,state){
 export function scoutMotionMemory(adapter){
   const saved=adapter.token.document.getFlag(ns,'scoutMotion');
   return saved?.combatId===game.combat.id&&saved.sceneId===canvas.scene.id?(saved.entries??[]).filter(e=>e.round>=game.combat.round-2):[];
+}
+
+export function scoutTacticalMap(adapter,state){
+ const steps=scoutTacticalSteps(adapter,state);let step=steps.next();while(!step.done)step=steps.next(step.value?buildTacticalField(step.value.graph,step.value.options):undefined);return step.value;
+}
+export async function scoutTacticalMapAsync(adapter,state,{budget,signal}={}){
+ const steps=scoutTacticalSteps(adapter,state);let step=steps.next();
+ while(!step.done){await budget.checkpoint();let field;
+  if(step.value){const response=await decisionWorker.request('tacticalField',step.value,{signal});if(response.error)throw new Error(response.error);if(response.cancelled)throw Object.assign(new Error('Planning cancelled'),{name:'AbortError'});field=response.result;}
+  step=steps.next(field);
+ }return step.value;
 }

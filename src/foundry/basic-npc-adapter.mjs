@@ -45,7 +45,7 @@ export class PF2eBasicNPCAdapter extends PF2eCreatureAdapter {
       return {strikes:positions,inReach:Object.values(positions).some(position=>position.usable)};
     };
     for(const enemy of state.enemies)Object.assign(enemy,describe(state.self.cell,enemy,this.actualWaypoint()));
-    for(const move of state.moves)for(const enemy of state.enemies)Object.assign(move.targets[enemy.id],describe(move,enemy));
+    for(const move of state.moves){await options?.budget?.checkpoint();for(const enemy of state.enemies)Object.assign(move.targets[enemy.id],describe(move,enemy));}
     return {...state,strikes:parts.native.map(strike=>this.describeStrike(strike)),
       diagnostics:{...state.diagnostics,profileId:this.profileId,manualAbilities:parts.unsupported}};
   }

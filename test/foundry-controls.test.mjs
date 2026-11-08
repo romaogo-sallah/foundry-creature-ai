@@ -7,7 +7,7 @@ test('Foundry controls preview with the reaction engine and reopen a saved choic
   const once = new Map(), dialogs = [], module = {};
   globalThis.libWrapper = { register: () => {} };
   globalThis.Hooks = { once: (name, fn) => once.set(name, fn), on: () => {} };
-  globalThis.game = { system: { id: 'pf2e' }, release: { generation: 14 }, modules: { get: () => module }, messages: { contents: [] },combat:{id:'combat',combatants:[]} };
+  globalThis.game = { settings:{get:(_namespace,key)=>key==='decisionPlanningBackend'?'native':undefined}, system: { id: 'pf2e' }, release: { generation: 14 }, modules: { get: () => module }, messages: { contents: [] },combat:{id:'combat',combatants:[]} };
   globalThis.canvas = { scene: { id: 'scene' }, tokens: { get: id => ({ name: id }),placeables:[] } };
   globalThis.foundry = { applications: { api: { DialogV2: { wait: async data => dialogs.push(data) } } } };
   const profiles = JSON.parse(await readFile(new URL('../profiles/creatures.json', import.meta.url)));

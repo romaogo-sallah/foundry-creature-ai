@@ -16,7 +16,7 @@ export function attachSpellcastingSystem(adapter){
   abilityNames:[...base.abilityNames??[],...catalog.spells.map(s=>s.name),'Sustain'],unsupported:[...base.unsupported??[],...catalog.unsupported.map(s=>`${s.name}: ${s.reason}`)]};};
  driver.parts=()=>adapter.parts();
  const snapshot=adapter.snapshot.bind(adapter),candidates=adapter.candidates.bind(adapter),execute=adapter.executeProfileAction.bind(adapter),record=adapter.recordOutcome.bind(adapter);
- adapter.snapshot=async(ledger,options)=>driver.enrichCasterState(await snapshot(ledger,options),ledger);
+ adapter.snapshot=async(ledger,options)=>driver.enrichCasterState(await snapshot(ledger,options),ledger,options);
  adapter.candidates=state=>[...candidates(state),...casterTurnCandidates(state,{actions:s=>driver.casterActions(s).filter(c=>['castSpell','sustainSpell'].includes(c.kind))})];
  adapter.decide=state=>{const d=chooseTacticalAction(adapter.candidates(state),state,{actionsRemaining:state.actionsRemaining,threatened:state.self.threatened});return {...d,diagnostics:{...state.diagnostics,...d.diagnostics}};};
  adapter.executeProfileAction=(choice,ledger,context)=>choice.kind==='castSpell'?executeSpell(adapter,choice,ledger,context):choice.kind==='sustainSpell'?sustainCast(adapter.actor,choice.castId):execute(choice,ledger,context);

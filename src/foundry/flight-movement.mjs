@@ -52,7 +52,7 @@ export function flightCollision(adapter,from,to){
   const [,blocked]=adapter.token.constrainMovementPath([from,to],{ignoreWalls:false,ignoreCost:true});
   return !blocked&&clearFlightSurfaces(adapter.token,from,to,tokenHeight(adapter.token));
 }
-export async function flightMoves(adapter,state,planner,{signal}={}){
+export async function flightMoves(adapter,state,planner,{signal,budget}={}){
   if(!flySpeed(adapter.actor)||state.self.immobile||state.self.prone||state.actionsRemaining<1||!state.enemies.length)return [];
   const fallback=reason=>{state.flight.planning={backend:'native',reason};return nativeFlightMoves(adapter,state,planner);};
   if(game.settings?.get('foundry-creature-ai','flightPlanningBackend')==='native')return fallback('Native planning selected');
@@ -71,6 +71,7 @@ export async function flightMoves(adapter,state,planner,{signal}={}){
   };
   const nodes=[];
   for(const node of response.result.nodes){
+    await budget?.checkpoint();
     if(!node.path?.length||node.path.length>128||!node.path.every(p=>[p.x,p.y,p.elevation].every(Number.isFinite)))continue;
     if(['x','y','elevation'].some(k=>node.path[0][k]!==state.flight.origin[k]||node.path.at(-1)[k]!==node[k]))continue;
     if(!planner.routeClear(node.path))continue;

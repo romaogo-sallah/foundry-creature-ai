@@ -1,38 +1,14 @@
+import {profileActions} from '../framework/profile-actions.mjs';
+import {profileActionFacts} from './decision-snapshot.mjs';
 import {PF2eSpellcasterAdapter} from './spellcaster-adapter.mjs';
 import {monsterAbility,pyreBreath,abilityDamage,monsterDC,monsterAdjustment} from './monster-abilities.mjs';
 import {describeSpellAreas} from './spell-areas.mjs';
-import {basicSaveValue} from '../framework/spell-evaluation.mjs';
 import {preparedStrikeCandidates} from '../framework/strike-capability.mjs';
 import {executeNativeStrike} from './native-strikes.mjs';
-import {fireShield,raiseFireShield} from './fire-shield.mjs';
+import {raiseFireShield} from './fire-shield.mjs';
 const ns='foundry-creature-ai';
 export const isCinderDragon=actor=>actor?.type==='npc'&&actor.system.traits.value.includes('dragon')&&/9d6\[fire\]/.test(monsterAbility(actor,'pyre-breath')?.system.description.value??'');
-export function dragonActivities(state){
- if(state.self.unable||state.self.restrained)return [];
- const result=[],dragon=state.dragon;
- if(!dragon)return result;
- if(dragon.breathReady&&state.actionsRemaining>=2&&!state.plannedCapabilities?.includes('pyre'))for(const area of dragon.areas??[]){
-  const value=basicSaveValue(dragon.breathDC??29,state.self.referenceAC-10,dragon.breathDamage??31.5)*(area.enemies.length-area.bystanders.filter(e=>!e.unaffected).length*2)+area.enemies.length*2;
-  if(value>0)result.push({id:`pyre:${area.id}`,kind:'pyreBreath',area,targetId:area.enemies[0]?.id,actionCost:2,legal:true,traits:['fire','primal'],
-   features:{onceKey:'pyre',blocksForecast:['pyre']},assessment:{value},scoringTerms:[{label:'Breath damage, fire and smoke; avoid friendly fire',contribution:value}]});
- }
- if(dragon.frenzy&&state.actionsRemaining>=2){
-  // Choose each Strike by benchmark value with normal increasing MAP. Replan
-  // actual targets between attacks; a prediction never assumes a hit or kill.
-  let forecast=state,total=0;const sequence=[],remaining=['claw','claw','wing'];
-  for(let i=0;i<3;i++){
-   const choices=preparedStrikeCandidates({...forecast,strikes:state.strikes.filter(s=>remaining.includes(s.dragonPart))}).sort((a,b)=>b.assessment.value-a.assessment.value);
-   const best=choices[0];if(!best)break;sequence.push({strikeId:best.strikeId,targetId:best.targetId});total+=best.assessment.value;
-   remaining.splice(remaining.indexOf(state.strikes.find(s=>s.id===best.strikeId).dragonPart),1);forecast={...forecast,attacksMade:forecast.attacksMade+1};
-  }
-  if(sequence.length===3)result.push({id:'draconic-frenzy',kind:'draconicFrenzy',sequence,targetId:sequence[0].targetId,actionCost:2,mapIncreases:3,legal:true,traits:['attack'],
-   assessment:{value:total},scoringTerms:[{label:'Two Claws and one Wing with normal MAP',contribution:total}]});
- }
- if(state.actionsRemaining&&dragon.burning?.length&&!state.plannedCapabilities?.includes('stoke')){
-  const value=dragon.burning.length*10.5;result.push({id:'stoke-flames',kind:'stokeFlames',actionCost:1,legal:true,traits:['fire','primal'],features:{onceKey:'stoke'},assessment:{value},scoringTerms:[{label:'Intensify persistent fire on known foes',contribution:value}]});
- }
- return result;
-}
+export const dragonActivities=state=>profileActions(state);
 export class PF2eCinderDragonAdapter extends PF2eSpellcasterAdapter{
  get profileId(){return this.actor.itemTypes.spell?.length?'cinder-dragon-caster':'cinder-dragon';}
  preferRangedFlight(){return true;}
@@ -46,12 +22,13 @@ export class PF2eCinderDragonAdapter extends PF2eSpellcasterAdapter{
   return state;
  }
  bystanders(state){return canvas.tokens.placeables.filter(t=>t!==this.token&&t.actor?.isOfType?.('creature')&&!t.document.hidden&&!state.enemies.some(e=>e.id===t.id));}
- async enrichFlight(state){
+ async enrichFlight(state,_planner,options={}){
   if(!state.dragon||!state.flight)return;state.flight.hunt=null;state.flight.airCombat=null;
-  const moves=[...state.flight.moves].sort((a,b)=>a.nearestEnemy-b.nearestEnemy).slice(0,16);state.dragon.flightSetups=[];
+  const moves=[...state.flight.moves].sort((a,b)=>a.nearestEnemy-b.nearestEnemy).slice(0,16);state.dragon.flightSetups=[];state.dragon.flightOptions=[];
   if(state.actionsRemaining<3)return;
-  for(const move of moves){const position=this.waypoint(move,'fly'),next={...state,actionsRemaining:state.actionsRemaining-1,enemies:state.enemies.map(e=>({...e,...move.targets[e.id]}))};
+  for(const move of moves){await options.budget?.checkpoint();const position=this.waypoint(move,'fly'),next={...state,actionsRemaining:state.actionsRemaining-1,enemies:state.enemies.map(e=>({...e,...move.targets[e.id]}))};
    next.dragon={...state.dragon,areas:state.dragon.breathReady?describeSpellAreas(this,{slug:'pyre-breath',area:{type:'cone',value:40},volumetric:true,range:40},next,this.bystanders(state),position):[]};
+   if(options.deferDecision){state.dragon.flightOptions.push({move,areas:next.dragon.areas});continue;}
    const follow=Math.max(0,...dragonActivities(next).map(c=>c.assessment.value),...preparedStrikeCandidates(next).map(c=>c.assessment.value));
    if(follow<=0)continue;
    state.dragon.flightSetups.push({id:`dragon:fly:${move.x},${move.y},${move.elevation}`,kind:'fly',legal:true,actionCost:1,path:move.path,destination:{x:move.x,y:move.y,elevation:move.elevation},movementCost:move.cost,
@@ -59,7 +36,7 @@ export class PF2eCinderDragonAdapter extends PF2eSpellcasterAdapter{
   }
  }
  candidates(state){return [...super.candidates(state),...(state.dragon?.flightSetups??[])];}
- extraCasterActions(state){return [...dragonActivities(state),...(state.actionsRemaining&&!state.plannedCapabilities?.includes('raise-shield')&&fireShield(this.actor)&&!this.actor.attributes.shield?.raised?[{id:'dragon:shield',kind:'raiseFireShield',actionCost:1,legal:true,features:{onceKey:'raise-shield'},assessment:{value:state.self.threatened?8:2},scoringTerms:[]}]:[])];}
+ extraCasterActions(state){return profileActions(state,profileActionFacts(this,state));}
  async executeProfileAction(choice,ledger,context={}){
   const valid=()=> (context.canContinue?.()??true)&&this.turnKey()===ledger.turn;
   if(choice.kind==='raiseFireShield')return raiseFireShield(this.token);

@@ -8,7 +8,7 @@ import { concealmentCheck } from './environment-rolls.mjs';
 import { stealthObservers, stealthRecord, detectionFor, hidingFrom, reveal, STEALTH_MOVEMENT } from './stealth-awareness.mjs';
 import { stealthBelief, projectStealth } from './stealth-belief.mjs';
 import { scoutGroup } from './scout-group.mjs';
-import {scoutTacticalMap,scoutMotionMemory} from './tactical-map.mjs';
+import {scoutTacticalMap,scoutTacticalMapAsync,scoutMotionMemory} from './tactical-map.mjs';
 import { executeSharedHide, executeSharedSneak, sneakSpeed } from './shared-stealth.mjs';
 
 const held=(item,hands=1)=>item.system.equipped.carryType==='held'&&item.system.equipped.handsHeld>=hands;
@@ -144,7 +144,7 @@ export class PF2eKoboldScoutAdapter extends PF2eCreatureAdapter {
     const hideEstimates=project('hide');
     const hideTargets=hideEstimates.filter(entry=>entry.unseenChance>(priors.find(prior=>prior.observerId===entry.observerId)?.unseenChance??0)).map(entry=>entry.observerId);
     const group=scoutGroup(this,state);
-    const field=state.moves.length?scoutTacticalMap(this,state):null;
+    const field=state.moves.length?await (options?.budget?scoutTacticalMapAsync:scoutTacticalMap)(this,state,options):null;
     if(field){
       for(const enemy of state.enemies)enemy.arrivalActions=field.unmappedThreatIds.includes(enemy.id)?undefined:field.origin?.arrivals[enemy.id]??Infinity;
       for(const move of state.moves){move.tactical=field.cells.get(`${move.x},${move.y}`);

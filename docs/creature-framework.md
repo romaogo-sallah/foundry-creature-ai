@@ -1,5 +1,7 @@
 # Shared creature AI framework
 
+Version **0.43.0** moves the shared numeric [decision engine into a Web Worker](decision-worker.md), including caster forecasts and tactic selection. Native geometry, execution and reactions remain authoritative on Foundry's thread; snapshot preparation yields between batches.
+
 Version **0.26.0** adds an ECS-style [plan and behavior layer](tactics-and-components.md) over the shared execution introduced in 0.9.0. Actors store attached component IDs and data; systems select a tactic and goal, activate its policy components, then rank supported legal actions. Creature kits bind native statistics and unique abilities. Imported descriptions remain creature data.
 
 ```mermaid

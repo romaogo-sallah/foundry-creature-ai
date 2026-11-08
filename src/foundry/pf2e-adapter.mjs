@@ -1,6 +1,6 @@
 import { chooseWolfAction, buildWolfCandidates } from '../wolf/planner.mjs';
 import { averageFormula } from '../framework/math.mjs';
-import { reachableCells, enemyDistances } from '../framework/navigation.mjs';
+import { reachableCells, enemyDistances, reachableCellsAsync, enemyDistancesAsync } from '../framework/navigation.mjs';
 import { standardArmorClass } from '../dawnsbury/chooser.mjs';
 import { canAssignTarget, combatantSceneId, targetingMode, targetRoster } from './targeting.mjs';
 import { incapacitationReason, encounterOutcome, occupiesMovementSpace } from './combat-state.mjs';
@@ -15,7 +15,7 @@ import { packAssessment, persistPackAssessment } from './pack-morale.mjs';
 import { frontlineAssessments } from './frontline.mjs';
 import { MANAGED_MOVEMENT } from './movement-options.mjs';
 import { targetKnowledge, rememberTargets } from './target-memory.mjs';
-import { approachNavigation } from './approach-navigation.mjs';
+import { approachNavigation, approachNavigationAsync } from './approach-navigation.mjs';
 import { greaseExtraCost, prepareGreaseMove, withGreaseMode, inGrease } from './spell-zones.mjs';
 import { settleGreaseSlip, finishGreaseFall } from './grease-landing.mjs';
 import { sameSurfaceElevation } from './surface-terrain.mjs';
@@ -305,7 +305,7 @@ export class PF2eCreatureAdapter {
       !token.actor.hasCondition('hidden', 'undetected', 'unnoticed', 'invisible'));
   }
 
-  async snapshot(ledger, { movement = true, movementRequired = false } = {}) {
+  async snapshot(ledger, { movement = true, movementRequired = false, budget:workBudget } = {}) {
     await this.waitForMovement();
     const { strike, remaster, averageDamage, pack, knockdown } = this.parts(), origin = this.originCell();
     const roster = this.targetIds();
@@ -392,12 +392,13 @@ export class PF2eCreatureAdapter {
         const [, constrained] = this.token.constrainMovementPath([start, this.waypoint(to)], { ignoreWalls: false, ignoreCost: false });
         return !constrained;
       };
-      const cells = reachableCells(origin, budget, {
+      await workBudget?.checkpoint();
+      const cells = await (workBudget?reachableCellsAsync:reachableCells)(origin, budget, {
         canEnter, canStop, canTraverse,
         pathCost: path => this.strideCost(path, movementContext),
         edgeRisk: (from,to) => ({ reactionIds: at(from).map(token => token.id), hazardous: hazardousAt(this.token,this.topLeft(to)).length>0 }),
-      });
-      const approach=approachNavigation(this,{targets:movementGoals,awareness,origin,reachable:cells,canEnter,canStop,reachSquares:self.reachSquares});
+      },workBudget);
+      const approach=await (workBudget?approachNavigationAsync:approachNavigation)(this,{targets:movementGoals,awareness,origin,reachable:cells,canEnter,canStop,reachSquares:self.reachSquares},workBudget);
       nearestEnemy=approach.nearestEnemy;
       let exitDistances;
       if (morale.broken) {
@@ -422,6 +423,7 @@ export class PF2eCreatureAdapter {
         retreatDistance = exitDistances.get(`${origin.x},${origin.y}`);
       }
       for (const cell of cells) {
+        await workBudget?.checkpoint();
         if (!cell.cost) continue;
         const reactors = new Set(cell.risk.reactionIds);
         const destinationThreats=at(cell).length;
@@ -498,7 +500,7 @@ export class PF2eCreatureAdapter {
     if(conditionReason)throw new Error(conditionReason);
     const current = await this.snapshot(ledger,options);
     // Revalidate legality without making a new random decision.
-    const available = this.candidates(current).find(candidate => candidate.id === choice.id && candidate.legal);
+    const available = (await (this.planningCandidates?.(current,options)??this.candidates(current))).find(candidate => candidate.id === choice.id && candidate.legal);
     if (!available || available.actionCost > ledger.actionsRemaining || (available.bonusActionCost ?? 0) > (ledger.bonusMovementActions ?? 0)) throw new Error('The chosen action is no longer available');
     if (choice.kind === 'stand') this.removableProneConditions();
     if (choice.path && JSON.stringify(available.path) !== JSON.stringify(choice.path)) throw new Error('The movement path changed; preview again');

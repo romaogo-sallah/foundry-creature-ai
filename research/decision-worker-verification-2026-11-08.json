@@ -1,0 +1,125 @@
+{
+  "date": "2026-11-08",
+  "version": "0.43.0",
+  "scope": "Default background creature decisions and cooperative native snapshot preparation",
+  "tests": {
+    "fullSuite": {
+      "command": "npm test",
+      "passed": 1162,
+      "failed": 0,
+      "workers": 11,
+      "seconds": 35.4
+    },
+    "finalTargeted": {
+      "command": "node tools/run-tests.mjs --jobs 1 test/decision-worker.test.mjs",
+      "passed": 26,
+      "failed": 0,
+      "seconds": 3.9,
+      "additionalCaseAfterFullRun": "Complete Eagle Dive turn with both flight and decision workers"
+    },
+    "verifiedCases": [
+      "Real Lich worker request and UI heartbeat",
+      "Full Lich turn with native resource/action reservation",
+      "Worker candidate revalidation",
+      "Every supported creature profile retains its own kit",
+      "Full Eagle Dive turn with independent flight and decision workers",
+      "Scout graph preparation plus worker tactical-field scoring",
+      "Confused and Fleeing policies",
+      "Stop cancels and terminates the pending CPU job",
+      "Movement invalidates a pending reply",
+      "Region changes invalidate a pending reply without coordinate changes",
+      "No synchronous fallback on worker unavailability",
+      "Refuse live Documents and executable values",
+      "Batched preparation honors cancellation"
+    ]
+  },
+  "architecture": {
+    "decisionBackend": "worker by default; explicit main-thread compatibility setting",
+    "nativePreparation": "8ms cooperative batch target; a single native API call can exceed it",
+    "workers": "Separate persistent decision/tactical-field and flight clients using the same module request dispatcher",
+    "cloneBoundary": "Prepared plain-data knowledge and numeric capability facts; no Actors, Documents, functions, secret rolls or mutations",
+    "nativeAuthority": "Native geometry and fresh worker candidates revalidate the original choice before action reservation and after presentation delays",
+    "caches": [
+      "Prepared parts within one snapshot",
+      "Area geometry shared across equivalent slot/Soul Cage bindings",
+      "One Region per area and one line-of-effect check per target/origin"
+    ],
+    "failurePolicy": "Pause on worker failure; no silent synchronous forecast fallback",
+    "cancellation": "Abort interrupts the worker CPU job; scene teardown closes both clients"
+  },
+  "native": {
+    "foundry": "14.369",
+    "pf2e": "8.6.1",
+    "world": "arena",
+    "combat": {
+      "id": "w2gVjB2d2sXRz7mL",
+      "round": 12,
+      "turn": 3
+    },
+    "records": [
+      {
+        "name": "Lich",
+        "profile": "lich",
+        "enemies": 0,
+        "spellBindings": 14,
+        "moves": 0,
+        "areaOptions": 0,
+        "preparation": {
+          "elapsedMs": 89,
+          "yields": 2,
+          "maxBatchMs": 75
+        },
+        "planning": {
+          "backend": "worker",
+          "elapsedMs": 7
+        },
+        "choice": "castSpell",
+        "elapsedMs": 119,
+        "uiTicks": 3,
+        "largestUiGapMs": 95,
+        "sameNumericDecisionOnMainMs": 9
+      }
+    ],
+    "controlledWorkload": {
+      "source": "Isolated Lich mechanics fixture; not the finished live encounter",
+      "enemies": 1,
+      "moves": 59,
+      "spellBindings": 28,
+      "coldWorkerMs": 432,
+      "warmWorkerMs": 216,
+      "uiTicks": 8,
+      "largestUiGapMs": 67,
+      "choice": "castSpell",
+      "sameNumericDecisionOnMainMs": 325
+    },
+    "noTurnsExecuted": true,
+    "tokenStateUnchanged": true,
+    "actorCountBefore": 161,
+    "actorCountAfter": 161,
+    "newActors": 0,
+    "moduleErrors": [],
+    "valid": true
+  },
+  "measurementLimits": [
+    "The live encounter had zero eligible enemies; it confirms installed native preparation/backend, not expensive battle performance",
+    "The controlled Lich workload uses the existing isolated mechanics fixture, one enemy, 59 movement choices and 28 casting bindings",
+    "Worker timings include request/response and heartbeat settling; cold requests also include module startup",
+    "Headless Chrome uses software rendering; timing varies with machine load",
+    "The native preparation sample still contained a 75ms batch and the controlled worker heartbeat had a 67ms maximum gap; no fixed frame-rate guarantee",
+    "No full encounter was replayed or reset"
+  ],
+  "compatibilityLimits": [
+    "Custom main-window-only JavaScript components/plans must be registered in a worker-compatible module or use explicit native mode",
+    "Main-thread compatibility mode may stall the interface",
+    "Flight proposal failure retains its existing native route fallback; decision failures pause",
+    "Native collision, visibility, rolls, reactions, resource changes and execution remain on the Foundry thread"
+  ],
+  "release": {
+    "archive": "releases/pf2e-tactical-suite-0.43.0.zip",
+    "archiveMatchesBuild": true,
+    "installedMatchesBuild": true,
+    "filesVerified": 288,
+    "version": "0.43.0",
+    "sha256": "8A91DDD0D742DE8E0FA9B620E250E0EF7C2E01E939D164D1D638C51B2A44C83C"
+  }
+}

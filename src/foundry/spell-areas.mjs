@@ -76,11 +76,11 @@ export function greaseShapes(adapter, enemies, position = adapter.actualWaypoint
   return [...areas.values()];
 }
 
-export function describeSpellAreas(adapter, spell, state, bystanders, position) {
+function* spellAreaSteps(adapter, spell, state, bystanders, position) {
   const caster = adapter.token, origin = position ? { x: position.x + caster.w / 2, y: position.y + caster.h / 2 } : caster.center;
-  if(spell.ice)return iceWallAreas(adapter,state,bystanders,position);
-  if(spell.slug==='mist')return [{id:'mist:defense',shapes:[{type:'ellipse',x:origin.x,y:origin.y,radiusX:canvas.grid.size*4,radiusY:canvas.grid.size*4,rotation:0,hole:false}],
-    enemies:[],bystanders:[],defensiveValue:state.self.threatened||state.self.hpFraction<0.5?10:0}];
+  if(spell.ice){yield* iceWallAreas(adapter,state,bystanders,position);return;}
+  if(spell.slug==='mist'){yield* [{id:'mist:defense',shapes:[{type:'ellipse',x:origin.x,y:origin.y,radiusX:canvas.grid.size*4,radiusY:canvas.grid.size*4,rotation:0,hole:false}],
+    enemies:[],bystanders:[],defensiveValue:state.self.threatened||state.self.hpFraction<0.5?10:0}];return;}
   const useVolume=spell.area&&spell.slug!=='grease'&&(spell.volumetric||state.enemies.some(e=>adapter.perceivedSpellTarget(e).document.elevation!==(position?.elevation??caster.document.elevation)));
   const shapes = useVolume?volumeAreas(adapter,spell,state.enemies,position):['wall-of-fire','floating-flame','wall-of-ice'].includes(spell.slug)?fireAreaShapes(adapter,spell,state.enemies,position):spell.slug==='grease'?greaseShapes(adapter,state.enemies,position,state.casterDefense?.enabled&&!state.casterDefense.preparedGrease):
     spell.area?.type==='line'?lineShapes(caster,position,spell.area.value):spell.area?.type==='burst'?burstShapes(adapter,spell,state.enemies,position):coneShapes(caster,position,spell.area?.value??15);
@@ -92,16 +92,24 @@ export function describeSpellAreas(adapter, spell, state, bystanders, position) 
     if(nativeItem&&token.actor.isImmuneTo?.(nativeItem))return true;
     return types.length>0&&types.every(type=>(token.actor.attributes?.immunities??[]).some(i=>i.type===type));
   };
-  return shapes.map(area => {
+  const paths=new Map();
+  for(const area of shapes){
     const region = spellRegion(area.shapes, caster);
-    const included = token => areaContains(caster,token,area) && clearAttackPath(caster, token, origin);
+    const contains=(token,at)=>token.document.level===caster.document.level&&(area.volume?volumeContains(token,area.volume,at):sameSpellLevel(caster,token)&&inSpellArea(token,region,at));
+    const included=token=>{if(!contains(token))return false;if(!paths.has(token.id))paths.set(token.id,clearAttackPath(caster,token,origin));return paths.get(token.id);};
     const others=bystanders.filter(included);
-    if(areaContains(caster,caster,area,position))others.push(caster);
-    return { ...area, enemies: state.enemies.filter(enemy => enemy.awareness?.detection!=='undetected'&&included(adapter.perceivedSpellTarget(enemy))),
+    if(contains(caster,position))others.push(caster);
+    const result={ ...area, enemies: state.enemies.filter(enemy => enemy.awareness?.detection!=='undetected'&&included(adapter.perceivedSpellTarget(enemy))),
       bystanders: others.map(token => ({ id: token.id,unaffected:unaffected(token),prone: token.actor.hasCondition('prone'),
         immobilized: token.actor.hasCondition('immobilized'), greased: state.bystanderGrease?.[token.id] ?? false,
         airborne: token.document.movementAction === 'fly' })) };
-  }).filter(area => area.enemies.length || area.approaches?.length);
+    if(result.enemies.length||result.approaches?.length)yield result;
+    else yield null;
+  }
+}
+export const describeSpellAreas=(...args)=>[...spellAreaSteps(...args)].filter(Boolean);
+export async function describeSpellAreasAsync(adapter,spell,state,bystanders,position,budget){
+ const result=[];for(const area of spellAreaSteps(adapter,spell,state,bystanders,position)){await budget?.checkpoint();if(area)result.push(area);}return result;
 }
 function iceWallAreas(adapter,state,bystanders,position=adapter.actualWaypoint()){
  const size=canvas.grid.size,result=[],source={x:position.x+adapter.token.w/2,y:position.y+adapter.token.h/2,elevation:position.elevation??adapter.token.document.elevation};

@@ -1,6 +1,6 @@
 import { PF2eCreatureAdapter, MODULE_ID } from './pf2e-adapter.mjs';
 import { pyroCandidates, choosePyroAction } from '../profiles/goblin-pyro.mjs';
-import { describeSpellAreas } from './spell-areas.mjs';
+import { describeSpellAreasAsync } from './spell-areas.mjs';
 import { executeSpell } from './spellcasting.mjs';
 import { detectionFor, reveal } from './stealth-awareness.mjs';
 import { casterStealthKnowledge } from './caster-stealth.mjs';
@@ -72,10 +72,11 @@ export class PF2eGoblinPyroAdapter extends PF2eCreatureAdapter {
       token.actor?.isOfType?.('creature') && !token.document.hidden && token.actor.hitPoints?.value > 0 &&
       this.sight(this.token.center,token) && !['undetected','unnoticed'].includes(detectionFor(this.token,token).state));
     const bystanderGrease = Object.fromEntries(bystanders.map(token => [token.id, inGrease(token).length > 0]));
-    const decorate = (descriptors,position,enemies = state.enemies) => descriptors.map(spell => spell.kind.endsWith('attack') || !spell.available || (!spell.area&&spell.kind!=='ground-control') ? spell :
-      { ...spell, areas: describeSpellAreas(this,spell,{ ...state, enemies,
-        bystanderGrease: { ...bystanderGrease, [this.token.id]: inGrease(this.token,position).length > 0 } },bystanders,position) });
-    state.spells = decorate(descriptors);
+    const decorate = async(descriptors,position,enemies = state.enemies) => {
+      const result=[];for(const spell of descriptors){await options?.budget?.checkpoint();result.push(spell.kind.endsWith('attack')||!spell.available||(!spell.area&&spell.kind!=='ground-control')?spell:
+        {...spell,areas:await describeSpellAreasAsync(this,spell,{...state,enemies,bystanderGrease:{...bystanderGrease,[this.token.id]:inGrease(this.token,position).length>0}},bystanders,position,options?.budget)});}return result;
+    };
+    state.spells = await decorate(descriptors);
     // All legal destinations get targeted-spell estimates. Area enumeration is
     // bounded to nearby tactically distinct destinations, avoiding a cone scan
     // at every reachable grid square on every preview/revalidation.
@@ -87,7 +88,7 @@ export class PF2eGoblinPyroAdapter extends PF2eCreatureAdapter {
       })) + (move.reactionRisk ?? 0) + (move.terrainRisk ?? 0);
       return quality(a)-quality(b) || a.cost-b.cost;
     }).slice(0,12);
-    if (ledger.actionsRemaining >= 3) for (const move of shortlist) move.spells = decorate(descriptors,this.topLeft(move),
+    if (ledger.actionsRemaining >= 3) for (const move of shortlist) move.spells = await decorate(descriptors,this.topLeft(move),
       state.enemies.map(enemy => ({ ...enemy, ...move.targets[enemy.id] })));
     const old = this.token.document.getFlag(MODULE_ID,'pyroShown');
     return { ...state, torchReady:this.parts().torchReady, spellSlots: entry.system.slots.slot1.value,

@@ -22,6 +22,7 @@ import {attachQuickenedSystem} from './quickened-runtime.mjs';
 import {PF2eCinderDragonAdapter,isCinderDragon} from './cinder-dragon-adapter.mjs';
 import {PF2eLichAdapter,isLich} from './lich-adapter.mjs';
 import {attachPitSystem} from './pit-adapter.mjs';
+import {attachDecisionSystem} from './decision-runtime.mjs';
 
 const profiles = [];
 export function registerCreatureProfile(profile) {
@@ -72,7 +73,7 @@ export function creatureProfile(actor) {
 }
 export function createCreatureAdapter(token, wolfProfile, options) {
   const profile = creatureProfile(token.actor);
-  return attachFleeingSystem(attachConfusionSystem(attachBehaviorSystem(attachPitSystem(attachQuickenedSystem(attachFlightSystem(attachSpellcastingSystem(new profile.Adapter(token, wolfProfile, options))))))));
+  return attachDecisionSystem(attachFleeingSystem(attachConfusionSystem(attachBehaviorSystem(attachPitSystem(attachQuickenedSystem(attachFlightSystem(attachSpellcastingSystem(new profile.Adapter(token, wolfProfile, options)))))))));
 }
 export function supportedProfiles() { return [...profiles.map(({ id, label, roles }) => ({ id, label, roles })),
   {id:'spellcaster',label:'Spellcaster NPC (shared spell library)',roles:['caster']},

@@ -1,5 +1,7 @@
 # Background flight planning — 0.29.0
 
+Since **0.43.0**, the suite also runs [whole creature decisions and caster forecasts in a separate worker client](decision-worker.md). The flight-specific behavior below still applies; its compatibility fallback is distinct from decision-worker failure handling.
+
 The active GM uses one persistent module Web Worker for numeric 3D route proposals and per-target Dive-setup shortlists. Scene Documents, functions, live actors, secret checks, dice and mutations never cross the boundary. Input contains grid bounds, the flyer's footprint and budget, walls, horizontal surfaces, observed occupied volumes and tactical goals using known/remembered enemy positions.
 
 The worker searches a bounded numeric graph and returns up to 24 diverse route proposals. The main thread checks each with Foundry's native collision/surface constraints, complete movement-history costs, occupied volumes, reach, visibility and reaction geometry. Dive setup ranking returns up to four endpoint alternatives per target and origin; native code validates each complete pass, with a wider per-position fallback if the shortlist is obstructed. A ready current-position Eagle Dive still evaluates all native endpoints.

@@ -1,8 +1,8 @@
 // One persistent module worker; live Documents and their methods never cross
 // this boundary. A failed worker leaves native planning available.
 export class PlanningWorker {
-  constructor({factory=()=>new Worker(new URL('../workers/flight-planner-worker.mjs',import.meta.url),{type:'module',name:'Creature AI flight planner'}),timeout=3000}={}){
-    this.factory=factory;this.timeout=timeout;this.pending=new Map();this.nextId=0;this.worker=null;this.failed=false;this.completed=0;
+  constructor({factory=()=>new Worker(new URL('../workers/flight-planner-worker.mjs',import.meta.url),{type:'module',name:'Creature AI planner'}),timeout=3000,interruptOnCancel=false}={}){
+    this.factory=factory;this.timeout=timeout;this.interruptOnCancel=interruptOnCancel;this.pending=new Map();this.nextId=0;this.worker=null;this.failed=false;this.completed=0;
   }
   status(){return {supported:typeof globalThis.Worker==='function',active:Boolean(this.worker),failed:this.failed,pending:this.pending.size,completed:this.completed};}
   available(){return !this.failed&&typeof globalThis.Worker==='function';}
@@ -19,7 +19,7 @@ export class PlanningWorker {
     if(!this.available())return Promise.resolve({error:'Web Workers are unavailable'});
     return new Promise(resolve=>{
       const id=++this.nextId;let timer;
-      const abort=()=>finish({cancelled:true});
+      const abort=()=>{finish({cancelled:true});if(this.interruptOnCancel)this.close('Planning cancelled');};
       const finish=result=>{if(!this.pending.has(id))return;this.pending.delete(id);clearTimeout(timer);signal?.removeEventListener('abort',abort);resolve(result);};
       this.pending.set(id,{finish});signal?.addEventListener('abort',abort,{once:true});
       timer=setTimeout(()=>{this.failed=true;this.close('The planning worker timed out');},this.timeout);

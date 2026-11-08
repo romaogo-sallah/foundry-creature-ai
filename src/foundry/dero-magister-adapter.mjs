@@ -1,5 +1,6 @@
+import {profileActions} from '../framework/profile-actions.mjs';
+import {profileActionFacts} from './decision-snapshot.mjs';
 import {PF2eSpellcasterAdapter} from './spellcaster-adapter.mjs';
-import {checkProbabilities} from '../framework/math.mjs';
 import {executeSpell} from './spellcasting.mjs';
 import {spellDefenseCheck} from './spell-checks.mjs';
 import {sustainCast,applyConditionSpell} from './ongoing-spells.mjs';
@@ -11,14 +12,7 @@ export class PF2eDeroMagisterAdapter extends PF2eSpellcasterAdapter{
  parts(){const base=super.parts(),stare=this.actor.itemTypes.action.find(a=>(a.slug??a.system.slug??a.name.toLowerCase().replaceAll(' ','-'))==='cytillesh-stare');
   if(!stare)throw new Error('Dero Magister needs Cytillesh Stare');
   return {...base,stare,abilityNames:[...base.abilityNames,'Cytillesh Stare'],unsupported:base.unsupported.filter(name=>name!==stare.name)};}
- extraCasterActions(state){
-  const attempts=this.token.document.getFlag(ns,'conditionCaster');
-  if(attempts?.combatId===game.combat.id&&attempts.stareRound===game.combat.round||state.actionsRemaining<1||state.self.restrained||state.plannedCapabilities?.includes('cytillesh-stare'))return [];
-  return state.enemies.filter(e=>e.distance<=30&&e.lineOfSight!==false&&e.lineOfEffect!==false&&!e.awareness?.searchRequired&&
-    !state.plannedCapabilities?.includes('gaze:'+e.id)&&!state.spellAttempts.some(a=>a.slug==='blindness'&&a.targetId===e.id&&a.untilRound>=state.round)).map(e=>{
-   const p=checkProbabilities(state.self.referenceAC-10,this.parts().entry.statistic.dc.value),value=1.5+(p.failure+p.criticalFailure)*5;
-   return {id:'stare:'+e.id,kind:'gaze',targetId:e.id,legal:true,actionCost:1,features:{onceKey:'cytillesh-stare'},assessment:{value},scoringTerms:[{label:'Dazzle and estimated chance to confuse; once per round',contribution:value}]};});
- }
+ extraCasterActions(state){return profileActions(state,profileActionFacts(this,state));}
  async executeProfileAction(choice,ledger,context={}){
   if(choice.kind==='castSpell')return executeSpell(this,choice,ledger,context);
   if(choice.kind==='sustainSpell')return sustainCast(this.actor,choice.castId);

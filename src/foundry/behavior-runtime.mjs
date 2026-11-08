@@ -29,7 +29,7 @@ export function behaviorConfiguration(adapter) {
   return tacticalBehaviors.configuration(raw,defaults);
 }
 
-export function battleContext(adapter,state) {
+export function battleContext(adapter,state,{deferDecision=false}={}) {
   const roster=new Set(Array.from(game.combat.combatants).filter(c=>!c.defeated&&
     (c.sceneId??c.token?.parent?.id??canvas.scene.id)===canvas.scene.id).map(c=>c.tokenId));
   const allies=canvas.tokens.placeables.filter(token=>token!==adapter.token&&roster.has(token.id)&&token.actor&&adapter.actor.isAllyOf(token.actor)&&
@@ -38,7 +38,7 @@ export function battleContext(adapter,state) {
   const known=state.enemies.length,visible=state.enemies.filter(enemy=>enemy.awareness?.state==='observed'&&enemy.lineOfSight!==false);
   const hp=adapter.actor.hitPoints,health=Math.max(0,Math.min(1,hp.value/Math.max(1,hp.max)));
   const immediate=state.enemies.some(enemy=>enemy.inReach||Object.values(enemy.strikes??{}).some(position=>position.usable))||
-    state.spells&&castingCandidates(state).some(candidate=>candidate.assessment.value>0);
+    !deferDecision&&state.spells&&castingCandidates(state).some(candidate=>candidate.assessment.value>0);
   const ranged=Boolean(state.spells?.some(spell=>spell.available)||state.bowReady&&state.loaded&&state.bolts>0||
     state.strikes?.some(strike=>strike.ranged&&state.enemies.some(enemy=>enemy.strikes?.[strike.id]?.usable)));
   const melee=!state.spells?.length&&(!state.bowReady||state.bolts<1);
@@ -59,7 +59,7 @@ export function battleContext(adapter,state) {
     broken:Boolean(state.morale?.broken),emergency:Boolean(state.morale?.broken||health<=0.25)};
 }
 
-async function enrichState(adapter,state) {
+async function enrichState(adapter,state,options={}) {
   const configuration=behaviorConfiguration(adapter),previous=adapter.token.document.getFlag(ns,'behaviorState');
   const roleKnowledge=casterTargetKnowledge(adapter);
   for(const enemy of state.enemies) enemy.tactics??=roleKnowledge.entries[enemy.id]??{role:'unknown',reach:5,speed:25};
@@ -93,6 +93,7 @@ async function enrichState(adapter,state) {
     move.behaviorProtectedGain=gain>0.25;
   }
   if(!['goblin-pyro','kobold-scout'].includes(adapter.profileId)&&!state.self.immobile&&state.actionsRemaining>0)for(const move of state.moves??[]){
+    await options.budget?.checkpoint();
     if(!move.cost||state.visited?.includes(`${move.x},${move.y}`))continue;
     const after=projectAt(move),gain=protection(after)-baseProtection;
     move.behaviorProtectedGain=gain>0.25;
@@ -110,6 +111,7 @@ async function enrichState(adapter,state) {
   }
   if(adapter.profileId!=='kobold-scout'&&canHide&&knowledge.priors.some(prior=>prior.unseenChance>0)&&!state.self.immobile&&state.actionsRemaining>0){
     for(const move of state.moves??[]){
+    await options.budget?.checkpoint();
       if(!move.cost||move.cost>sneakSpeed(adapter)||move.kind==='step'||state.visited?.includes(`${move.x},${move.y}`))continue;
       const after=projectAt(move),gain=protection(after)-baseProtection;
       const distance=Math.min(...state.enemies.map(enemy=>move.targets[enemy.id]?.distance??0))-Math.min(...state.enemies.map(enemy=>enemy.distance));
@@ -138,12 +140,14 @@ async function enrichState(adapter,state) {
   if(!configuration.components.includes('stealth')){
     state.hideTargets=[];state.hideEstimates=[];state.freshHideEstimates=[];
     if(state.casterDefense)state.casterDefense={...state.casterDefense,canHide:false};
-    for(const move of state.moves??[]){move.hideEstimates=[];move.sneakChances=[];move.sneakObservers=[];}
+    for(const move of state.moves??[]){
+    await options.budget?.checkpoint();move.hideEstimates=[];move.sneakChances=[];move.sneakObservers=[];}
   }
-  state.behavior={configuration,previous:scoped(previous)&&JSON.stringify(previous.configuration)===JSON.stringify(configuration)?previous:null,context:battleContext(adapter,state)};
+  state.behavior={configuration,previous:scoped(previous)&&JSON.stringify(previous.configuration)===JSON.stringify(configuration)?previous:null,context:battleContext(adapter,state,options)};
   for(const id of configuration.components) if(tacticalBehaviors.components.get(id).enrich)
     state=await tacticalBehaviors.components.get(id).enrich(state,adapter,configuration.parameters[id]??{})??state;
-  state.behavior.context=battleContext(adapter,state);
+  state.behavior.context=battleContext(adapter,state,options);
+  if(options.deferDecision)return state;
   state.casterScenarios=casterScenarios(state);
   state.behavior.selection=tacticalBehaviors.select(state);
   if(state.behavior.selection.planId==='lay-low')state.diagnostics.noActionReason='Known enemies are above available attack reach. Hold protection and estimated stealth until an attack becomes possible; Hide still requires cover or concealment.';
@@ -175,7 +179,7 @@ export function attachBehaviorSystem(adapter) {
     if(JSON.stringify(adapter.token.document.getFlag(ns,'casterTargets'))!==JSON.stringify(knowledge))await adapter.token.document.setFlag(ns,'casterTargets',knowledge);
     return options.canContinue?.()??true;
   };
-  adapter.snapshot=async(...args)=>{const state=await snapshot(...args);return state.mistEscape?state:enrichState(adapter,state);};
+  adapter.snapshot=async(...args)=>{const state=await snapshot(...args);return state.mistEscape?state:enrichState(adapter,state,args[1]);};
   adapter.execute=async(choice,ledger,context={})=>{
     if(!await adapter.waitForReactions({signal:context.signal})||!(context.canContinue?.()??true)||adapter.turnKey()!==ledger.turn)
       return {skipped:true,pause:true,skipReason:'Stopped before the behavior action'};

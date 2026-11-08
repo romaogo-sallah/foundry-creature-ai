@@ -1,7 +1,7 @@
 // Bounded search by risk category, then distance. The adapter measures whole paths
 // with Foundry's terrain rules; risk is not added to the physical movement cost.
 // Diagonal parity stays in the search key because alternating diagonals affect future costs.
-export function reachableCells(start, budget, { canEnter, canStop = canEnter, canTraverse, pathCost, edgeRisk = () => ({}), maxNodes = 2000 }) {
+export function* reachableCellSteps(start, budget, { canEnter, canStop = canEnter, canTraverse, pathCost, edgeRisk = () => ({}), maxNodes = 2000 }) {
   const compare = (a, b) => a.risk.state - b.risk.state || a.risk.reactionIds.length - b.risk.reactionIds.length ||
     (Math.abs(a.cost - b.cost) > 1e-8 ? a.cost - b.cost :
     Math.abs(a.geometricLength - b.geometricLength) > 1e-8 ? a.geometricLength - b.geometricLength : a.bends - b.bends);
@@ -11,6 +11,7 @@ export function reachableCells(start, budget, { canEnter, canStop = canEnter, ca
   const queue = [origin], best = new Map([[keyOf(origin), origin]]), destinations = new Map();
   let count = 0;
   while (queue.length && count++ < maxNodes) {
+    yield;
     queue.sort(compare);
     const node = queue.shift();
     const key = keyOf(node);
@@ -48,13 +49,14 @@ export function reachableCells(start, budget, { canEnter, canStop = canEnter, ca
 
 // Dawnsbury's nearest-enemy measure is an eight-neighbour flood distance, not
 // straight-line closing distance. The Foundry adapter supplies wall constraints.
-export function enemyDistances(seeds, { canVisit, canCross, needed, maxNodes = 20000 }) {
+export function* enemyDistanceSteps(seeds, { canVisit, canCross, needed, maxNodes = 20000 }) {
   const key = cell => `${cell.x},${cell.y}`;
   const distances = new Map(), queue = [], pending = new Set(needed.map(key));
   for (const seed of seeds) if (canVisit(seed) && !distances.has(key(seed))) {
     distances.set(key(seed), 0); queue.push(seed); pending.delete(key(seed));
   }
   for (let i = 0; i < queue.length && i < maxNodes && pending.size; i++) {
+    yield;
     const from = queue[i], distance = distances.get(key(from));
     for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
       if (!dx && !dy) continue;
@@ -66,3 +68,10 @@ export function enemyDistances(seeds, { canVisit, canCross, needed, maxNodes = 2
   }
   return distances;
 }
+
+export function finishNavigation(iterator){let step;do{step=iterator.next();}while(!step.done);return step.value;}
+export async function finishNavigationAsync(iterator,budget){let step;do{await budget.checkpoint();step=iterator.next();}while(!step.done);return step.value;}
+export const reachableCells=(...args)=>finishNavigation(reachableCellSteps(...args));
+export const enemyDistances=(...args)=>finishNavigation(enemyDistanceSteps(...args));
+export const reachableCellsAsync=(start,budget,options,work)=>finishNavigationAsync(reachableCellSteps(start,budget,options),work);
+export const enemyDistancesAsync=(seeds,options,work)=>finishNavigationAsync(enemyDistanceSteps(seeds,options),work);

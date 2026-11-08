@@ -97,7 +97,7 @@ export function fixture({ attackDegree = 2, tripOutcome = 'success', applyDamage
     dimensions:{sceneRect:{x:0,y:0,width:size*100,height:size*100,contains:(x,y)=>x>=0&&x<size*100&&y>=0&&y<size*100}}};
   globalThis.CONST={GRID_TYPES:{SQUARE:1}};
   globalThis.game={paused:false,system:{id:'pf2e'},release:{generation:14},combat,scenes:{contents:[scene]},
-    settings:{get:(namespace,key)=>key==='seekScope'?'area':undefined},
+    settings:{get:(namespace,key)=>key==='decisionPlanningBackend'?'native':key==='seekScope'?'area':undefined},
     user:{id:'gm',isGM:true,targets:new Set(),settings:{showCheckDialogs:true,showDamageDialogs:true}},users:{activeGM:{id:'gm'}},
     pf2e:{settings:{automation:{flanking:true}},actions:new Map([
       ['trip',{use:async options=>{calls.push(['trip',options]);return [{outcome:tripOutcome}];}}],

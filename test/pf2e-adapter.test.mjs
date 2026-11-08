@@ -107,7 +107,7 @@ function fixture({ remaster = true, applyDamage = true, hit = 2, outcome = 'succ
     tokens: { placeables: tokens, get: id => tokens.find(t => t.id === id), controlled: [wolf] },
   };
   globalThis.CONST = { GRID_TYPES: { SQUARE: 1 } };
-  globalThis.game = { paused: false, user: { id: 'gm', isGM: true, settings: { showCheckDialogs: true, showDamageDialogs: true } },
+  globalThis.game = { settings:{get:(_namespace,key)=>key==='decisionPlanningBackend'?'native':undefined}, paused: false, user: { id: 'gm', isGM: true, settings: { showCheckDialogs: true, showDamageDialogs: true } },
     users: { activeGM: { id: 'gm' } },
     combat: { id: 'combat', round: 1, started: true, scene: null,
       getFlag: (namespace, key) => flags.get(`combat:${namespace}:${key}`),
@@ -2154,7 +2154,7 @@ test('shared core installs the reaction query and AI exposes the same reaction c
   f.hooks.get('init')();
   assert.equal(typeof CONFIG.queries[`${MODULE_ID}.reactionPrompt`], 'function');
   assert.equal(typeof game.modules.get(MODULE_ID).api.reactions.openControls, 'function');
-  assert.equal(game.modules.get(MODULE_ID).api.version,'0.42.0');
+  assert.equal(game.modules.get(MODULE_ID).api.version,'0.43.0');
   assert.equal(typeof game.modules.get(MODULE_ID).api.resetActors,'function');
 });
 

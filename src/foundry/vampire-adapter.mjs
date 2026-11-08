@@ -1,3 +1,5 @@
+import {profileActions} from '../framework/profile-actions.mjs';
+import {profileActionFacts} from './decision-snapshot.mjs';
 import {PF2eSpellcasterAdapter} from './spellcaster-adapter.mjs';
 import {preparedNPCStrikes,basicMeleeStrikes} from './basic-npc-adapter.mjs';
 import {chooseTacticalAction} from '../framework/tactical-behaviors.mjs';
@@ -45,30 +47,7 @@ export class PF2eVampireAdapter extends PF2eSpellcasterAdapter{
   return state;
  }
  ammunition(){return (this.actor.itemTypes.ammo??[]).filter(i=>(i.slug??i.system.slug)==='arrows').reduce((n,i)=>n+i.system.quantity,0);}
- extraCasterActions(state){
-  if(vampireForm(this.actor)==='mist')return [];
-  const result=[],last=state.vampire?.lastStrike;
-  if(state.actionsRemaining>0&&!state.plannedCapabilities?.includes('raise-shield')&&fireShield(this.actor)&&!this.actor.attributes.shield?.raised)
-   result.push({id:'vampire:raise-shield',kind:'raiseFireShield',legal:true,actionCost:1,features:{onceKey:'raise-shield'},assessment:{value:state.self.threatened?9:4},scoringTerms:[{label:'Raise Fire Shield for AC and a blocking reaction',contribution:state.self.threatened?9:4}]});
-  const airThreat=state.enemies.some(e=>(e.awareness?.position?.elevation??this.perceivedTarget(e).document.elevation)>this.token.document.elevation+10);
-  if(state.actionsRemaining>0&&state.vampire?.form==='vampire'&&airThreat&&state.enemies.every(e=>!e.inReach))
-   result.push({id:'vampire:bat',kind:'vampireForm',form:'bat',legal:true,actionCost:1,assessment:{value:12},scoringTerms:[{label:'Change into a giant bat to reach airborne opponents',contribution:12}]});
-  if(state.actionsRemaining>0&&state.vampire?.form==='bat'&&this.token.document.elevation===0&&!airThreat)
-   result.push({id:'vampire:body',kind:'vampireForm',form:'vampire',legal:true,actionCost:1,assessment:{value:12},scoringTerms:[{label:'Resume the stronger vampire body at ground level',contribution:12}]});
-  for(const enemy of state.enemies){if(!enemy.inReach||enemy.lineOfSight===false)continue;
-   if(enemy.held&&enemy.bloodEligible){const value=(enemy.drained?3+(this.vampireSpec.killAtFive&&enemy.drained>=4?20:0):this.vampireSpec.drain*3+Math.min(this.vampireSpec.bloodHeal,this.actor.hitPoints.max-this.actor.hitPoints.value)+2);
-    result.push({id:`blood:${enemy.id}`,kind:'drinkBlood',targetId:enemy.id,legal:true,actionCost:1,mapIncreases:0,assessment:{value},scoringTerms:[{label:'Drain a held foe and recover without wasting healing on a previously drained victim',contribution:value}]});}
-   const sizes=['tiny','sm','med','lg','huge','grg'],canGrab=sizes.indexOf(canvas.tokens.get(enemy.id).actor.size)<=sizes.indexOf(this.actor.size)+1;
-   if(enemy.ownGrab||canGrab&&last?.hit&&last.targetId===enemy.id&&this.parts().native.some(s=>s.item.id===last.strikeId&&(s.item.attackEffects?.includes?.('grab')||s.item.system.attackEffects?.value?.includes('grab')))){
-    const value=enemy.ownGrab?4:7+(state.actionsRemaining>=2?this.vampireSpec.drain*2+Math.min(5,this.actor.hitPoints.max-this.actor.hitPoints.value):0);
-    result.push({id:`grab:${enemy.id}`,kind:'grab',targetId:enemy.id,legal:true,actionCost:1,mapIncreases:0,assessment:{value},scoringTerms:[{label:'Hold a foe for allied attacks and Drink Blood',contribution:value}]});}
-  }
-  for(const strike of state.strikes.filter(s=>!s.available)){const native=this.parts().native.find(s=>s.item.id===strike.id),weapon=native.item.linkedWeapon;if(!weapon||strike.ranged&&!this.ammunition())continue;
-   const other=this.parts().native.find(s=>s.item.linkedWeapon&&s.item.linkedWeapon!==weapon&&s.item.linkedWeapon.system.equipped.carryType==='held')?.item.linkedWeapon,cost=other?2:1;
-   if(cost>state.actionsRemaining)continue;const forecast=preparedStrikeCandidates({...state,actionsRemaining:Math.max(1,state.actionsRemaining-cost),strikes:[{...strike,available:true}]}),value=Math.max(0,...forecast.map(c=>c.assessment.value))-cost;
-   if(value>0)result.push({id:`equip:${weapon.id}`,kind:other?'vampireStow':'vampireEquip',weaponId:other?.id??weapon.id,legal:true,actionCost:1,assessment:{value},scoringTerms:[{label:'Prepare a native weapon for a useful attack',contribution:value}]});}
-  return result;
- }
+ extraCasterActions(state){return profileActions(state,profileActionFacts(this,state));}
  candidates(state){if(state.mistEscape){const r=state.mistEscape;if(r.revert)return state.actionsRemaining>0?[{id:'mist:revert',kind:'vampireForm',form:'vampire',actionCost:1,legal:true,assessment:{value:20}}]:[{id:'mist:end',kind:'endTurn',actionCost:0,legal:true,assessment:{value:0}}];
   return r.atEdge?[{id:'mist:exit',kind:'escapeScene',actionCost:0,legal:true,assessment:{value:10000}}]:r.path.length&&state.actionsRemaining>0?
   [{id:'mist:fly',kind:'mistFly',actionCost:1,legal:true,path:r.path,destination:r.path.at(-1),movementCost:r.cost,assessment:{value:10000}}]:[{id:'mist:end',kind:'endTurn',actionCost:0,legal:true,assessment:{value:0}}];}
