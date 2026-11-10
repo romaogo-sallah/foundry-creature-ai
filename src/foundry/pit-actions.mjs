@@ -55,7 +55,7 @@ export async function executePitAction(token,choice,{valid=()=>true,reactions=ru
  const origin={x:token.document.x,y:token.document.y,elevation:token.document.elevation,level:token.document.level};
  const provoke=async()=>{const r=await reactions?.action({mover:token,kind:'move',valid,applyDamage:true});return r?.pause||r?.endTurn?r:null;};
  if(choice.kind==='climb'){
-  const climbSpeed=token.actor.system.movement?.speeds.climb?.value??token.actor.system.attributes.speed.otherSpeeds?.find(s=>s.type==='climb')?.value;
+  const climbSpeed=token.actor.system.movement?.speeds.climb?.value??token.actor.system.attributes.speed?.otherSpeeds?.find(s=>s.type==='climb')?.value;
   const held=pitHeldHands(token.actor);
   if(held&&!climbSpeed)throw new Error('Climb requires two free hands; release or stow held equipment first');
   const r=await provoke();if(r)return r;if(!valid())return {resolved:true};

@@ -9,6 +9,7 @@ import {gateActivityGoal} from '../framework/activity-plan.mjs';
 import {chooseTacticalAction} from '../framework/tactical-behaviors.mjs';
 import {aerialTactics,recordAerialPlan} from './aerial-tactics.mjs';
 import {isTrueVampire} from './vampire-state.mjs';
+import {pitAt} from './pit-geometry.mjs';
 const attached=new WeakSet(),ns='foundry-creature-ai';
 export function attachFlightSystem(adapter){
   if(attached.has(adapter)||!flySpeed(adapter.actor)&&!isTrueVampire(adapter.actor)&&!adapter.hasSpellcasting)return adapter;
@@ -25,7 +26,9 @@ export function attachFlightSystem(adapter){
       origin:{...adapter.originCell(),elevation:adapter.token.document.elevation},moves:[]};
     state.flight.airCombat=aerialTactics(adapter,state);
     if(state.flight.airborne||canFly)state.moves=[];
-    const planner=canFly?flightRoutePlanner(adapter,state):null;
+    const pit=pitAt(adapter.token.document),leavingPit=pit&&adapter.token.document.elevation<pit.rim-.1;
+    if(leavingPit)state.flight.airCombat=null;
+    const planner=canFly&&!leavingPit?flightRoutePlanner(adapter,state):null;
     if(planner){
       state.flight.safety=planner.safety(state.flight.origin);
       state.flight.preferredElevation=planner.preferredElevation;
@@ -37,13 +40,13 @@ export function attachFlightSystem(adapter){
           reason:phase==='recover'?'Recover altitude after attacking':phase==='gain-height'?'Gain a safe hunting altitude before committing':'Approach at altitude and wait for an attack with an escape route'};
       }
     }
-    if(canFly&&options?.movement!==false){
+    if(canFly&&!leavingPit&&options?.movement!==false){
       const moves=await flightMoves(adapter,state,planner,options);
       if(moves.stale){if((options.workerRetries??0)>=2)throw new Error('Battlefield changed repeatedly while planning; retry this turn');
         return flightSnapshot(ledger,{...options,workerRetries:(options.workerRetries??0)+1});}
       state.flight.moves=moves;
     }
-    await adapter.enrichFlight?.(state,planner,options);
+    if(!leavingPit)await adapter.enrichFlight?.(state,planner,options);
     if(state.flight.hunt&&state.flight.hunt.phase==='stalk'&&state.flight.dives?.some(d=>d.features?.escapePlan&&
       (state.actionsRemaining>d.actionCost||d.features.escapePlan.cost===0))){
       state.flight.hunt.phase='strike';state.flight.hunt.reason='A descending attack and a safe escape fit the remaining actions';

@@ -1,0 +1,75 @@
+{
+  "version": "0.43.3",
+  "date": "2026-11-10",
+  "changes": [
+    "Compare prepared Fly casting and ascent cost with own Climb ability and equipment preparation",
+    "Prefer completing a Fly escape this turn over spare setup buffs",
+    "Generate local pit escape flight through the opening to a clear bank, including partial ascent in deeper pits",
+    "Skip ordinary aerial hunting/search until the flyer leaves the pit",
+    "Handle native prepared movement with no legacy attributes.speed in Climb"
+  ],
+  "tests": {
+    "passed": 1188,
+    "failed": 0,
+    "parallelProcesses": 11,
+    "elapsedSeconds": 36,
+    "regressions": [
+      "native and real-worker complete Lich turns cast Fly and reach a bank",
+      "uphill movement cost, blocked ceiling, unavailable spell, no visible enemy, deep pit",
+      "Climb with modern prepared movement data"
+    ]
+  },
+  "native": {
+    "version": "0.43.3",
+    "foundry": "14.369",
+    "pf2e": "8.6.1",
+    "scene": "Arena Stadium",
+    "actor": "Lich",
+    "pitDepth": 10,
+    "climbBonus": 0,
+    "climbDC": 20,
+    "flyAvailable": true,
+    "chosen": "fly",
+    "postSpellSimulation": {
+      "detachedNativeActorAndToken": true,
+      "nativeEffect": true,
+      "flySpeed": 25,
+      "flightExitCost": 25,
+      "bankRoutes": 4,
+      "allRoutesAffordable": true
+    },
+    "sceneUnchanged": true,
+    "actorsUnchanged": true,
+    "moduleErrors": [],
+    "valid": true
+  },
+  "targetedRecovery": {
+    "reason": "The actual Lich turn retained an uncertain reservation from the old pre-check Climb failure. Only that exact captured ledger was corrected.",
+    "changed": true,
+    "actionCountPreserved": true,
+    "remainingActions": 2,
+    "uncertain": false,
+    "hpAndPositionUnchanged": true,
+    "itemsUnchanged": true,
+    "combatUnchanged": true,
+    "noActionsExecuted": true,
+    "valid": true,
+    "moduleErrors": []
+  },
+  "artifact": {
+    "archiveMatchesBuild": true,
+    "installedMatchesBuild": true,
+    "filesVerified": 292,
+    "version": "0.43.3",
+    "sha256": "01BF8BC764DEF0C3159C5B16A9590CEEAE6FE49924766A9171BB2B89A9C9CAB0"
+  },
+  "rules": [
+    "https://2e.aonprd.com/Actions.aspx?ID=2374",
+    "https://2e.aonprd.com/Spells.aspx?ID=1534"
+  ],
+  "limits": [
+    "The live fight was not advanced and no live spell was cast by diagnostics. Two remaining actions were preserved when clearing the stale marker.",
+    "Climb duration is a heuristic using the actor own skill and configured pit DC.",
+    "This adds Fly escape, not general ladder/cliff or every teleport spell planning."
+  ]
+}

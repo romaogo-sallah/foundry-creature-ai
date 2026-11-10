@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.43.3:** casters compare Fly with Climb when trapped in a pit, budget casting plus the escape move, and use native flight paths to ascend through the opening onto a clear bank. Existing flyers prioritize leaving the pit before resuming ordinary combat tactics. [Pit details](docs/pits.md). Reload clients with **Ctrl+F5**.
+
 **Version 0.43.2:** persistent spell areas remain visible while controlling tokens. Clouds, smoke, blizzards and ice walls now use the same native visibility as Grease and fire. Existing layer-only spell zones update when viewed by the active GM; hidden and explicitly restricted zones retain their visibility. Reload clients with **Ctrl+F5**.
 
 **Version 0.43.1:** fixes Frightful Presence immunity persistence, invalid Dispel retries, nonliving spell targets, indefinite caster waiting and animation-sensitive pit jumps. Adds guarded recovery for missed Mist Escape turns. [Details and verification](docs/combat-fixes-0.43.1.md). Reload clients with **Ctrl+F5** after installing the suite.

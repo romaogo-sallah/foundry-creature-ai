@@ -57,3 +57,12 @@ test('pit walls block rays through earth below the rim but allow an upward ray t
  assert.equal(pitBlocksRay(f.boss,f.player,from,{x:800,y:150,elevation:0}),true);
  assert.equal(pitBlocksRay(f.boss,f.player,from,{x:450,y:150,elevation:20}),false);
 });
+
+test('Climb handles native prepared movement data with no legacy attributes.speed object',async()=>{
+ const f=setup();f.boss.document.x=400;f.boss.document.elevation=-10;
+ f.actor.system.movement={speeds:{land:{value:25}}};delete f.actor.system.attributes.speed;
+ for(const weapon of f.actor.itemTypes.weapon)weapon.system.equipped.carryType='worn';
+ f.actor.getStatistic=()=>({check:{roll:async()=>({degreeOfSuccess:2,total:25})}});
+ const choice=pitActionChoices(f.boss).find(c=>c.kind==='climb');assert.ok(choice);
+ await executePitAction(f.boss,choice,{reactions:f.reactions});assert.equal(f.boss.document.elevation,-5);
+});

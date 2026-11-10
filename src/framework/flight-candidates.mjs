@@ -5,6 +5,7 @@ import {aerialEngagementCandidates} from './aerial-engagement.mjs';
 export function flightCandidates(state){
   const flight=state.flight;
   if(!flight?.canFly||state.actionsRemaining<1)return [];
+  if(state.pitEscape?.flightMoves?.length)return [];
   if(flight.airCombat)return aerialEngagementCandidates(state);
   if(flight.hunt)return huntingFlightCandidates(state);
   const candidates=[];

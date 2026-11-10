@@ -19,6 +19,7 @@ import {waitingCaster} from './caster-defense.mjs';
 import {chooseConfusedAction,confusedCandidates} from './confused-policy.mjs';
 import {chooseFleeingAction,fleeingCandidates} from './fleeing-policy.mjs';
 import {withdrawalPosition} from './withdrawal.mjs';
+import {pitFlightCandidates} from './pit-escape.mjs';
 
 export function finalizeDecisionState(state){
  if(state.dragon?.flightOptions?.length){
@@ -60,6 +61,7 @@ export function decisionCandidates(state,model){
   items=[...items.filter(c=>!state.hasteBonus||c.bonusActionCost!==1||model.bonusKinds.includes(c.kind)),...extra];
  }
  items.push(...state.pitActions??[]);
+ items.push(...pitFlightCandidates(state));
  return state.behavior?tacticalBehaviors.candidates(state,items,state.behavior.selection??tacticalBehaviors.select(state)).candidates:items;
 }
 // All target/action ranking and remaining-turn forecasts run here. This module

@@ -3,6 +3,8 @@ import {pitActionChoices,executePitAction} from './pit-actions.mjs';
 import {chooseTacticalAction} from '../framework/tactical-behaviors.mjs';
 import {flySpeed} from './flight-costs.mjs';
 import {resolveFlightFall} from './flight-falling.mjs';
+import {pitEscapeFacts} from './pit-escape-planning.mjs';
+import {pitFlightCandidates} from '../framework/pit-escape.mjs';
 export function attachPitSystem(adapter){
  const prepare=adapter.prepareTurn.bind(adapter);adapter.prepareTurn=async(options={})=>{
   const pit=pitAt(adapter.token.document);if(pit&&Math.abs(adapter.token.document.elevation-pit.rim)<0.1&&!flySpeed(adapter.actor))await resolveFlightFall(adapter.token,{force:true,reactions:adapter.reactions,applyDamage:adapter.config.applyDamage,valid:options.canContinue??(()=>true)});
@@ -10,14 +12,17 @@ export function attachPitSystem(adapter){
  };
  const snapshot=adapter.snapshot.bind(adapter),candidates=adapter.candidates.bind(adapter),execute=adapter.execute.bind(adapter),decide=adapter.decide.bind(adapter);
  adapter.snapshot=async(...args)=>{const state=await snapshot(...args);if(state.mistEscape)return state;state.pit=pitAt(adapter.token.document);
+  state.pitEscape=state.pit?await pitEscapeFacts(adapter,state.pit,args[1]):null;
+  if(state.pitEscape)state.diagnostics.pitEscape={height:state.pitEscape.height,climbBonus:state.pitEscape.climbBonus,climbDC:state.pitEscape.dc,
+   flightExitCost:state.pitEscape.flightExitCost,flySpeed:state.pitEscape.flySpeed,flightMoves:state.pitEscape.flightMoves.length};
   state.pitActions=pitActionChoices(adapter.token,state).map(c=>{
    if(['climb','pitStow'].includes(c.kind))return c;
    const before=Math.min(Infinity,...state.enemies.map(e=>e.distance)),after=Math.min(Infinity,...state.enemies.map(e=>adapter.targetAt(adapter.cell(c.destination),adapter.perceivedTarget(e),[],c.destination).distance));
    const value=before-after;if(value<=0)return {...c,legal:false};return {...c,assessment:{value:value+3},scoringTerms:[{label:'Cross a pit to approach a known opponent',contribution:value+3}]};
   });return state;};
- adapter.candidates=state=>[...candidates(state),...(state.pitActions??[])];
+ adapter.candidates=state=>[...candidates(state),...(state.pitActions??[]),...pitFlightCandidates(state)];
  adapter.decide=state=>{
-  if(!state.pitActions?.some(c=>c.legal))return decide(state);
+  if(!state.pitActions?.some(c=>c.legal)&&!pitFlightCandidates(state).length)return decide(state);
   const result=chooseTacticalAction(adapter.candidates(state),state,{actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0});
   return {...result,diagnostics:{...state.diagnostics,...result.diagnostics,turnComplete:result.chosen?.kind==='endTurn'}};
  };

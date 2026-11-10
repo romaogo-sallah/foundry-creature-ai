@@ -30,6 +30,10 @@ Climb spends one action, normally requires two free hands, and rolls Athletics a
 
 An armed creature can spend Interact actions stowing its held weapons first. A flyer able to Fly uses flight rather than preparing a slow climb. Fleeing can still make the preparations needed to escape a pit. Manual action counting remains with the player; the AI ledger spends each action normally.
 
+From **0.43.3**, an NPC with an available **Fly spell** compares the casting and escape movement with its own Athletics bonus, the configured wall DC, Climb speed and held equipment. An untrained caster can cast Fly instead of attempting a long series of unlikely Climb checks. A ten-foot ascent costs twenty feet of flying movement; reaching an adjacent bank normally adds five feet. If casting and that Fly action fit this turn, the planner values completing the escape before spending spare actions on other buffs. A spell's actual native slot is consumed, and movement is replanned after its native effect grants flight.
+
+Pit escape routes rise through the opening before moving sideways onto a bank. They retain native wall/surface collision and occupancy checks. Deep pits allow affordable upward progress across multiple Fly actions, including when no opponents are currently visible. Flyers in a pit use this local escape objective before their ordinary hunting or firing-position search. If the spell is unavailable or flight is obstructed, the existing Climb and equipment preparation remain available. This does not grant flight, restore expended slots, or automatically succeed at Athletics checks.
+
 ## Jump across
 
 Select **Leap / Long Jump** in the movement menu and drag toward the far bank, or use the toolbar action. The resolver offers only in-scene, unoccupied landings with a wall-clear route over an actual pit.

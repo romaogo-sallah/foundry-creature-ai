@@ -2,6 +2,7 @@ import {checkProbabilities} from './math.mjs';
 import {spellChoiceFields} from './spell-definitions.mjs';
 import {spellReserveCost} from './caster-tactics.mjs';
 import {spellSaveProbabilities,witnessedSpellConfidence,knownSpellImmunity} from './spell-knowledge.mjs';
+import {pitFlightSpellValue} from './pit-escape.mjs';
 const conditionValue={stunned:8,slowed:7,blinded:9,sickened:3,frightened:3,enfeebled:2,clumsy:2,stupefied:3,dazzled:2,immobilized:5,prone:5};
 export function outcomeSpellValue(state,spell,target,{area=false}={}){
  if(!area&&(target.lineOfSight===false||target.lineOfEffect===false||target.distance>spell.range||
@@ -47,12 +48,12 @@ export function genericCastingCandidates(state){
    const value=spell.slug==='sure-strike'?state.actionsRemaining>=2&&state.enemies.some(e=>e.inReach)?7:0:spell.slug==='shield'?exposed?5:0:
     spell.slug==='false-vitality'?Math.max(0,10+(spell.castRank-2)*3-(state.self.tempHP??0))*0.7:
     spell.slug==='see-the-unseen'?state.enemies.some(e=>e.awareness?.detection==='undetected'||e.awareness?.detection==='hidden')?10:0:
-    spell.slug==='fly'?state.enemies.some(e=>e.airborne)||state.pit?12:2:spell.energyWard?energyType?9:0:
+    spell.slug==='fly'?Math.max(ally.self?pitFlightSpellValue(state,spell):0,state.enemies.some(e=>e.airborne)||state.pit?12:2):spell.energyWard?energyType?9:0:
     spell.slug==='mountain-resilience'?exposed?12:3:spell.slug==='haste'?4+(ally.martialPower??8)*0.7+(exposed?3:0):spell.slug==='blur'?exposed?7+(ownDanger?3:0):1:
     spell.slug==='invisibility'?ownDanger?12:ally.skulk?8:2:spell.slug==='fleet-step'?state.nearestEnemy>25?6:0:exposed?8:1;
    if(value<=reserve)continue;
    result.push({...base,id:`spell:${spell.bindingId}:${ally.id}`,targetId:ally.id,energyType,features:{...base.features,support:true,onceKey:`buff:${spell.slug}:${ally.id}`},assessment:{value:value-reserve},
-    scoringTerms:[{label:'Expected group benefit from '+spell.name,contribution:value},{label:'Reserve limited casting resources',contribution:-reserve}]});
+    scoringTerms:[{label:spell.slug==='fly'&&ally.self&&pitFlightSpellValue(state,spell)>0?'Escape the pit with Fly instead of a slower Climb':'Expected group benefit from '+spell.name,contribution:value},{label:'Reserve limited casting resources',contribution:-reserve}]});
   }else if(spell.kind==='ward')for(const ally of state.casterAllies??[]){
    if(ally.self||ally.distance>spell.range||ally.lineOfEffect===false||ally.lineOfSight===false)continue;
    for(const enemy of state.enemies.filter(e=>e.distance<=spell.range&&e.lineOfSight!==false&&e.lineOfEffect!==false)){
