@@ -1,6 +1,7 @@
 import { spellDefenseCheck, bestGreaseDefense } from './spell-checks.mjs';
 import { inSpellArea } from './spell-areas.mjs';
 import { environmentBetween } from './environment-zones.mjs';
+import {spellZoneVisibility} from './spell-zone-visibility.mjs';
 
 const ns = 'foundry-creature-ai';
 export const GREASE_SCRIPT = "await game.modules.get('pf2e-tactical-core')?.api?.rules?.spells?.refresh?.();";
@@ -42,7 +43,7 @@ export async function createGreaseZone(adapter,spell,area,affected,{valid}) {
   const data = { name: `Grease — ${adapter.token.name}`, color: '#a18b25', shapes: area.shapes,
     elevation: { bottom: adapter.token.document.elevation, top: adapter.token.document.elevation + 0.1 },
     levels: adapter.token.document.level ? [adapter.token.document.level] : [],
-    visibility: CONST.REGION_VISIBILITY?.ALWAYS ?? 0,
+    visibility: spellZoneVisibility(),
     flags: { 'pf2e-toolbelt': { targetHelper: { skip: true } }, [ns]: { spellZone: { slug: 'grease', casterId: adapter.token.id, casterUuid: adapter.actor.uuid,
       spellId: spell.id, dc: adapter.parts().entry.statistic.dc.value, expiresAt: now + 60,
       combatId: game.combat?.id, casterCombatantId: game.combat?.combatant?.id, expiryRound: (game.combat?.round ?? 0) + 10 } } },

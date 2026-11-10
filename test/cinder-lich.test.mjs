@@ -167,12 +167,14 @@ test('Shield cantrip permits Shield Block against magical cold without requiring
 test('Toxic Cloud ticks once per turn on a breathing creature, not on undead, and drifts on the following caster turn',async()=>{
  const f=setup(),spell=f.actor.itemTypes.spell.find(s=>s.slug==='toxic-cloud'),entry=f.actor.itemTypes.spellcastingEntry[0],area={shapes:[{type:'ellipse',x:f.player.center.x,y:f.player.center.y,radiusX:400,radiusY:400,rotation:0}]};
  await createAdvancedZone(f.adapter,spell,entry,{area},spellDefinition(spell));const region=canvas.scene.regions.contents[0],hp=f.player.actor.hitPoints.value;
+ assert.equal(region.visibility,CONST.REGION_VISIBILITY?.ALWAYS??2);
  const combatant={id:'target-turn',tokenId:f.player.id};await advanceWeather(combatant);await advanceWeather(combatant);assert.equal(f.calls.filter(c=>c[0]==='spell-save').length,1);assert.ok(f.player.actor.hitPoints.value<hp);
  f.player.actor.modeOfBeing='undead';game.combat.round++;await advanceWeather(combatant);assert.equal(f.calls.filter(c=>c[0]==='spell-save').length,1);
  const x=region.shapes[0].x;await advanceWeather({id:'caster-turn',tokenId:f.boss.id});assert.equal(region.shapes[0].x,x+200);
 });
 test('Blizzard terrain ends at the caster next start, rather than at an earlier combatant turn',async()=>{
  const f=setup(),spell=f.actor.itemTypes.spell.find(s=>s.slug==='howling-blizzard'),area={shapes:[{type:'rectangle',x:500,y:500,width:100,height:100}]};await createBlizzard(f.adapter,area,spell);
+ assert.equal(canvas.scene.regions.contents[0].visibility,CONST.REGION_VISIBILITY?.ALWAYS??2);
  game.combat.round++;await advanceWeather({id:'other',tokenId:f.player.id});assert.equal(canvas.scene.regions.contents.length,1);
  await advanceWeather({id:'caster',tokenId:f.boss.id});assert.equal(canvas.scene.regions.contents.length,0);
 });

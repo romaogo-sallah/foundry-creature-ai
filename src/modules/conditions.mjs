@@ -24,9 +24,11 @@ import {installMonsterAbilities} from '../foundry/monster-abilities.mjs';
 import {installMonsterReactions} from '../foundry/monster-reactions.mjs';
 import {installWeather} from '../foundry/spell-weather.mjs';
 import {installIceWalls,openIceWalls} from '../foundry/ice-wall-controls.mjs';
+import {installSpellZoneVisibility} from '../foundry/spell-zone-visibility.mjs';
 getRulesRuntime().register('conditions',{
   init:()=>{registerSpellProfiles();registerConditionCompatibility();registerRulesSetting('conditionRestrictions',{name:'Enforce condition action and reaction rules',scope:'world',config:true,type:Boolean,default:true});installRestrictionMovement();},
   start:async runtime=>{
+    installSpellZoneVisibility({onError:runtime.onError});
     loadSpellProfiles();Hooks.on('updateSetting',setting=>{if(setting.key?.endsWith('.spellProfiles'))loadSpellProfiles();});
     installMonsterAbilities({reactions:runtime.reactions,onError:runtime.onError});
     installWeather({reactions:runtime.reactions,onError:runtime.onError});installIceWalls({reactions:runtime.reactions,onError:runtime.onError});

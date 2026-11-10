@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.43.2:** persistent spell areas remain visible while controlling tokens. Clouds, smoke, blizzards and ice walls now use the same native visibility as Grease and fire. Existing layer-only spell zones update when viewed by the active GM; hidden and explicitly restricted zones retain their visibility. Reload clients with **Ctrl+F5**.
+
 **Version 0.43.1:** fixes Frightful Presence immunity persistence, invalid Dispel retries, nonliving spell targets, indefinite caster waiting and animation-sensitive pit jumps. Adds guarded recovery for missed Mist Escape turns. [Details and verification](docs/combat-fixes-0.43.1.md). Reload clients with **Ctrl+F5** after installing the suite.
 
 **Version 0.42.0:** teaches the supplied [Young Cinder Dragons and Lich](docs/cinder-dragon-and-lich.md), their distinct martial/caster kits, shared Counterspell, Siphon Life, Frightful Presence, 3D areas and sixteen additional spell components. Adds editable [pits, Climb and crossing jumps](docs/pits.md) for manual play and AI, including the two marked Stadium pits. Fixes restricted retreat movement and unaffordable Strike follow-up scoring. Restart Foundry to discover the Pit behavior type, then reload clients with **Ctrl+F5**.

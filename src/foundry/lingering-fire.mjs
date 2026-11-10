@@ -3,6 +3,7 @@ import {spellDefenseCheck} from './spell-checks.mjs';
 import {detectionFor} from './stealth-awareness.mjs';
 import {clearSightPath,clearAttackPath} from './attack-path.mjs';
 import {averageFormula} from '../framework/math.mjs';
+import {spellZoneVisibility} from './spell-zone-visibility.mjs';
 const ns='foundry-creature-ai',locks=new WeakMap();
 const fire=region=>region.flags?.[ns]?.lingeringFire;
 const contents=()=>canvas.scene?.regions?.contents??[];
@@ -19,7 +20,7 @@ export async function createLingeringFire(adapter,spell,entry,choice,definition,
   const hazard=hazardBehavior({formula:estimate,damageType:'fire',frequency:'crossing'});hazard.system.events=['tokenMoveIn'];behaviors.push(hazard);}
  const [region]=await adapter.token.document.parent.createEmbeddedDocuments('Region',[{name:`${spell.name}: ${adapter.token.name}`,shapes:choice.area.shapes,
   elevation:{bottom:adapter.token.document.elevation,top:adapter.token.document.elevation+(definition.wall?10:5)},levels:adapter.token.document.level?[adapter.token.document.level]:[],
-  color:'#ee6611',visibility:CONST.REGION_VISIBILITY?.ALWAYS??0,behaviors,flags:{[ns]:{lingeringFire:data}}}],{renderSheet:false});
+  color:'#ee6611',visibility:spellZoneVisibility(),behaviors,flags:{[ns]:{lingeringFire:data}}}],{renderSheet:false});
  if(!definition.wall)await resolveFireDamage(region,canvas.tokens.placeables.filter(t=>t.actor?.isOfType?.('creature')&&inside(t,region)));
  return {resolved:true,lastAction:{kind:'castSpell',spellId:spell.id},note:definition.wall?'Wall of Fire burns on crossing and at turn start, and conceals through its flames.':'Floating Flame is active; Sustain can move it 10 feet and damage a creature at most once per round.'};
 }

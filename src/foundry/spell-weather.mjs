@@ -1,6 +1,7 @@
 import {createObscuringZone} from './monster-abilities.mjs';
 import {spellDefenseCheck,SPELL_OPTIONS} from './spell-checks.mjs';
 import {clearAttackPath} from './attack-path.mjs';
+import {spellZoneVisibility} from './spell-zone-visibility.mjs';
 const ns='foundry-creature-ai',active=()=>canvas.scene?.regions?.contents??[],weather=r=>r.flags?.[ns]?.weather;
 export async function createAdvancedZone(adapter,spell,entry,choice,definition){
  if(definition.ice)return createIceWall(adapter,spell,choice);
@@ -16,7 +17,7 @@ export async function createAdvancedZone(adapter,spell,entry,choice,definition){
 }
 export async function createBlizzard(adapter,area,spell){
  const [region]=await adapter.token.document.parent.createEmbeddedDocuments('Region',[{name:'Howling Blizzard: difficult terrain',shapes:area.shapes,elevation:{bottom:area.volume?area.volume.origin.z-area.volume.range:adapter.token.document.elevation,top:area.volume?area.volume.origin.z+area.volume.range:adapter.token.document.elevation+60},
-  levels:adapter.token.document.level?[adapter.token.document.level]:[],behaviors:[{type:'modifyMovementCost',name:'Blizzard difficult terrain',system:{difficulties:{walk:2,fly:2}}}],
+  levels:adapter.token.document.level?[adapter.token.document.level]:[],color:'#98cfee',visibility:spellZoneVisibility(),behaviors:[{type:'modifyMovementCost',name:'Blizzard difficult terrain',system:{difficulties:{walk:2,fly:2}}}],
   flags:{[ns]:{weather:{slug:spell.slug,sourceTokenId:adapter.token.id,expiresAt:game.time.worldTime+6,untilSourceStart:true,combatId:game.combat?.id,round:game.combat?.round??0}},'pf2e-toolbelt':{targetHelper:{skip:true}}}}],{renderSheet:false});return region;
 }
 export async function createIceWall(adapter,spell,choice){
@@ -25,7 +26,7 @@ export async function createIceWall(adapter,spell,choice){
    bottom:adapter.token.document.elevation,top:adapter.token.document.elevation+10,hp:40+Math.floor((spell.rank-5)/2)*10}));
  if(segments.some(s=>canvas.tokens.placeables.some(t=>t.document.x<s.x+s.width&&t.document.x+t.w>s.x&&t.document.y<s.y+s.height&&t.document.y+t.h>s.y&&t.document.elevation<s.top&&t.document.elevation+5>s.bottom)))return {resolved:true,note:'The ice wall could not form in an unbroken open space; the cast remains spent.'};
  await adapter.token.document.parent.createEmbeddedDocuments('Region',[{name:`Wall of Ice: ${adapter.token.name}`,shapes:segments.map(s=>({type:'rectangle',x:s.x,y:s.y,width:s.width,height:s.height})),elevation:{bottom:adapter.token.document.elevation,top:adapter.token.document.elevation+10},levels:adapter.token.document.level?[adapter.token.document.level]:[],
-  flags:{[ns]:{iceWall:{segments,rank:spell.rank,sourceTokenId:adapter.token.id,expiresAt:game.time.worldTime+60}},'pf2e-toolbelt':{targetHelper:{skip:true}}}}],{renderSheet:false});
+  color:'#73bce6',visibility:spellZoneVisibility(),flags:{[ns]:{iceWall:{segments,rank:spell.rank,sourceTokenId:adapter.token.id,expiresAt:game.time.worldTime+60}},'pf2e-toolbelt':{targetHelper:{skip:true}}}}],{renderSheet:false});
  return {resolved:true,lastAction:{kind:'castSpell',spellId:spell.id},note:'Wall of Ice blocks movement and sight for 1 minute. Each section has Hardness 10 and separate HP; use Ice walls to attack a section.'};
 }
 export async function advanceWeather(combatant,{reactions}={}){

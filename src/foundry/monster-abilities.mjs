@@ -4,6 +4,7 @@ import {applyDefinedSpellEffects} from './defined-spell-effects.mjs';
 import {environmentBehavior} from './terrain-contract.mjs';
 import {clearAttackPath,clearSightPath} from './attack-path.mjs';
 import {rulesAPI} from './rules-api.mjs';
+import {spellZoneVisibility} from './spell-zone-visibility.mjs';
 const ns='foundry-creature-ai';
 const fearJobs=new WeakMap();
 const immunityKey=uuid=>encodeURIComponent(uuid).replace(/\./g,'%2E');
@@ -45,7 +46,7 @@ export async function pyreBreath(adapter,choice,{valid=()=>true}={}){
 export async function createObscuringZone(source,{name,area,duration=60,smoke=false,flags={}}){
  const volume=area.volume,low=volume?volume.origin.z-volume.range:source.document.elevation,high=volume?volume.origin.z+volume.range:source.document.elevation+20;
  return source.document.parent.createEmbeddedDocuments('Region',[{name,shapes:area.shapes,elevation:{bottom:low,top:high},levels:source.document.level?[source.document.level]:[],
-  color:smoke?'#555555':'#b5bfc7',behaviors:[environmentBehavior({enabled:true,cover:'none',coverMode:'occupants',concealment:'through',firingRadius:0})],
+  color:smoke?'#555555':flags.slug==='toxic-cloud'?'#7da54b':'#b5bfc7',visibility:spellZoneVisibility(),behaviors:[environmentBehavior({enabled:true,cover:'none',coverMode:'occupants',concealment:'through',firingRadius:0})],
   flags:{[ns]:{obscuring:{smoke,volume,expiresAt:game.time.worldTime+duration,...flags}},'pf2e-toolbelt':{targetHelper:{skip:true}}}}],{renderSheet:false});
 }
 export async function resolveFrightfulPresence(source,target){

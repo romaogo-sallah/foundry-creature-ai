@@ -1,0 +1,77 @@
+{
+  "version": "0.43.2",
+  "date": "2026-11-10",
+  "change": "Show supported persistent spell Region highlights while the Token layer is active.",
+  "coverage": [
+    "Grease",
+    "Floating Flame",
+    "Wall of Fire",
+    "Mist",
+    "Toxic Cloud",
+    "Pyre Breath smoke",
+    "Howling Blizzard terrain",
+    "Wall of Ice"
+  ],
+  "migration": "On ready/viewing a scene, the active GM upgrades only module-owned layer-only spell Regions. Hidden Regions, GM/observer-only Regions and ordinary terrain retain their visibility.",
+  "tests": {
+    "passed": 1180,
+    "failed": 0,
+    "processes": 11,
+    "elapsedSeconds": 38.5
+  },
+  "native": {
+    "version": "0.43.2",
+    "foundry": "14.369",
+    "pf2e": "8.6.1",
+    "tokenLayerActive": true,
+    "records": [
+      {
+        "key": "spellZone",
+        "visibility": 2,
+        "visible": true,
+        "regionLayerActive": false,
+        "interactable": false
+      },
+      {
+        "key": "lingeringFire",
+        "visibility": 2,
+        "visible": true,
+        "regionLayerActive": false,
+        "interactable": false
+      },
+      {
+        "key": "obscuring",
+        "visibility": 2,
+        "visible": true,
+        "regionLayerActive": false,
+        "interactable": false
+      },
+      {
+        "key": "weather",
+        "visibility": 2,
+        "visible": true,
+        "regionLayerActive": false,
+        "interactable": false
+      },
+      {
+        "key": "iceWall",
+        "visibility": 2,
+        "visible": true,
+        "regionLayerActive": false,
+        "interactable": false
+      }
+    ],
+    "sceneUnchanged": true,
+    "actorsUnchanged": true,
+    "valid": true,
+    "moduleErrors": []
+  },
+  "artifact": {
+    "archiveMatchesBuild": true,
+    "installedMatchesBuild": true,
+    "filesVerified": 290,
+    "version": "0.43.2",
+    "sha256": "1BBA7960EC162EF70CE0CA2B026C4820D438B468AFFB50AC78AA7EBDBDBB268F"
+  },
+  "diagnostics": "Detached native Region placeables only. No scene documents or actors created; scene and actor collection unchanged. Native visibility and interaction predicates verified; no screenshot comparison."
+}
