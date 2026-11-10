@@ -5,6 +5,12 @@ import {environmentBehavior} from './terrain-contract.mjs';
 import {clearAttackPath,clearSightPath} from './attack-path.mjs';
 import {rulesAPI} from './rules-api.mjs';
 const ns='foundry-creature-ai';
+const fearJobs=new WeakMap();
+const immunityKey=uuid=>encodeURIComponent(uuid).replace(/\./g,'%2E');
+function immunityExpiry(saved,uuid){
+ let legacy=saved;for(const part of uuid.split('.'))legacy=legacy?.[part];
+ return Math.max(saved[immunityKey(uuid)]??0,saved[uuid]??0,typeof legacy==='number'?legacy:0);
+}
 export const abilitySlug=item=>item?.slug??item?.system?.slug??item?.name?.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-$/,'');
 export const monsterAbility=(actor,slug)=>(actor.itemTypes?.action??[]).find(a=>abilitySlug(a)===slug);
 export const monsterAdjustment=actor=>actor.isElite||actor.system.attributes.adjustment==='elite'?1:actor.isWeak||actor.system.attributes.adjustment==='weak'?-1:0;
@@ -43,13 +49,21 @@ export async function createObscuringZone(source,{name,area,duration=60,smoke=fa
   flags:{[ns]:{obscuring:{smoke,volume,expiresAt:game.time.worldTime+duration,...flags}},'pf2e-toolbelt':{targetHelper:{skip:true}}}}],{renderSheet:false});
 }
 export async function resolveFrightfulPresence(source,target){
+ // Movement and turn hooks can arrive together. Serialize on the target actor
+ // so separate sources cannot overwrite each other's persisted immunity.
+ const actor=target.actor;if(!actor)return;
+ const task=(fearJobs.get(actor)??Promise.resolve()).catch(()=>{}).then(()=>resolvePresence(source,target));
+ fearJobs.set(actor,task);try{return await task;}finally{if(fearJobs.get(actor)===task)fearJobs.delete(actor);}
+}
+async function resolvePresence(source,target){
  const item=monsterAbility(source.actor,'frightful-presence');if(!item||!target.actor?.hitPoints?.value||!source.actor.isEnemyOf(target.actor)||!clearSightPath(target,source)||!clearAttackPath(source,target))return;
  const radius=item.system.rules?.find(r=>r.key==='Aura')?.radius??(monsterAbility(source.actor,'pyre-breath')?90:60);
  if(source.distanceTo(target)>radius||target.actor.hasCondition('blinded'))return;
- const key=source.document.uuid??source.id,immunities=target.actor.getFlag(ns,'frightfulImmunities')??{};if(immunities[key]>game.time.worldTime)return;
- await target.actor.setFlag(ns,'frightfulImmunities',{...immunities,[key]:game.time.worldTime+60});
+ const uuid=source.document.uuid??source.id,key=immunityKey(uuid),immunities=target.actor.getFlag(ns,'frightfulImmunities')??{};
+ if(immunityExpiry(immunities,uuid)>game.time.worldTime)return;
  const dc=monsterDC(source.actor,Number(item.system.description.value.match(/dc:(\d+)/)?.[1]??29));
  const degree=await spellDefenseCheck(target,{dc,statistic:'will',origin:source,spell:item,label:'Frightful Presence'});
+ await target.actor.setFlag(ns,'frightfulImmunities',{...immunities,[key]:game.time.worldTime+60});
  if(target.actor.isImmuneTo?.(item)||degree===3)return;
  const desired=[4,2,1][degree],current=target.actor.getCondition('frightened')?.value??0;
  if(current<desired){const editable=target.actor.getCondition('frightened',{all:true}).find(c=>!c.isLocked);await target.actor.increaseCondition('frightened',{value:desired-(editable?.value??0),max:desired});}

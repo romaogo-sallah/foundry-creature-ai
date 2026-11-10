@@ -51,6 +51,7 @@ export function spellDescriptor(binding,actionCost){
   actionCost,reservePremium:binding.soulCage?4:0,resourceCost:binding.focus?(spell.system.cast?.focusPoints??1):1,cantrip,unlimited:!poolId,available:remaining>=(binding.focus?(spell.system.cast?.focusPoints??1):1),range:touchRange??definition.range??(Number.isFinite(range)?range:area?.value??0),
   maxTargets:spell.slug==='fear'&&castRank>=3?5:definition.maxTargets??Math.min(12,Number.parseInt(spell.system.target?.value?.match(/\d+/)?.[0]??'1')),
   area,...spell.slug==='howling-blizzard'&&actionCost===3?{range:500}:{},bonus:entry.statistic.check?.mod??0,dc:entry.statistic.dc.value,damage,meleeDamage:spell.slug==='ignition'?damage*1.4:damage,
+  damageTypes:[...new Set(Object.values(spell.system.damage??{}).map(part=>part.type).filter(Boolean))],
   traits:[...new Set([...spell.traits??spell.system.traits?.value??[],...definition.domination&&isTrueVampire(spell.actor)?['visual']:[]])],areas:[]};
 }
 export function casterCatalog(actor){

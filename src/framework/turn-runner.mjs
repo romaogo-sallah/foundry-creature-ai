@@ -124,6 +124,12 @@ export class TurnRunner {
         try{decision=await (this.adapter.planDecision?.(state,planningOptions)??this.adapter.decide(state));}
         catch(error){if(this.cancelled||this.abortController.signal.aborted||this.adapter.turnKey()!==turn)return ledger;if(error.name==='StalePlanningError')continue;throw error;}
         const choice = decision.chosen;
+        if(choice&&ledger.rejectedActionIds?.includes(choice.id)){
+          // A third-party chooser may not honor the shared candidate filter.
+          // Never retry a known-unexecuted action unchanged until the limit.
+          await this.adapter.report(decision,ledger,{skipped:true,pause:true,skipReason:'This unchanged action was already rejected; choose another action or correct the scene.'});
+          return ledger;
+        }
         if (!choice || choice.kind === 'endTurn') {
           ledger = { ...ledger, done: ledger.actionsRemaining === 0 || Boolean(decision.diagnostics?.turnComplete || decision.diagnostics?.retreatComplete || decision.diagnostics?.encounterComplete || decision.diagnostics?.escapeExhausted),
             ...(ledger.actionsRemaining === 0 ? { bonusMovementActions: 0, pendingSweep: null } : {}),
@@ -196,7 +202,7 @@ export class TurnRunner {
         // Only an explicit, known-unexecuted result can release a reservation.
         // Errors keep their reservation because their outcome may be unknown.
         if (result.skipped) {
-          ledger = beforeAction;
+          ledger = {...beforeAction,rejectedActionIds:[...new Set([...(beforeAction.rejectedActionIds??[]),choice.id])]};
           await this.adapter.saveLedger(ledger);
           await this.adapter.report(decision, ledger, result);
           const encounterEnd=await this.completeIfEncounterOver(ledger,turn);
@@ -211,7 +217,7 @@ export class TurnRunner {
         // if a reaction/effect healed or replaced its synthetic actor since then.
         const incapacitated = this.adapter.turnEndReason ? this.adapter.turnEndReason() : result.incapacitationReason;
         ledger = {
-          ...ledger, lastAction: result.lastAction ?? { kind: choice.kind }, uncertain: false,
+          ...ledger, lastAction: result.lastAction ?? { kind: choice.kind }, uncertain: false,rejectedActionIds:[],
           ...(result.attackNotAttempted?{attacksMade:Math.max(beforeAction.attacksMade,ledger.attacksMade-(choice.mapIncreases??0))}:{}),
           ...(result.forfeitActions ? { actionsRemaining: 0, bonusMovementActions: 0 } : {}),
           pendingSweep: result.pendingSweep ?? null,

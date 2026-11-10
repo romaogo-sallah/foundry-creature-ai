@@ -5,6 +5,7 @@ import {rulesAPI} from './rules-api.mjs';
 import {occupiesMovementSpace} from './combat-state.mjs';
 import {flySpeed} from './flight-costs.mjs';
 const ns='foundry-creature-ai';
+const settled=async token=>{await (token.movementAnimationPromise??token.document.movement?.animation?.ended);return token.document._source??token.document;};
 export const pitHeldItems=actor=>[...actor.itemTypes.weapon??[],...actor.itemTypes.shield??[]].filter(w=>!w.flags?.[ns]?.fireShield&&w.system.equipped?.carryType==='held'&&w.system.equipped.handsHeld>0);
 export const pitHeldHands=actor=>pitHeldItems(actor).reduce((n,w)=>n+(w.system.equipped.handsHeld??1),0);
 const directions=[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
@@ -66,23 +67,24 @@ export async function executePitAction(token,choice,{valid=()=>true,reactions=ru
   const pit=pitAt(token.document),speed=token.actor.system.movement?.speeds.land?.value??token.actor.system.attributes.speed.value,
    gain=climbSpeed??5+Math.max(0,Math.floor((speed-20)/20))*5+(degree===3?5:0),z=Math.min(pit.rim,origin.elevation+gain),to=z>=pit.rim?current.destination:{...origin,elevation:z};
   await token.document.move([{...to,action:'climb',snapped:true}],{[MANAGED_MOVEMENT]:true,showRuler:true});
-  if(Math.abs(token.document.elevation-to.elevation)>0.1)return {resolved:true,note:'Foundry stopped the Climb. Its action remains spent; reassessing the actual position.'};
+  if(Math.abs((await settled(token)).elevation-to.elevation)>0.1)return {resolved:true,note:'Foundry stopped the Climb. Its action remains spent; reassessing the actual position.'};
   if(!climbSpeed&&!token.actor.itemTypes.effect.some(e=>e.flags?.[ns]?.pitClimb))await token.actor.createEmbeddedDocuments('Item',[{name:'Climbing: off-guard',type:'effect',img:'icons/svg/anchor.svg',system:{slug:'pit-climbing',duration:{value:-1,unit:'unlimited',expiry:null,sustained:false},rules:[{key:'GrantItem',uuid:'Compendium.pf2e.conditionitems.Item.AJh5ex99aV6VTggg',inMemoryOnly:true}]},flags:{[ns]:{pitClimb:true}}}]);
   if(z>=pit.rim){const ids=token.actor.itemTypes.effect.filter(e=>e.flags?.[ns]?.pitClimb).map(e=>e.id);if(ids.length)await token.actor.deleteEmbeddedDocuments('Item',ids);}
   return {resolved:true,note:`Climbed ${z-origin.elevation} feet${z>=pit.rim?' and reached the bank':''}.`};
  }
  // The run-up is part of the two-action activity and still triggers movement
  // reactions. The jump is not a teleport and cannot cross solid walls.
- if(current.runup.length){await token.document.move(current.runup.map(p=>({...p,action:'walk',snapped:true})),{[MANAGED_MOVEMENT]:true,showRuler:true});if(!valid())return {resolved:true};
-  const end=current.runup.at(-1);if(Math.abs(token.document.x-end.x)>1||Math.abs(token.document.y-end.y)>1||token.actor.hasCondition('prone','immobilized','grabbed','restrained'))return {resolved:true,note:'The run-up stopped; Long Jump actions remain spent, and no jump was made.'};}
+ if(current.runup.length){await token.document.move(current.runup.map(p=>({...p,action:'walk',snapped:true})),{[MANAGED_MOVEMENT]:true,showRuler:true});const actual=await settled(token);if(!valid())return {resolved:true};
+  const end=current.runup.at(-1);if(Math.abs(actual.x-end.x)>1||Math.abs(actual.y-end.y)>1||Math.abs(actual.elevation-end.elevation)>0.1||token.actor.hasCondition('prone','immobilized','grabbed','restrained'))return {resolved:true,note:'The run-up stopped; Long Jump actions remain spent, and no jump was made.'};}
  const interrupted=await provoke();if(interrupted)return interrupted;
- const from={x:token.document.x,y:token.document.y,elevation:token.document.elevation,level:token.document.level};
+ const actual=token.document._source??token.document,from={x:actual.x,y:actual.y,elevation:actual.elevation,level:actual.level};
  const check=choice.actionCost===2?await token.actor.getStatistic('athletics').check.roll({skipDialog:true,token:token.document,dc:{value:15},action:'long-jump',extraRollOptions:[`${ns}:managed`,'action:long-jump','skip-handling-message']}):null;
  if(choice.actionCost===2&&!Number.isInteger(check?.degreeOfSuccess))throw new Error('Long Jump check was not resolved');
  const speed=token.actor.system.movement?.speeds.land?.value??token.actor.system.attributes.speed.value,
   limit=check?.degreeOfSuccess>=2?Math.min(speed,Math.floor(check.total/5)*5):current.leapDistance,
   fraction=Math.min(1,limit/current.jumpDistance),to={...current.destination,x:from.x+(current.destination.x-from.x)*fraction,y:from.y+(current.destination.y-from.y)*fraction};
  await token.document.move([{...to,action:'jump',snapped:true}],{[MANAGED_MOVEMENT]:true,showRuler:true,constrainOptions:{ignoreWalls:false,ignoreCost:true}});
+ await settled(token);
  if(check?.degreeOfSuccess===0&&!token.actor.hasCondition('prone'))await token.actor.increaseCondition('prone');
  if(pitAt(token.document))await resolveFlightFall(token,{force:true,reactions});
  return {resolved:true,note:pitAt(token.document)?'The jump fell short and ended in the pit.':'Jumped to the opposite bank.'};

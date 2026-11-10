@@ -247,6 +247,7 @@ test('a known-unexecuted action restores its reservation and recomputes the next
   const f = fixture();
   let first = true;
   const execute = f.adapter.execute;
+  f.adapter.decide=async state=>({chosen:{id:state.rejectedActionIds?.includes('jaws')?'alternative-jaws':'jaws',kind:'strike',actionCost:1}});
   f.adapter.execute = async () => {
     if (first) { first = false; return { skipped: true }; }
     return execute();
@@ -256,6 +257,14 @@ test('a known-unexecuted action restores its reservation and recomputes the next
   assert.equal(f.ledger().attacksMade, 3);
   assert.equal(f.calls.filter(c => c[0] === 'execute').length, 3);
   assert.equal(f.ledger().uncertain, false);
+});
+
+test('a chooser ignoring rejected candidates cannot loop on an unchanged skipped action',async()=>{
+ const f=fixture();let tries=0;
+ f.adapter.execute=async()=>{tries++;return {skipped:true,skipReason:'Effect is no longer a legal target'};};
+ const ledger=await f.runner.run();assert.equal(tries,1);assert.equal(ledger.actionsRemaining,3);assert.equal(ledger.attacksMade,0);
+ assert.deepEqual(ledger.rejectedActionIds,['jaws']);assert.equal(ledger.uncertain,false);
+ await f.runner.run();assert.equal(tries,1,'an automatic retry in the same turn cannot repeat the rejected action');
 });
 
 test('a stopped Stride records the actual destination without marking the planned goal visited', async () => {

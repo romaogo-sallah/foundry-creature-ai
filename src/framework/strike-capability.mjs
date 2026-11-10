@@ -5,6 +5,7 @@ import { attackValue } from '../dawnsbury/chooser.mjs';
 export function preparedStrikeCandidates(state){
   if(state.self.restrained||state.self.unable||state.actionsRemaining<1||state.retreatComplete||state.morale?.broken)return [];
   return (state.strikes??[]).filter(strike=>strike.available!==false).flatMap(strike=>state.enemies.flatMap(enemy=>{
+    if(enemy.knownModeOfBeing==='undead'&&strike.damageTypes?.length&&strike.damageTypes.every(type=>type==='void'))return [];
     const position=enemy.strikes?.[strike.id];
     if(!position?.usable||enemy.lineOfSight===false||position.lineOfSight===false||position.lineOfEffect===false||
       enemy.awareness?.searchRequired&&!enemy.awareness.allowAttackEstimate&&!enemy.awareness.attackOnSight)return [];

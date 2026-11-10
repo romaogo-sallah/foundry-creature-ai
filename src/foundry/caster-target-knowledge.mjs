@@ -22,7 +22,13 @@ export function casterTargetKnowledge(adapter) {
   const saved = adapter.token.document.getFlag(namespace, 'casterTargets');
   const entries = { ...(saved?.combatId === combatId && saved.sceneId === sceneId ? saved.entries : {}) };
   for (const check of targetKnowledge(adapter).checks) {
-    if (check.awareness?.state === 'observed' && check.target) entries[check.id] = {...apparentCombatRole(check.target.actor),...witnessedThreat(adapter.token,check.id)};
+    if (check.awareness?.state === 'observed' && check.target) {
+      const actor=check.target.actor,traits=actor.system.traits?.value??[];
+      // Table policy: an observed undead/construct body is recognizable as
+      // nonliving. This supplies target categories, never its hidden defenses.
+      const knownModeOfBeing=traits.includes('undead')?'undead':traits.includes('construct')?'construct':undefined;
+      entries[check.id] = {...apparentCombatRole(actor),...witnessedThreat(adapter.token,check.id),knownModeOfBeing};
+    }
   }
   return { combatId, sceneId, entries };
 }

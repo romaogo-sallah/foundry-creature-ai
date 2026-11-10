@@ -117,7 +117,8 @@ export class BehaviorSystem {
       return {...candidate,[policyBase]:candidate,assessment:{...candidate.assessment,value:candidate.assessment.value+bounded},
         scoringTerms:[...(candidate.scoringTerms??[]),...terms.map(term=>({...term,contribution:term.contribution*scale}))]};
     });
-    const flightSafe=filterConditionActions(gateActivityGoal(state,gateFlightHunt(state,adjusted)),state.conditionRules);
+    const flightSafe=filterConditionActions(gateActivityGoal(state,gateFlightHunt(state,adjusted)),state.conditionRules)
+      .filter(c=>!state.rejectedActionIds?.includes(c.id));
     const maintenance=state.flight?.airborne&&!state.flight.flown&&flightSafe.some(c=>c.kind==='fly'&&c.legal);
     const takeoff=state.flight?.canFly&&!state.flight.airborne&&state.flight.airCombat?.mode!=='disengage'&&flightSafe.some(c=>c.kind==='fly'&&c.legal);
     return {candidates:takeoff?flightSafe.filter(c=>c.kind==='fly'||['escape','stand'].includes(c.kind)):
@@ -134,6 +135,7 @@ export class BehaviorSystem {
 // Profiles may still provide specialized forecasts, but all runtime profiles
 // share the same plan/component gate and the same final legality/budget checks.
 export function chooseBehaviorAction(system, candidates, state, options = {}) {
+  candidates=candidates.filter(c=>!state.rejectedActionIds?.includes(c.id));
   return state.behavior ? system.decide(state,candidates,options) : chooseOption(filterConditionActions(candidates,state.conditionRules),{
     actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened,...options});
 }

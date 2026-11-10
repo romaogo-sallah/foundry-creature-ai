@@ -24,6 +24,7 @@ import {openSpellProfiles} from './spell-profile-controls.mjs';
 import {casterCatalog} from './spell-catalog.mjs';
 import {enableSelectedFullAuto} from './bulk-controls.mjs';
 import {getRulesRuntime} from '../modules/runtime.mjs';
+import {recoverMistTurn} from './mist-turn-recovery.mjs';
 let profile;
 const aiPresentation=new AIPresentation();
 const rulesRuntime=getRulesRuntime();
@@ -142,6 +143,7 @@ export async function correctLedger(token = selected()) {
     !Number.isInteger(bonusMovementActions) || bonusMovementActions < 0 || bonusMovementActions > Math.max(ledger.bonusMovementActions ?? 0, Number(adapter.movementBonusAvailable()))) throw new Error('Invalid action, attack or restricted-movement count');
   if (ledger.turn !== adapter.turnKey()) throw new Error('The combat turn changed');
   await adapter.saveLedger({ ...ledger, actionsRemaining, attacksMade, bonusMovementActions, lastAction: null, uncertain: false,
+    rejectedActionIds:[],
     done: actionsRemaining === 0 && !bonusMovementActions, completionReason: null, incapacitationReason: null, freeEscapeStride: false, pendingSweep: null });
 }
 
@@ -417,6 +419,10 @@ Hooks.on('pf2e.startTurn', (combatant) => {
   if (config?.enabled && config.autoRun) runTurn(token, {
     automatic: true, expectedTurn: `${game.combat.id}:${game.combat.round}:${combatant.id}`,
   }).catch(showError);
+});
+Hooks.on('combatTurnChange',combat=>{
+  if(!profile)return;
+  void recoverMistTurn(combat,{paused:automaticStartsPaused,blocked:resettingActors,activeRuns,run:runTurn}).catch(showError);
 });
 Hooks.on('canvasTearDown', () => { stop(); planningWorker.close('Scene changed');decisionWorker.close('Scene changed'); runners.clear(); });
 Hooks.on('deleteCombat', combat => { stop(); expireCommands({ combat, removeAll: true }).catch(showError); });

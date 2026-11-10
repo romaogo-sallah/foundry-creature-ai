@@ -9,7 +9,7 @@ export function attachPitSystem(adapter){
   return prepare(options);
  };
  const snapshot=adapter.snapshot.bind(adapter),candidates=adapter.candidates.bind(adapter),execute=adapter.execute.bind(adapter),decide=adapter.decide.bind(adapter);
- adapter.snapshot=async(...args)=>{const state=await snapshot(...args);state.pit=pitAt(adapter.token.document);
+ adapter.snapshot=async(...args)=>{const state=await snapshot(...args);if(state.mistEscape)return state;state.pit=pitAt(adapter.token.document);
   state.pitActions=pitActionChoices(adapter.token,state).map(c=>{
    if(['climb','pitStow'].includes(c.kind))return c;
    const before=Math.min(Infinity,...state.enemies.map(e=>e.distance)),after=Math.min(Infinity,...state.enemies.map(e=>adapter.targetAt(adapter.cell(c.destination),adapter.perceivedTarget(e),[],c.destination).distance));

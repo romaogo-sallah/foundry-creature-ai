@@ -41,14 +41,19 @@ export async function observeSustain(source,cast){
 // Only witnessed PUBLIC Strikes provide relative-strength evidence. Never use
 // a hidden save, a private/secret roll, or an actor's actual level/statistic.
 export async function observePublicAttack(message){
- if(!game.combat?.started||message.blind||message.whisper?.length||message.flags?.pf2e?.context?.type!=='attack-roll'||
-  message.flags.pf2e.context.action!=='strike'||message.speaker?.scene!==canvas.scene?.id)return;
+ if(!game.combat?.started||message.blind||message.whisper?.length||message.speaker?.scene!==canvas.scene?.id)return;
+ const publicSpell=message.item?.type==='spell'&&message.item.system?.range?.value!=='touch'&&
+   Number.parseFloat(message.item.system?.range?.value)>5;
+ const publicStrike=message.flags?.pf2e?.context?.type==='attack-roll'&&message.flags.pf2e.context.action==='strike';
+ if(!publicSpell&&!publicStrike)return;
  const attacker=canvas.tokens.get(message.speaker.token),bonus=message.rolls?.[0]?.options?.totalModifier;
- if(!attacker||!Number.isFinite(bonus))return;
+ if(!attacker||!publicSpell&&!Number.isFinite(bonus))return;
  for(const observer of canvas.tokens.placeables){
   if(observer.actor?.type!=='npc'||observer===attacker||!sees(observer,attacker))continue;
-  await mutate(observer,saved=>{const attackBonus=Math.max(saved.threats?.[attacker.id]?.attackBonus??-Infinity,bonus);
-   return {...saved,threats:{...saved.threats,[attacker.id]:{attackBonus,estimatedLevel:Math.max(-1,attackBonus-10),levelUncertainty:2,source:'witnessed public Strike; uncertain NPC attack benchmark'}}};});
+  await mutate(observer,saved=>{const previous=saved.threats?.[attacker.id]??{};
+   const evidence=publicSpell?{role:'caster',source:'witnessed public ranged casting'}:(()=>{const attackBonus=Math.max(previous.attackBonus??-Infinity,bonus);
+    return {attackBonus,estimatedLevel:Math.max(-1,attackBonus-10),levelUncertainty:2,source:'witnessed public Strike; uncertain NPC attack benchmark'};})();
+   return {...saved,threats:{...saved.threats,[attacker.id]:{...previous,...evidence}}};});
  }
 }
 export function installSpellObservations({reactions,onError}){

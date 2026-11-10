@@ -1,10 +1,17 @@
 import {detectionFor} from './stealth-awareness.mjs';
-import {clearSightPath} from './attack-path.mjs';
+import {clearSightPath,clearAttackPath} from './attack-path.mjs';
+import {escapingMist} from './vampire-state.mjs';
 const ns='foundry-creature-ai';
+export function liveDispelTarget(adapter,id,effectUuid){
+ const token=canvas.tokens.get(id);
+ if(!token?.actor||token.document.hidden||escapingMist(token.actor)||token.actor.hitPoints?.value<=0||
+   detectionFor(adapter.token,token).state!=='observed'||!clearSightPath(adapter.token,token)||!clearAttackPath(adapter.token,token))return null;
+ return (token.actor.itemTypes.effect??[]).some(e=>e.uuid===effectUuid)?token:null;
+}
 // Only effects with an explicit, taught magical source are offered. Their
 // actual rank/DC is resolved after commitment, never supplied to AI scoring.
 export function visibleDispelTargets(adapter){
- return canvas.tokens.placeables.filter(t=>t.actor&&!t.document.hidden&&detectionFor(adapter.token,t).state==='observed'&&clearSightPath(adapter.token,t)).flatMap(token=>
+ return canvas.tokens.placeables.filter(t=>t.actor&&!t.document.hidden&&!escapingMist(t.actor)&&t.actor.hitPoints?.value>0&&detectionFor(adapter.token,t).state==='observed'&&clearSightPath(adapter.token,t)&&clearAttackPath(adapter.token,t)).flatMap(token=>
   (token.actor.itemTypes.effect??[]).filter(e=>e.system.context?.origin?.item&&(e.flags?.[ns]?.supportSpell||e.flags?.[ns]?.domination||e.flags?.[ns]?.definedSpell)&&
    (adapter.actor.isEnemyOf(token.actor)&&e.flags?.[ns]?.supportSpell||!adapter.actor.isEnemyOf(token.actor)&&!e.flags?.[ns]?.supportSpell||e.flags?.[ns]?.domination)).map(effect=>({
     id:effect.id,uuid:effect.uuid,targetId:token.id,distance:adapter.targetAt(adapter.originCell(),token,[],adapter.actualWaypoint()).distance,

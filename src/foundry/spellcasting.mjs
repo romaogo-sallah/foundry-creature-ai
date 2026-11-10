@@ -14,6 +14,7 @@ import {observeSpellCast,witnessedSpellCasts} from './spell-observations.mjs';
 import {vampireForm,isTrueVampire} from './vampire-state.mjs';
 import {consumeSureStrike} from './spell-attack-buffs.mjs';
 import {resistSpellDisruption} from './spell-disruption.mjs';
+import {liveDispelTarget} from './counteract-spells.mjs';
 
 const ns = 'foundry-creature-ai';
 const outcomes = ['criticalFailure','failure','success','criticalSuccess'];
@@ -30,7 +31,7 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
   if(choice.bindingId&&!binding)return {skipped:true,skipReason:'The selected casting entry or resource is no longer available'};
   const entry=binding?.entry??parts.entry,definition=binding?.definition;
   const targetRange=choice.melee?Math.max(5,adapter.actor.getReach({action:'attack'})):binding?spellDescriptor(binding,choice.actionCost).range:Infinity;
-  const target = choice.area ? null : ['heal','ward','buff','counteract'].includes(definition?.kind)?adapter.liveSpellTarget?.(choice.targetId):adapter.liveTarget(choice.targetId);
+  const target = choice.area ? null : definition?.kind==='counteract'?liveDispelTarget(adapter,choice.targetId,choice.effectUuid):['heal','ward','buff'].includes(definition?.kind)?adapter.liveSpellTarget?.(choice.targetId):adapter.liveTarget(choice.targetId);
   if(['heal','ward'].includes(definition?.kind)&&(target?.actor.isDead||target?.actor.hasCondition('dead')))
     return {skipped:true,skipReason:'A dead creature cannot receive this healing or ward'};
   if (!choice.area && (!target || !clearAttackPath(adapter.token,target))) return { skipped: true, skipReason: 'Spell target or attack path changed' };

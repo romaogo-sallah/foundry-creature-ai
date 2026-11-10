@@ -56,7 +56,7 @@ const summary = action => ({ kind: action.kind, actionCost: action.actionCost,bi
 // replans from the resulting live state, including reactions and spell terrain.
 export function casterTurnCandidates(state, { actions }) {
   function rankedActions(current) {
-    const ranked=actions(current).map(action => {
+    const ranked=actions(current).filter(action=>!current.rejectedActionIds?.includes(action.id)).map(action => {
       const castingRisk = action.kind === 'castSpell' && current.self.threatened ? current.self.reactionRisk ?? 0 : 0;
       const reveal = ['castSpell', 'strike'].includes(action.kind) ?
         Math.max(0, casterProtection(current) - casterProtection(afterAction(current, action))) : 0;

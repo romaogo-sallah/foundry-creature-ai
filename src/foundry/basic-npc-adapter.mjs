@@ -33,6 +33,7 @@ export class PF2eBasicNPCAdapter extends PF2eCreatureAdapter {
       usable:inReach&&geometry.lineOfEffect&&strike.ready!==false&&strike.canAttack!==false};
   }
   describeStrike(strike){return {id:strike.item.id,bonus:strike.totalModifier,damage:average(strike),ranged:strike.item.isRanged,
+    damageTypes:[...new Set(Object.values(strike.item.system.damageRolls??{}).map(part=>part.damageType).filter(Boolean))],
     mapPenalties:[0,strike.variants[1]?.penalty??-5,strike.variants[2]?.penalty??-10]};}
   async snapshot(ledger,options){
     const state=await super.snapshot(ledger,options),parts=this.parts();

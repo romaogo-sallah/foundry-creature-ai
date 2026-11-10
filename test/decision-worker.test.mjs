@@ -65,6 +65,23 @@ for(const directive of ['confused','fleeing'])test(`${directive} keeps its condi
 test('planning data refuses live Documents and executable values',()=>{
  class Document{}assert.throws(()=>planningData({actor:new Document()}),/Live planning object/);assert.throws(()=>planningData({roll(){}}),/Non-data/);
 });
+
+test('worker rejects living-only spells against an observed undead body and honors skipped candidates',async t=>{
+ const f=fixture({npcData:lich,size:10});enable(t);f.player.actor.system.traits.value.push('undead');
+ const ledger=await f.adapter.readLedger(f.adapter.turnKey()),state=await f.adapter.snapshot(ledger,{movement:false});
+ assert.equal(state.enemies[0].knownModeOfBeing,'undead');
+ const candidates=await f.adapter.planningCandidates(state);
+ assert.equal(candidates.some(c=>['vampiric-feast','vampiric-exsanguination','vision-of-death','toxic-cloud'].includes(c.spellSlug)),false);
+ const first=await f.adapter.planDecision(state);state.rejectedActionIds=[first.chosen.id];
+ const retry=await f.adapter.planDecision(state);assert.notEqual(retry.chosen.id,first.chosen.id);
+});
+
+test('0-HP Mist Escape completes a movement turn through the real decision worker',async t=>{
+ const data=JSON.parse(await readFile(new URL('./fixtures/vampire-count-mechanics.json',import.meta.url))),f=fixture({npcData:data,size:30});
+ enable(t);f.actor.hitPoints.value=0;f.boss.document.x=1400;f.boss.document.y=1400;
+ await f.actor.setFlag('foundry-creature-ai','vampire',{form:'mist',escape:true,escapeTriggered:true,expiresAt:7200});
+ const result=await new TurnRunner(f.adapter).run();assert.equal(result.actionsRemaining,0);assert.equal(result.uncertain,false);assert.ok(decisionWorker.completed>=3);
+});
 test('native preparation batches can be cancelled between work items',async()=>{
  const controller=new AbortController(),work=planningBudget({signal:controller.signal,milliseconds:0});await work.checkpoint();controller.abort();await assert.rejects(work.checkpoint(),{name:'AbortError'});
 });

@@ -26,4 +26,7 @@ export function witnessedSpellConfidence(state,spell,target){
   return 1-(1-confidence)*(1-effective);
  },0);
 }
-export const knownSpellImmunity=(state,spell,target)=>(state.witnessedCasts??[]).some(c=>c.slug===spell.slug&&c.targetId===target.id&&c.immunity);
+export const knownSpellImmunity=(state,spell,target)=>
+ ((spell.living||spell.slug==='toxic-cloud')&&['undead','construct'].includes(target.knownModeOfBeing))||
+ (target.knownModeOfBeing==='undead'&&spell.damageTypes?.length>0&&spell.damageTypes.every(type=>type==='void'))||
+ (state.witnessedCasts??[]).some(c=>c.slug===spell.slug&&c.targetId===target.id&&c.immunity);

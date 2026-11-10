@@ -182,7 +182,7 @@ export class PF2eCreatureAdapter {
     return { turn, ...budget, attacksMade: 0, lastAction: null, visited: [], startCell:this.originCell(),
       done: false, uncertain: false, completionReason: null, incapacitationReason: null,
       advanceRequested: false, advanced: false, escapeBlocked: false, freeEscapeStride: false, frontlineEngaged: false,
-      pendingSweep: null, commandedThisTurn: false };
+      pendingSweep: null, commandedThisTurn: false,rejectedActionIds:[] };
   }
   settleActionEconomy(ledger){return settleStunned(this,ledger);}
   executeReservedAction(choice,ledger,options){return withConditionActivity(this.actor,()=>this.execute(choice,ledger,options));}

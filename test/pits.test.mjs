@@ -25,6 +25,26 @@ test('a failed Long Jump lands in the pit and applies falling damage rather than
  const choice=pitActionChoices(f.boss).find(c=>c.kind==='jump'&&c.destination.x===600&&c.destination.y===100);assert.ok(choice);assert.equal(choice.actionCost,2);
  const hp=f.actor.hitPoints.value;await executePitAction(f.boss,choice,{reactions:f.reactions});assert.equal(f.boss.document.elevation,-10);assert.equal(f.actor.hitPoints.value,hp-5);assert.equal(f.actor.hasCondition('prone'),true);
 });
+
+test('Long Jump waits for an animated run-up before checking takeoff and making the jump',async()=>{
+ const f=setup({width:200});f.boss.document.x=100;let checks=0,moves=0;
+ f.actor.getStatistic=()=>({check:{roll:async()=>{checks++;return {degreeOfSuccess:2,total:25};}}});
+ const choice=pitActionChoices(f.boss).find(c=>c.kind==='jump'&&c.destination.x===600&&c.destination.y===100);
+ const move=f.boss.document.move.bind(f.boss.document);
+ f.boss.document.move=async(points,options)=>{
+  if(++moves===1){f.boss.movementAnimationPromise=new Promise(resolve=>setTimeout(async()=>{await move(points,options);resolve();},15));return true;}
+  return move(points,options);
+ };
+ const result=await executePitAction(f.boss,choice,{reactions:f.reactions});assert.equal(checks,1);assert.equal(f.boss.document.x,600);assert.match(result.note,/opposite bank/);
+});
+
+test('Long Jump still stops when native movement genuinely fails to reach takeoff',async()=>{
+ const f=setup({width:200});f.boss.document.x=100;
+ const choice=pitActionChoices(f.boss).find(c=>c.kind==='jump'&&c.destination.x===600&&c.destination.y===100);
+ f.actor.getStatistic=()=>({check:{roll:async()=>assert.fail('no jump after a stopped run-up')}});
+ f.boss.document.move=async()=>false;
+ const result=await executePitAction(f.boss,choice,{reactions:f.reactions});assert.match(result.note,/run-up stopped/);assert.equal(f.boss.document.x,100);
+});
 test('Climb makes five-foot progress per ordinary success, then exits onto the bank',async()=>{
  const f=setup();f.boss.document.x=400;f.boss.document.elevation=-10;
  for(const weapon of f.actor.itemTypes.weapon)weapon.system.equipped.carryType='worn';

@@ -42,6 +42,8 @@ export class PF2eVampireAdapter extends PF2eSpellcasterAdapter{
    if(this.profileId==='vampire-guardian')strike.precisionDamage=3.5;
   }
   for(const enemy of state.enemies){const target=this.perceivedTarget(enemy);enemy.bloodEligible=bloodEligible(target.actor);enemy.drained=target.actor.getCondition('drained')?.value??0;
+   if(!enemy.bloodEligible)enemy.strikeEffectValues=Object.fromEntries(state.strikes.map(s=>[s.id,
+    (s.onHitBenefits??[]).filter(b=>b.minimumActions===2&&state.actionsRemaining>=2).reduce((n,b)=>n+b.value,0)]));
    enemy.held=target.actor.hasCondition('grabbed','restrained','paralyzed','unconscious');enemy.ownGrab=Boolean(ownGrab(target.actor,this.token.id));
    if(enemy.held)enemy.offGuard=true;}
   return state;

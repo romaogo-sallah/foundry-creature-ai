@@ -1771,7 +1771,7 @@ test('a target becoming prone during the reservation skips Knockdown without spe
   };
   const runner = new TurnRunner(f.adapter);
   const ledger = await runner.run({ oneAction: true });
-  assert.deepEqual(ledger, previous);
+  assert.deepEqual(ledger, {...previous,rejectedActionIds:['knockdown:target']});
   assert.equal(f.calls.some(c => c[0] === 'trip'), false);
   assert.match(f.calls.find(c => c[0] === 'chat')[1].content, /Knockdown skipped/);
   await runner.run();
@@ -2154,7 +2154,7 @@ test('shared core installs the reaction query and AI exposes the same reaction c
   f.hooks.get('init')();
   assert.equal(typeof CONFIG.queries[`${MODULE_ID}.reactionPrompt`], 'function');
   assert.equal(typeof game.modules.get(MODULE_ID).api.reactions.openControls, 'function');
-  assert.equal(game.modules.get(MODULE_ID).api.version,'0.43.0');
+  assert.equal(game.modules.get(MODULE_ID).api.version,'0.43.1');
   assert.equal(typeof game.modules.get(MODULE_ID).api.resetActors,'function');
 });
 

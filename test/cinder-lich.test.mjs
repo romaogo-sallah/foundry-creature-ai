@@ -87,6 +87,26 @@ test('Frightful Presence resolves once per source per minute and does not invent
  assert.equal(f.calls.filter(c=>c[0]==='spell-save').length,1);assert.equal(f.player.actor.hasCondition('frightened'),true);assert.equal(f.player.actor.hasCondition('fleeing'),false);
  game.time.worldTime=61;await resolveFrightfulPresence(f.boss,f.player);assert.equal(f.calls.filter(c=>c[0]==='spell-save').length,2);
 });
+
+test('Frightful Presence survives Foundry dotted-key expansion and simultaneous movement hooks',async()=>{
+ const f=setup(),actor=f.player.actor,get=actor.getFlag.bind(actor),set=actor.setFlag.bind(actor);
+ actor.setFlag=async(namespace,key,value)=>{
+  const expanded={};for(const [path,v]of Object.entries(value)){
+   const parts=path.split('.');let at=expanded;for(const part of parts.slice(0,-1))at=at[part]??={};at[parts.at(-1)]=v;
+  }return set(namespace,key,expanded);
+ };
+ await Promise.all(Array.from({length:5},()=>resolveFrightfulPresence(f.boss,f.player)));
+ assert.equal(f.calls.filter(c=>c[0]==='spell-save').length,1);
+ assert.ok(Object.keys(get(ns,'frightfulImmunities')).some(k=>k.includes('%2E')));
+ game.time.worldTime=61;await resolveFrightfulPresence(f.boss,f.player);assert.equal(f.calls.filter(c=>c[0]==='spell-save').length,2);
+});
+
+test('Frightful Presence honors the nested UUID immunity already stored by older releases',async()=>{
+ const f=setup(),uuid=f.boss.document.uuid,nested={};let at=nested;const parts=uuid.split('.');
+ for(const part of parts.slice(0,-1))at=at[part]??={};at[parts.at(-1)]=60;
+ await f.player.actor.setFlag(ns,'frightfulImmunities',nested);await resolveFrightfulPresence(f.boss,f.player);
+ assert.equal(f.calls.filter(c=>c[0]==='spell-save').length,0);
+});
 test('Counterspell consumes an unexpended matching prepared slot and one reaction',async()=>{
  const f=setup(),spell=f.actor.itemTypes.spell.find(s=>s.slug==='fire-shield'),entry=f.actor.itemTypes.spellcastingEntry[0];
  entry.counteraction={check:{roll:async()=>({degreeOfSuccess:2})}};spell.spellcasting={statistic:{dc:{value:25}}};let reservations=0;

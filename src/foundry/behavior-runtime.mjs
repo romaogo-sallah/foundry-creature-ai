@@ -11,6 +11,7 @@ import { executeSharedHide, executeSharedSneak, sneakSpeed, retainStepStealth, s
 import { movementSight } from '../framework/pursuit.mjs';
 import { flySpeed } from './flight-costs.mjs';
 import {groundThreats} from './ground-threats.mjs';
+import {movingMist} from './vampire-state.mjs';
 
 const ns='foundry-creature-ai';
 const attached=new WeakSet();
@@ -175,6 +176,9 @@ export function attachBehaviorSystem(adapter) {
   const prepare=adapter.prepareTurn.bind(adapter);
   adapter.prepareTurn=async(options={})=>{
     if(!await prepare(options)||!(options.canContinue?.()??true))return false;
+    // Escaping mist has its own geometry-only objective. It does not need to
+    // refresh offensive target knowledge before it can leave the battlefield.
+    if(movingMist(adapter.actor))return true;
     const knowledge=casterTargetKnowledge(adapter);
     if(JSON.stringify(adapter.token.document.getFlag(ns,'casterTargets'))!==JSON.stringify(knowledge))await adapter.token.document.setFlag(ns,'casterTargets',knowledge);
     return options.canContinue?.()??true;

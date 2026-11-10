@@ -1,0 +1,69 @@
+{
+  "version": "0.43.1",
+  "date": "2026-11-10",
+  "review": "docs/battle-analysis-2026-11-08-lich-vampires.md",
+  "changes": [
+    "Frightful Presence encoded source keys, compatibility lookup and serialized checks",
+    "Matching supported Dispel subject/effect legality; rejected action suppression and replanning",
+    "Observed nonliving target categories; pure void avoidance against recognized undead; no false blood forecasts",
+    "Shared bounded caster patience and public casting role evidence",
+    "Guarded missing Mist Escape start recovery; no offensive or pit preparation in moving mist",
+    "Settled native movement before pit activity checks"
+  ],
+  "tests": {
+    "full": {
+      "passed": 1177,
+      "failed": 0,
+      "parallelProcesses": 11,
+      "elapsedSeconds": 46.5
+    },
+    "afterFinalMistPitSeparation": {
+      "passed": 42,
+      "failed": 0,
+      "files": [
+        "test/pits.test.mjs",
+        "test/lich-vampire-regressions.test.mjs",
+        "test/decision-worker.test.mjs"
+      ]
+    },
+    "afterFinalCorrectCountsChange": {
+      "passed": 149,
+      "failed": 0,
+      "files": [
+        "test/pf2e-adapter.test.mjs"
+      ]
+    }
+  },
+  "native": {
+    "foundry": "14.369",
+    "pf2e": "8.6.1",
+    "version": "0.43.1",
+    "world": "arena",
+    "detachedActor": true,
+    "actorHP": 0,
+    "nativeIsDead": true,
+    "movingMist": true,
+    "routeCost": 10,
+    "workerChoice": "mistFly",
+    "nativeChoice": "mistFly",
+    "workerBackend": "worker",
+    "encodedKeySurvivesExpansion": true,
+    "noWorldActorsCreated": true,
+    "sceneUnchanged": true,
+    "actionsExecuted": false,
+    "combatAdvanced": false
+  },
+  "artifact": {
+    "archiveMatchesBuild": true,
+    "installedMatchesBuild": true,
+    "filesVerified": 289,
+    "version": "0.43.1",
+    "sha256": "BB38ED601B9AB87579E2F5103E02CC873BEC5342CAC07087C0E3B639B891E736"
+  },
+  "limitations": [
+    "The old mist start-hook failure was not exactly reproduced; recovery and a complete worker-backed 0-HP turn are tested. A live encounter should confirm scene-border travel under the installed module combination.",
+    "The original Long Jump report cannot exclude an external constraint; asynchronous completion and genuine interruption have separate regression checks.",
+    "Recognizable nonliving physiology is a documented table knowledge policy; disguised identity override remains future work.",
+    "No retroactive action, resource, damage or fear-save corrections to the saved encounter."
+  ]
+}

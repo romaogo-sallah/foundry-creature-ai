@@ -10,7 +10,7 @@ import {observeSpellCast} from './spell-observations.mjs';
 import {applySupportSpell} from './support-spells.mjs';
 import {applyDomination,dominateImmune} from './domination.mjs';
 import {createLingeringFire} from './lingering-fire.mjs';
-import {executeCounteract} from './counteract-spells.mjs';
+import {executeCounteract,liveDispelTarget} from './counteract-spells.mjs';
 import {markKilled} from './death-status.mjs';
 import {grantVampiricTempHP} from './ongoing-spells.mjs';
 import {createAdvancedZone,createBlizzard} from './spell-weather.mjs';
@@ -19,7 +19,7 @@ import {isTrueVampire} from './vampire-state.mjs';
 import {consumeSureStrike} from './spell-attack-buffs.mjs';
 const outcomes=['criticalFailure','failure','success','criticalSuccess'];
 export async function executeSpellOutcomes(adapter,spell,entry,choice,definition,{valid,attackNumber=1}){
- const healing=definition.kind==='heal',support=healing||['ward','buff','counteract'].includes(definition.kind),target=choice.area?null:support?adapter.liveSpellTarget?.(choice.targetId):adapter.liveTarget(choice.targetId);
+ const healing=definition.kind==='heal',support=healing||['ward','buff','counteract'].includes(definition.kind),target=choice.area?null:definition.kind==='counteract'?liveDispelTarget(adapter,choice.targetId,choice.effectUuid):support?adapter.liveSpellTarget?.(choice.targetId):adapter.liveTarget(choice.targetId);
  if(!choice.area&&(!target||!valid()))return {resolved:true,note:'Spell lost its target after commitment.'};
  if(definition.teleport)return executeTranslocate(adapter,spell,choice);
  if(definition.kind==='buff')return applySupportSpell({actor:adapter.actor,token:adapter.token},target,spell,{...definition,energyType:choice.energyType});

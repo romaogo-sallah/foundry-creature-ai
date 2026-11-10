@@ -52,6 +52,7 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
   const stealth=casterStealthKnowledge(stealthAdapter(this),state),at=stealth.at();
   for(const enemy of state.enemies){enemy.tactics=knowledge.entries[enemy.id]??{role:'unknown',reach:5,speed:25};Object.assign(enemy,at[enemy.id]);
    const sizes=['tiny','sm','med','lg','huge','grg'],target=canvas.tokens.get(enemy.id);
+   enemy.knownModeOfBeing=enemy.tactics.knownModeOfBeing;
    enemy.spellTrippable=enemy.trippable&&sizes.indexOf(target.actor.size)<=sizes.indexOf(this.actor.size)+1;}
   const turns=Array.from(game.combat.turns??game.combat.combatants),index=game.combat.turn;
   for(const enemy of state.enemies){const targetIndex=turns.findIndex(c=>c.tokenId===enemy.id),steps=(targetIndex-index+turns.length)%turns.length||turns.length;
@@ -68,7 +69,9 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
   for(const enemy of state.enemies)enemy.chainNeighbors=state.enemies.filter(e=>e.id!==enemy.id&&this.perceivedSpellTarget(enemy).distanceTo(this.perceivedSpellTarget(e))<=30).map(e=>e.id);
   state.damageThreats=[...new Set((game.messages?.contents??[]).slice(-100).filter(m=>!m.blind&&!m.whisper?.length&&state.enemies.some(e=>e.id===m.speaker?.token)).flatMap(m=>(m.rolls??[]).flatMap(r=>(r.instances??[]).map(i=>i.type))))];
   state.dispelTargets=parts.descriptors.some(s=>s.slug==='dispel-magic'&&s.available)?visibleDispelTargets(this):[];
-  state.casterDefense={enabled:true,engagementRange:Math.max(5,...parts.descriptors.filter(s=>s.kind!=='heal').map(s=>s.range))};
+  const patience=this.token.document.getFlag(ns,'casterPatience');
+  state.casterDefense={enabled:true,holdTurns:patience?.combatId===game.combat.id&&patience.sceneId===canvas.scene.id?patience.holdTurns??0:0,
+   engagementRange:Math.max(5,...parts.descriptors.filter(s=>s.available&&s.kind!=='heal').map(s=>s.range))};
   const bystanders=allies.filter(t=>t!==this.token); // Add other visible neutrals as friendly-fire risks too.
   for(const t of canvas.tokens.placeables)if(t!==this.token&&!bystanders.includes(t)&&!state.enemies.some(e=>e.id===t.id)&&t.actor?.isOfType?.('creature')&&!t.document.hidden&&this.sight(this.token.center,t)&&detectionFor(this.token,t).state==='observed')bystanders.push(t);
   const areaCache=new Map();
@@ -105,6 +108,13 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
   if(choice.kind==='sustainSpell')return sustainCast(this.actor,choice.castId);return super.executeProfileAction(choice,ledger,context);}
  async recordOutcome(choice,_ledger,result={}){
   if(result.skipped)return;const saved=this.token.document.getFlag(ns,'conditionCaster'),previous=saved?.combatId===game.combat.id?saved:{};
+  const old=this.token.document.getFlag(ns,'casterPatience'),history=old?.combatId===game.combat.id&&old.sceneId===canvas.scene.id?old:{};
+  // Count quiet turns once per round, even if a turn is reported/retried twice.
+  // A real offensive action resets patience; setup and Hide do not.
+  const offensive=['strike','grab','drinkBlood','castSpell'].includes(choice.kind);
+  if(offensive||choice.kind==='endTurn')await this.token.document.setFlag(ns,'casterPatience',{
+   combatId:game.combat.id,sceneId:canvas.scene.id,round:game.combat.round,
+   holdTurns:offensive?0:history.round===game.combat.round?history.holdTurns??0:Math.min(2,(history.holdTurns??0)+1)});
   const attempts=(previous.attempts??[]).filter(a=>a.untilRound>=game.combat.round);
   if(choice.kind==='castSpell'&&result.lastAction?.kind==='castSpell'&&conditionSpells[choice.spellSlug]&&!conditionSpells[choice.spellSlug].damage)
    attempts.push({slug:choice.spellSlug,targetId:choice.targetId,untilRound:game.combat.round+(choice.spellSlug==='blindness'?10:2)});

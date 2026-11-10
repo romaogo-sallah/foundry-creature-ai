@@ -1,6 +1,6 @@
 # Foundry creature AI
 
-**Version 0.43.0:** moves supported creature decision making, caster forecasts, tactical plans and Scout field scoring to a [background Web Worker](docs/decision-worker.md). Native snapshot preparation yields between batches and shares equivalent spell geometry across casting resources. Stop interrupts worker jobs; changed battlefield state invalidates pending choices before action reservation. Worker failure pauses AI instead of silently freezing the interface with a main-thread forecast. Reload clients with **Ctrl+F5**; no server restart or external application is needed.
+**Version 0.43.1:** fixes Frightful Presence immunity persistence, invalid Dispel retries, nonliving spell targets, indefinite caster waiting and animation-sensitive pit jumps. Adds guarded recovery for missed Mist Escape turns. [Details and verification](docs/combat-fixes-0.43.1.md). Reload clients with **Ctrl+F5** after installing the suite.
 
 **Version 0.42.0:** teaches the supplied [Young Cinder Dragons and Lich](docs/cinder-dragon-and-lich.md), their distinct martial/caster kits, shared Counterspell, Siphon Life, Frightful Presence, 3D areas and sixteen additional spell components. Adds editable [pits, Climb and crossing jumps](docs/pits.md) for manual play and AI, including the two marked Stadium pits. Fixes restricted retreat movement and unaffordable Strike follow-up scoring. Restart Foundry to discover the Pit behavior type, then reload clients with **Ctrl+F5**.
 
