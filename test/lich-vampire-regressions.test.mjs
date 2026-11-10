@@ -82,3 +82,33 @@ test('post-effect turn change recovers a missing mist start once, and respects S
  assert.equal(await recoverMistTurn(game.combat,{run}),true);assert.equal(runs,1);
  assert.equal(await recoverMistTurn(game.combat,{run}),false);assert.equal(runs,1);
 });
+
+test('a Vampire Count makes a meaningful Stride instead of treating a short gaze as artillery',async()=>{
+ const f=fixture({npcData:count,size:16});f.player.document.x=1200;
+ const ledger=await f.adapter.readLedger(f.adapter.turnKey()),state=await f.adapter.snapshot(ledger);
+ const decision=f.adapter.decide(state);
+ assert.notEqual(decision.diagnostics.tactic.planId,'defensive');
+ assert.equal(decision.chosen.kind,'stride');
+ assert.ok(decision.chosen.assessment.distanceMoved>=4,'the first leg should cover at least 20 feet');
+});
+
+test('See the Unseen answers known Invisibility, not ordinary Hidden or blocked sight',()=>{
+ const spell={id:'see',bindingId:'see:1',slug:'see-the-unseen',name:'See the Unseen',resolver:'outcomes',kind:'buff',
+  selfOnly:true,range:5,available:true,actionCost:2,unlimited:true,cantrip:false};
+ const state={actionsRemaining:3,attacksMade:0,spellSlots:1,spells:[spell],self:{id:'self',hpFraction:1},
+  casterAllies:[{id:'self',self:true,distance:0,hpFraction:1,buffs:[]}],enemies:[{id:'hidden',awareness:{detection:'hidden'}}]};
+ assert.equal(genericCastingCandidates(state).some(c=>c.spellSlug==='see-the-unseen'),false);
+ state.enemies[0].knownConditions=['invisible'];
+ assert.equal(genericCastingCandidates(state).some(c=>c.spellSlug==='see-the-unseen'),true);
+});
+
+test('an existing allied ice wall suppresses another distant low-pressure partition but not an emergency melee barrier',()=>{
+ const spell={id:'wall',bindingId:'wall:1',slug:'wall-of-ice',name:'Wall of Ice',resolver:'outcomes',kind:'lingering',role:'control',
+  wall:true,ice:true,range:120,available:true,actionCost:3,unlimited:true,areas:[]};
+ const enemy={id:'enemy',distance:80,tactics:{role:'caster',reach:5,speed:25}},area={id:'area',enemies:[],bystanders:[]};
+ area.enemies=[enemy];spell.areas=[area];
+ const state={actionsRemaining:3,attacksMade:0,spellSlots:1,spells:[spell],self:{hpFraction:1},enemies:[enemy],battlefieldControl:{alliedIceWalls:1}};
+ assert.equal(genericCastingCandidates(state).length,0);
+ enemy.distance=20;enemy.tactics={role:'melee',reach:10,speed:25};
+ assert.equal(genericCastingCandidates(state).length,1);
+});

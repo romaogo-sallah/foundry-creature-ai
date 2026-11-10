@@ -47,7 +47,10 @@ export function genericCastingCandidates(state){
    const energyType=spell.energyWard?(state.damageThreats??[]).find(t=>['acid','cold','electricity','fire','sonic'].includes(t)):null;
    const value=spell.slug==='sure-strike'?state.actionsRemaining>=2&&state.enemies.some(e=>e.inReach)?7:0:spell.slug==='shield'?exposed?5:0:
     spell.slug==='false-vitality'?Math.max(0,10+(spell.castRank-2)*3-(state.self.tempHP??0))*0.7:
-    spell.slug==='see-the-unseen'?state.enemies.some(e=>e.awareness?.detection==='undetected'||e.awareness?.detection==='hidden')?10:0:
+    // Hidden is normally caused by Hide, blocked sight, or imprecise senses.
+    // See the Unseen only answers a known Invisible/incorporeal problem; it
+    // must not spend a slot merely because an opponent won a Stealth check.
+    spell.slug==='see-the-unseen'?state.enemies.some(e=>e.knownConditions?.includes('invisible'))?10:0:
     spell.slug==='fly'?Math.max(ally.self?pitFlightSpellValue(state,spell):0,state.enemies.some(e=>e.airborne)||state.pit?12:2):spell.energyWard?energyType?9:0:
     spell.slug==='mountain-resilience'?exposed?12:3:spell.slug==='haste'?4+(ally.martialPower??8)*0.7+(exposed?3:0):spell.slug==='blur'?exposed?7+(ownDanger?3:0):1:
     spell.slug==='invisibility'?ownDanger?12:ally.skulk?8:2:spell.slug==='fleet-step'?state.nearestEnemy>25?6:0:exposed?8:1;
@@ -69,9 +72,21 @@ export function genericCastingCandidates(state){
    result.push({...base,id:`spell:${spell.bindingId}:${ally.id}`,targetId:ally.id,features:{...base.features,support:true,onceKey:`heal:${ally.id}`},
     assessment:{value:value-reserve},scoringTerms:[{label:'Restore allied HP; prioritize allies in danger',contribution:value},{label:'Reserve limited casting resources',contribution:-reserve}]});
   }else if(spell.area||spell.kind==='lingering')for(const area of spell.areas??[]){
-   const value=spell.slug==='mist'?(area.defensiveValue??0):area.enemies.reduce((n,e)=>n+(spell.wall?spell.ice?12:spell.damage:outcomeSpellValue(state,spell,e,{area:true})),0)*(spell.kind==='lingering'?1.4:1)-area.bystanders.filter(e=>!e.unaffected).reduce((n,e)=>n+2*(spell.wall?spell.ice?12:spell.damage:outcomeSpellValue(state,spell,e,{area:true})),0);
+   // An ice wall is delayed control, not twelve points of virtual damage per
+   // creature. It is strongest against nearby melee pressure and progressively
+   // less useful against distant/ranged opponents. Existing allied walls make
+   // another three-action partition substantially less attractive.
+   const iceControl=enemy=>{
+    const role=enemy.tactics?.role,reach=enemy.tactics?.reach??5,speed=enemy.tactics?.speed??25;
+    const close=enemy.distance<=reach+speed?9:enemy.distance<=reach+speed*2?6:2;
+    return close+(role==='melee'?3:role==='ranged'||role==='caster'?-1:0)+(state.self.hpFraction<0.5?2:0);
+   };
+   const saturation=spell.ice?(state.battlefieldControl?.alliedIceWalls??0)*10:0;
+   const value=spell.slug==='mist'?(area.defensiveValue??0):
+    (area.enemies.reduce((n,e)=>n+(spell.wall?spell.ice?iceControl(e):spell.damage:outcomeSpellValue(state,spell,e,{area:true})),0)*(spell.kind==='lingering'?1.4:1)
+      -area.bystanders.filter(e=>!e.unaffected).reduce((n,e)=>n+2*(spell.wall?spell.ice?12:spell.damage:outcomeSpellValue(state,spell,e,{area:true})),0)-saturation);
    if(value>reserve)result.push({...base,id:`spell:${spell.bindingId}:${area.id}`,area,targetId:area.enemies[0]?.id,assessment:{value:value-reserve},
-    scoringTerms:[{label:'Area benefit minus friendly fire and resource cost',contribution:value-reserve}]});
+    scoringTerms:[{label:'Area benefit minus friendly fire, existing control, and resource cost',contribution:value-reserve}]});
   }else if(spell.chain){
    for(const first of state.enemies){
     let current=first,value=0,continuation=1;const path=[];

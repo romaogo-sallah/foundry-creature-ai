@@ -28,7 +28,8 @@ tacticalBehaviors.registerComponent({id:'pressure',label:'Press the attack',kind
   adjust:(candidate,_state,selection)=>attack(candidate)?0.4+(candidate.targetId===selection.goal?.targetId?0.3:0):0});
 tacticalBehaviors.registerComponent({id:'advance',label:'Close to effective reach',kind:'policy',
   adjust:(candidate,state)=>movement(candidate)&&!state.behavior.context.immediateAttack&&
-    candidate.assessment.nearestEnemy<state.nearestEnemy&&!candidate.provokes?0.6:0});
+    candidate.assessment.nearestEnemy<state.nearestEnemy&&!candidate.provokes?
+      Math.min(2,Math.max(0.4,(state.nearestEnemy-candidate.assessment.nearestEnemy)/2.5)):0});
 tacticalBehaviors.registerComponent({id:'protection',label:'Use protection',kind:'policy',
   candidates:(state,selection)=>['defensive','hiding','lay-low','avoiding'].includes(selection.planId)?
     (state.sharedBehaviors?.protectedMoves??[]).filter(candidate=>selection.planId!=='defensive'||!candidate.features.visibility.losesAll):[],
@@ -74,9 +75,9 @@ function objective(id,context,state,previous){
 const plan=(id,label,components,score)=>tacticalBehaviors.registerPlan({id,label,components,score,
   ...(id==='hiding'?{requires:['stealth']}:{}),objective:(context,state,previous)=>objective(id,context,state,previous)});
 plan('aggressive','Aggressive',['pressure'],c=>({value:3+(c.immediateAttack?2:0),reason:c.immediateAttack?'A useful attack is available':'Engage known opponents'}));
-plan('charge','Charge',['advance','pressure'],c=>c.melee&&!c.immediateAttack&&c.visibleEnemies>0&&c.health>0.4&&c.forceRatio>=0.5?
-  {value:5,reason:'Melee attacks need a safe approach'}:null);
-plan('defensive','Defensive',['protection'],c=>({value:c.caster?5.5:c.health<0.5||c.forceRatio<0.6?5:2,
+plan('charge','Charge',['advance','pressure'],c=>c.melee&&!c.immediateAttack&&c.knownEnemies>0&&c.health>0.4&&c.forceRatio>=0.5?
+  {value:5,reason:c.visibleEnemies?'Melee attacks need a safe approach':'Close on remembered opponents and regain contact'}:null);
+plan('defensive','Defensive',['protection'],c=>({value:c.caster&&!(c.melee&&!c.immediateAttack)?5.5:c.health<0.5||c.forceRatio<0.6?5:2,
   reason:c.caster?'Preserve a protected casting position':'Reduce exposure while remaining able to fight'}));
 plan('avoiding','Avoiding',['withdraw','protection'],c=>c.emergency?{value:100,reason:c.broken?'The group has broken':'Own HP is critically low'}:
   c.health<0.4&&c.forceRatio<0.6?{value:7,reason:'Wounded and locally outnumbered'}:null);

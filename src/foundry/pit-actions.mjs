@@ -4,6 +4,8 @@ import {MANAGED_MOVEMENT} from './movement-options.mjs';
 import {rulesAPI} from './rules-api.mjs';
 import {occupiesMovementSpace} from './combat-state.mjs';
 import {flySpeed} from './flight-costs.mjs';
+import {iceBlocksMovement} from './ice-wall-geometry.mjs';
+import {tokenHeight} from './vertical-geometry.mjs';
 const ns='foundry-creature-ai';
 const settled=async token=>{await (token.movementAnimationPromise??token.document.movement?.animation?.ended);return token.document._source??token.document;};
 export const pitHeldItems=actor=>[...actor.itemTypes.weapon??[],...actor.itemTypes.shield??[]].filter(w=>!w.flags?.[ns]?.fireShield&&w.system.equipped?.carryType==='held'&&w.system.equipped.handsHeld>0);
@@ -39,6 +41,8 @@ export function pitActionChoices(token,{actionsRemaining=3}={}){
     const from=runup.length>=2?lastSafe:origin,jumpDistance=distance(from,p),strideDistance=distance(origin,from),ordinary=distance(origin,p)<=leap,
      cost=ordinary?1:2;
     if(!ordinary&&(actionsRemaining<2||strideDistance<10||strideDistance>speed||jumpDistance>speed))break;
+    const route=[origin,...ordinary?[]:runup,p];
+    if(route.some((point,index)=>index&&iceBlocksMovement(token,route[index-1],point,tokenHeight(token))))break;
     if(token.constrainMovementPath([origin,{...p,action:'jump'}],{ignoreWalls:false,ignoreCost:true})[1])break;
     result.push({id:`pit:jump:${dx},${dy}:${step}`,kind:'jump',destination:p,runup:ordinary?[]:runup,jumpDistance:ordinary?distance(origin,p):jumpDistance,leapDistance:leap,
      actionCost:cost,legal:true,traits:['move',...(cost===2?['skill']:[])],assessment:{value:8},scoringTerms:[{label:cost===1?'Leap across an open pit':'Run up and Long Jump across an open pit',contribution:8}]});break;

@@ -54,6 +54,10 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
   const stealth=casterStealthKnowledge(stealthAdapter(this),state),at=stealth.at();
   for(const enemy of state.enemies){enemy.tactics=knowledge.entries[enemy.id]??{role:'unknown',reach:5,speed:25};Object.assign(enemy,at[enemy.id]);
    const sizes=['tiny','sm','med','lg','huge','grg'],target=canvas.tokens.get(enemy.id);
+   // Only expose Invisibility when this observer has a known target and the
+   // live condition explains its precision loss. Never copy secret Hide/Sneak
+   // rolls or observer-relative Hidden results into spell evaluation.
+   enemy.knownConditions=target?.actor.hasCondition('invisible')&&enemy.awareness?.precisionBlocked?['invisible']:[];
    enemy.knownModeOfBeing=enemy.tactics.knownModeOfBeing;
    enemy.spellTrippable=enemy.trippable&&sizes.indexOf(target.actor.size)<=sizes.indexOf(this.actor.size)+1;}
   const turns=Array.from(game.combat.turns??game.combat.combatants),index=game.combat.turn;
@@ -67,6 +71,10 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
    skulk:Boolean((token.actor.itemTypes.action??[]).some(a=>a.slug==='sneak-attack')),nearestEnemy:Math.min(Infinity,...state.enemies.filter(e=>e.lineOfSight!==false).map(e=>token.distanceTo(this.perceivedSpellTarget(e)))),
    hpFraction:token.actor.hitPoints.value/Math.max(1,token.actor.hitPoints.max),...token===this.token?{distance:0,lineOfSight:true,lineOfEffect:true}:this.targetAt(cell,token,[],position)});
   state.casterAllies=allies.map(t=>support(t));
+  state.battlefieldControl={alliedIceWalls:(canvas.scene.regions?.contents??[]).filter(region=>{
+   const wall=region.flags?.[ns]?.iceWall,source=wall&&canvas.tokens.get(wall.sourceTokenId);
+   return !region.hidden&&wall?.segments?.some(segment=>segment.hp>0)&&source?.actor&&this.actor.isAllyOf(source.actor);
+  }).length};
   state.teleportDestinations=parts.descriptors.some(s=>s.teleport&&s.available)?await translocationDestinationsAsync(this,state,options.budget):[];
   for(const enemy of state.enemies)enemy.chainNeighbors=state.enemies.filter(e=>e.id!==enemy.id&&this.perceivedSpellTarget(enemy).distanceTo(this.perceivedSpellTarget(e))<=30).map(e=>e.id);
   state.damageThreats=[...new Set((game.messages?.contents??[]).slice(-100).filter(m=>!m.blind&&!m.whisper?.length&&state.enemies.some(e=>e.id===m.speaker?.token)).flatMap(m=>(m.rolls??[]).flatMap(r=>(r.instances??[]).map(i=>i.type))))];

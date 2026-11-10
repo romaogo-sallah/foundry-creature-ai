@@ -1,0 +1,67 @@
+{
+  "version": "0.43.6",
+  "date": "2026-11-11",
+  "review": {
+    "scene": "Stadium",
+    "combatId": "VQ806NzG0rLfMDub",
+    "reportVersion": "0.43.3",
+    "aiReports": 57,
+    "participants": [
+      "Lich",
+      "Lich",
+      "Vampire Mastermind",
+      "Vampire Count",
+      "Vampire Count",
+      "Vampire Guardian"
+    ],
+    "evidencePolicy": "Retained decisions and public encounter state only; no secret check outcomes were used for tactical scoring."
+  },
+  "findings": [
+    "Short-range Dominate caused melee-capable vampires to inherit an overly defensive caster posture.",
+    "Wall of Ice used a fixed virtual-damage value and had no allied-wall saturation term.",
+    "See the Unseen treated every Hidden or Undetected opponent as a qualifying target.",
+    "Pit jump planning did not test run-up and jump segments against managed ice-wall geometry."
+  ],
+  "changes": [
+    "Classify melee actors with no hostile spell beyond 30 feet as short-range hybrids.",
+    "Reward route progress only when the caster has no useful current action and at least two actions remain.",
+    "Score Wall of Ice by proximity, apparent combat role, caster injury and intact allied-wall saturation.",
+    "Require observer-known Invisibility before valuing See the Unseen; ordinary Hidden remains private observer state.",
+    "Reject Leap and Long Jump routes whose run-up or airborne segment crosses an intact managed Wall of Ice."
+  ],
+  "tests": {
+    "fullPassed": 1212,
+    "failed": 0,
+    "testFiles": 97,
+    "parallelProcesses": 11,
+    "elapsedSeconds": 24.8,
+    "focusedPassed": 48,
+    "focusedFiles": [
+      "test/lich-vampire-regressions.test.mjs",
+      "test/caster-defense.test.mjs",
+      "test/goblin-pyro.test.mjs",
+      "test/pits.test.mjs"
+    ]
+  },
+  "artifact": {
+    "archive": "releases/pf2e-tactical-suite-0.43.6.zip",
+    "archiveBytes": 708618,
+    "sha256": "35E01F8A8F49668F361A1367A5F12BA2E334D1CBEACDA6F32F1A8557C6389596",
+    "filesVerified": 294,
+    "archiveMatchesBuild": true,
+    "installedMatchesBuild": true,
+    "installedPath": "C:/Users/Roman/AppData/Local/FoundryVTT/Data/modules"
+  },
+  "native": {
+    "liveCombatMutated": false,
+    "worldDatabaseChanged": false,
+    "browserReloadRequired": true,
+    "liveReplayPending": true
+  },
+  "limits": [
+    "Wall of Ice placement remains straight horizontal or vertical supported geometry.",
+    "The planner does not predict future wall destruction or arbitrary multi-turn ally routes.",
+    "Incorporeal creatures inside objects and suspected illusions need explicit observer knowledge before See the Unseen can be scored.",
+    "A fresh live fight is required to compare emergent initiative, dice and player choices."
+  ]
+}

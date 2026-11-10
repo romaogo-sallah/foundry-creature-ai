@@ -45,6 +45,12 @@ test('Long Jump still stops when native movement genuinely fails to reach takeof
  f.boss.document.move=async()=>false;
  const result=await executePitAction(f.boss,choice,{reactions:f.reactions});assert.match(result.note,/run-up stopped/);assert.equal(f.boss.document.x,100);
 });
+test('pit planning rejects a Leap or Long Jump route blocked by an active Wall of Ice',()=>{
+ const f=setup({width:200});f.boss.document.x=100;
+ canvas.scene.regions.contents.push({id:'ice',hidden:false,flags:{'foundry-creature-ai':{iceWall:{segments:[{
+  x:250,y:100,width:20,height:100,bottom:0,top:10,hp:40}]}}}});
+ assert.equal(pitActionChoices(f.boss).some(c=>c.kind==='jump'&&c.destination.x===600&&c.destination.y===100),false);
+});
 test('Climb makes five-foot progress per ordinary success, then exits onto the bank',async()=>{
  const f=setup();f.boss.document.x=400;f.boss.document.elevation=-10;
  for(const weapon of f.actor.itemTypes.weapon)weapon.system.equipped.carryType='worn';

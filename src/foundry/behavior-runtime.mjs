@@ -40,9 +40,14 @@ export function battleContext(adapter,state,{deferDecision=false}={}) {
   const hp=adapter.actor.hitPoints,health=Math.max(0,Math.min(1,hp.value/Math.max(1,hp.max)));
   const immediate=state.enemies.some(enemy=>enemy.inReach||Object.values(enemy.strikes??{}).some(position=>position.usable))||
     !deferDecision&&state.spells&&castingCandidates(state).some(candidate=>candidate.assessment.value>0);
-  const ranged=Boolean(state.spells?.some(spell=>spell.available)||state.bowReady&&state.loaded&&state.bolts>0||
+  const hostileSpells=(state.spells??[]).filter(spell=>spell.available&&
+    !['buff','heal','ward','counteract'].includes(spell.kind)&&!spell.teleport);
+  const ranged=Boolean(hostileSpells.some(spell=>spell.range>30)||state.bowReady&&state.loaded&&state.bolts>0||
     state.strikes?.some(strike=>strike.ranged&&state.enemies.some(enemy=>enemy.strikes?.[strike.id]?.usable)));
-  const melee=!state.spells?.length&&(!state.bowReady||state.bolts<1);
+  // A vampire with only a short-range gaze is a melee hybrid, not a protected
+  // artillery caster. Long-range spellcasters such as liches retain distance.
+  const melee=Boolean(state.strikes?.some(strike=>!strike.ranged))&&
+    !hostileSpells.some(spell=>spell.range>30)&&(!state.bowReady||state.bolts<1);
   const configuration=behaviorConfiguration(adapter);
   const supportRecipients=!configuration.components.includes('leadership')||state.commandedThisTurn?0:
     state.supportRecipients??(state.commandRecipients??[]).filter(ally=>ally.needsMovement!==false).length;

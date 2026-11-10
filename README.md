@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.43.6:** improves the reviewed Lich-versus-vampire battle: short-range vampire hybrids make meaningful approaches, ordinary Hidden targets no longer trigger See the Unseen, Wall of Ice values current melee pressure and existing allied walls, and pit jumps reject routes through intact ice walls. [Analysis and policies](docs/lich-vampire-tactics-0.43.6.md). Reload clients with **Ctrl+F5**.
+
 **Version 0.43.5:** Translocate rejects destinations beyond movement-blocking terrain-wall boundaries and checks the caster's whole body against walls, ice walls, surfaces and occupied space. Planner, pre-cast and post-reaction checks share the same destination rules. [Cause and placement policy](docs/teleport-destinations.md). Reload clients with **Ctrl+F5**.
 
 **Version 0.43.4:** vampire bat forms and native battle forms cannot cast spells unless explicitly permitted. AI forecasts and manual casting share the restriction, preserve unspent resources on stale choices, and allow ordinary polymorph disguises. [Rules and scope](docs/polymorph-casting.md). Reload clients with **Ctrl+F5**.

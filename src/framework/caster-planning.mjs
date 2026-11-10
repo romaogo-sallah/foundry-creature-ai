@@ -70,8 +70,6 @@ export function casterTurnCandidates(state, { actions }) {
     for(const choice of sorted){if(selected.size>=state.maxForecastActions)break;selected.set(choice.id,choice);}
     return [...selected.values()];
   }
-  const planningMoves=state.maxForecastMoves?state.moves.map(move=>({move,value:movementValue(state,move).value+
-    Math.max(0,...actions(moveState(state,move)).map(a=>a.assessment.value))})).sort((a,b)=>b.value-a.value).slice(0,state.maxForecastMoves).map(e=>e.move):state.moves;
   function stationaryPlan(current) {
     let best = { value: 0, sequence: [] };
     if (current.actionsRemaining <= 0) return best;
@@ -83,6 +81,15 @@ export function casterTurnCandidates(state, { actions }) {
     }
     return best;
   }
+  const currentPlan=stationaryPlan(state),needsApproach=state.actionsRemaining>=2&&!currentPlan.sequence.length;
+  // Reward closing only when this position has no useful action and at least
+  // two actions remain. This breaks distant Step loops without making a caster
+  // abandon an available spell or walk into melee with a leftover third action.
+  // Navigation distance is measured in squares; five squares grants the cap.
+  const approachValue=move=>needsApproach&&Number.isFinite(state.nearestEnemy)&&Number.isFinite(move.nearestEnemy)?
+    Math.min(2,Math.max(0,state.nearestEnemy-move.nearestEnemy)/2.5):0;
+  const planningMoves=state.maxForecastMoves?state.moves.map(move=>({move,value:movementValue(state,move).value+approachValue(move)+
+    Math.max(0,...actions(moveState(state,move)).map(a=>a.assessment.value))})).sort((a,b)=>b.value-a.value).slice(0,state.maxForecastMoves).map(e=>e.move):state.moves;
   const immediate = rankedActions(state).map(action => {
     const after = afterAction(state, action);
     let follow = stationaryPlan(after);
@@ -110,7 +117,7 @@ export function casterTurnCandidates(state, { actions }) {
     if (waitingCaster(state) && position.defense <= 0.25 && !position.escape && !position.regain.value) continue;
     if (!follow.sequence.length && position.value <= 0 &&
       (canCastNextTurn || move.nearestEnemy >= state.nearestEnemy)) continue;
-    const value = follow.value + position.value;
+    const approach=approachValue(move),value = follow.value + position.value+approach;
     // Never turn a dangerous route into a favorable zero-value approach.
     if (value < 0) continue;
     const first = follow.sequence[0];
@@ -127,6 +134,7 @@ export function casterTurnCandidates(state, { actions }) {
         { label: 'Leave plausible melee pressure', contribution: position.escape },
         { label: 'Avoid entering melee pressure', contribution: -position.enter },
         { label: 'Cover, concealment and defensive hiding', contribution: position.defense },
+        { label: 'Meaningful progress toward effective range', contribution: approach },
         { label: 'Movement and sight risks', contribution: -position.risk - position.sight.penalty - position.sight.returnPenalty },
         { label: 'Regain sight', contribution: position.regain.value }] };
     choice.features.turnPlan = [summary(choice), ...follow.sequence];

@@ -86,7 +86,7 @@ for(const data of [
  {slug:'howling-blizzard',kind:'save',save:'reflex',actionCosts:[2,3],area:{type:'cone',value:60},outcomes:basic,blizzard:true},
  {slug:'toxic-cloud',kind:'lingering',save:'fortitude',duration:60,cloud:true,actionCosts:[3],outcomes:basic},
  {slug:'mist',kind:'lingering',duration:60,cloud:true,role:'support'},
- {slug:'wall-of-ice',kind:'lingering',duration:60,wall:true,ice:true,actionCosts:[3]},
+ {slug:'wall-of-ice',kind:'lingering',role:'control',duration:60,wall:true,ice:true,actionCosts:[3]},
  {slug:'fear',kind:'save',save:'will',role:'control',outcomes:[{conditions:[{slug:'frightened',value:3},{slug:'fleeing'}],conditionDurations:{fleeing:6}},
   {conditions:[{slug:'frightened',value:2}]},{conditions:[{slug:'frightened',value:1}]},{}]},
  {slug:'revealing-light',kind:'save',save:'reflex',role:'control',reveal:true,outcomes:[{conditions:[{slug:'dazzled'}],duration:600},{conditions:[{slug:'dazzled'}],duration:60},{conditions:[{slug:'dazzled'}],duration:12},{}]},
