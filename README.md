@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.43.5:** Translocate rejects destinations beyond movement-blocking terrain-wall boundaries and checks the caster's whole body against walls, ice walls, surfaces and occupied space. Planner, pre-cast and post-reaction checks share the same destination rules. [Cause and placement policy](docs/teleport-destinations.md). Reload clients with **Ctrl+F5**.
+
 **Version 0.43.4:** vampire bat forms and native battle forms cannot cast spells unless explicitly permitted. AI forecasts and manual casting share the restriction, preserve unspent resources on stale choices, and allow ordinary polymorph disguises. [Rules and scope](docs/polymorph-casting.md). Reload clients with **Ctrl+F5**.
 
 **Version 0.43.3:** casters compare Fly with Climb when trapped in a pit, budget casting plus the escape move, and use native flight paths to ascend through the opening onto a clear bank. Existing flyers prioritize leaving the pit before resuming ordinary combat tactics. [Pit details](docs/pits.md). Reload clients with **Ctrl+F5**.

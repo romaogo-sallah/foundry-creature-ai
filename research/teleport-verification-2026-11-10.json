@@ -1,0 +1,152 @@
+{
+  "version": "0.43.5",
+  "date": "2026-11-10",
+  "cause": "Movement-blocking arena walls use Limited sight; ordinary sight sees through the first terrain edge, so visibility alone allowed teleport landings inside the outer structure.",
+  "source": "https://foundryvtt.com/article/walls/",
+  "placementPolicy": "Conservatively reject AI teleport destinations across movement-blocking Limited-sight walls; transparent walls and open doorways may still be bypassed to a clear visible landing.",
+  "changes": [
+    "Validate whole destination footprint and body against walls, intact ice walls, surfaces, scene bounds and living occupants",
+    "Use the native Token.checkCollision API to preserve Level documents and native collision sources",
+    "Validate before slot consumption and again after casting reactions; keep already committed costs when a reaction invalidates the destination",
+    "Sample distinct 5?20-foot destinations alongside 30?120-foot destinations so cramped casters retain clear alternatives"
+  ],
+  "tests": {
+    "fullPassed": 1208,
+    "failed": 0,
+    "parallelProcesses": 11,
+    "elapsedSeconds": 31.5,
+    "newRegressionCases": 13,
+    "file": "test/translocation.test.mjs"
+  },
+  "native": {
+    "version": "0.43.5",
+    "foundry": "14.369",
+    "pf2e": "8.6.1",
+    "records": [
+      {
+        "token": "1yoev02wagN0mlSs",
+        "origin": {
+          "x": 2100,
+          "y": 2170
+        },
+        "destination": {
+          "x": 2100,
+          "y": 2590
+        },
+        "nativeSight": true,
+        "safeSight": false,
+        "fits": true,
+        "width": 70,
+        "height": 70,
+        "crossedWalls": [
+          {
+            "id": "wall.XOu2BMyqgs1WMxO4",
+            "type": "wall",
+            "sight": 10,
+            "move": 20
+          }
+        ],
+        "candidates": [
+          {
+            "x": 2240,
+            "y": 2240,
+            "elevation": 0,
+            "level": "defaultLevel0000"
+          },
+          {
+            "x": 1960,
+            "y": 2170,
+            "elevation": 0,
+            "level": "defaultLevel0000"
+          },
+          {
+            "x": 2310,
+            "y": 2240,
+            "elevation": 0,
+            "level": "defaultLevel0000"
+          },
+          {
+            "x": 2240,
+            "y": 2310,
+            "elevation": 0,
+            "level": "defaultLevel0000"
+          }
+        ],
+        "planningMs": 148,
+        "clearControl": {
+          "x": 2310,
+          "y": 2240,
+          "elevation": 0,
+          "level": "defaultLevel0000"
+        },
+        "candidatesDistinct": true,
+        "candidatesAllClear": true
+      },
+      {
+        "token": "1kkunLFpgYhYzS5H",
+        "origin": {
+          "x": 2520,
+          "y": 2240
+        },
+        "destination": {
+          "x": 3710,
+          "y": 2730
+        },
+        "nativeSight": true,
+        "safeSight": false,
+        "fits": false,
+        "width": 70,
+        "height": 70,
+        "crossedWalls": [
+          {
+            "id": "wall.UXRoYOBXc2noOFfq",
+            "type": "wall",
+            "sight": 10,
+            "move": 20
+          }
+        ],
+        "candidates": [
+          {
+            "x": 2310,
+            "y": 2240,
+            "elevation": 0,
+            "level": "defaultLevel0000"
+          },
+          {
+            "x": 2240,
+            "y": 2240,
+            "elevation": 0,
+            "level": "defaultLevel0000"
+          }
+        ],
+        "planningMs": 68,
+        "clearControl": {
+          "x": 2310,
+          "y": 2240,
+          "elevation": 0,
+          "level": "defaultLevel0000"
+        },
+        "candidatesDistinct": true,
+        "candidatesAllClear": true
+      }
+    ],
+    "worldActorsUnchanged": true,
+    "sceneUnchanged": true,
+    "liveSpellsCast": false,
+    "valid": true,
+    "moduleErrors": []
+  },
+  "artifact": {
+    "archiveMatchesBuild": true,
+    "installedMatchesBuild": true,
+    "filesVerified": 294,
+    "version": "0.43.5",
+    "sha256": "47A1A643ADF98C88907F9F7277DF61F91B38C1C2CA2D384AA1C1BE03645C5F26"
+  },
+  "limits": [
+    "AI Translocate only; manual teleport entry points are unchanged.",
+    "Conservative terrain placement does not infer arbitrary solid volumes from artwork.",
+    "The existing pit destination exclusion and visible local teleport search remain; long-range remembered destinations are not taught.",
+    "Both misplaced Liches were left in their current positions; no live spells, resources or actors were changed."
+  ]
+}

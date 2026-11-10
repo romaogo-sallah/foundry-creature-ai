@@ -16,6 +16,7 @@ import {consumeSureStrike} from './spell-attack-buffs.mjs';
 import {resistSpellDisruption} from './spell-disruption.mjs';
 import {liveDispelTarget} from './counteract-spells.mjs';
 import {formSpellcastingRestriction} from './form-restrictions.mjs';
+import {canTranslocate} from './translocation.mjs';
 
 const ns = 'foundry-creature-ai';
 const outcomes = ['criticalFailure','failure','success','criticalSuccess'];
@@ -57,6 +58,8 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
   }
   if(definition?.domination&&isTrueVampire(adapter.actor)&&!spell.traits.has('visual')&&spell.clone)
     spell=spell.clone({'system.traits.value':[...spell.traits,'visual']},{keepId:true});
+  if(definition?.teleport&&!canTranslocate(adapter,spell,choice))
+    return {skipped:true,skipReason:'The teleport destination is no longer a visible clear space'};
   // Committing Cast a Spell spends its native resource even if a subsequent
   // reaction disrupts it. The action ledger has already reserved its actions.
   if(binding?.bonded)await binding.bonded.update({'system.frequency.value':0});
