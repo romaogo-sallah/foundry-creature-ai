@@ -1,0 +1,69 @@
+{
+  "version": "0.43.4",
+  "date": "2026-11-10",
+  "rules": {
+    "polymorph": "https://2e.aonprd.com/Traits.aspx?ID=670",
+    "changeShape": "https://2e.aonprd.com/MonsterAbilities.aspx?ID=55",
+    "vampire": "https://2e.aonprd.com/Monsters.aspx?ID=3226",
+    "aerialForm": "https://2e.aonprd.com/Spells.aspx?ID=1437",
+    "vaporForm": "https://2e.aonprd.com/Spells.aspx?ID=1738"
+  },
+  "adjudication": "The taught vampire giant-bat form follows animal battle-form casting restrictions, as requested. Polymorph alone is not a blanket casting ban; explicit native BattleForm.canCast exceptions are honored.",
+  "changes": [
+    "Shared AI and manual spellcasting restrictions for taught bat/mist, native battle forms and Vapor Form",
+    "Disable casting before AI forecasts and reject stale executions before resources are consumed",
+    "A form change during the casting reaction window prevents completion while retaining committed resources",
+    "Manual entry casting, actual spell-card use, spell attack checks and the vampire Dominate ability card use the same restriction",
+    "Card browsing, compulsory saves, ordinary polymorph disguises and explicit casting exceptions remain available"
+  ],
+  "tests": {
+    "fullPassed": 1195,
+    "failed": 0,
+    "parallelProcesses": 11,
+    "elapsedSeconds": 25.8,
+    "afterFinalDominateCardChange": {
+      "passed": 7,
+      "failed": 0,
+      "file": "test/form-restrictions.test.mjs"
+    }
+  },
+  "native": {
+    "version": "0.43.4",
+    "foundry": "14.369",
+    "pf2e": "8.6.1",
+    "records": [
+      {
+        "form": "vampire",
+        "restriction": null,
+        "nativeCastInvoked": true
+      },
+      {
+        "form": "bat",
+        "restriction": "Vampire giant-bat form cannot cast spells; return to vampire form first.",
+        "nativeCastInvoked": false
+      },
+      {
+        "form": "mist",
+        "restriction": "Mist form cannot cast spells.",
+        "nativeCastInvoked": false
+      }
+    ],
+    "polymorphAloneAllowsCasting": true,
+    "worldActorsUnchanged": true,
+    "sceneUnchanged": true,
+    "liveSpellsCast": false,
+    "valid": true,
+    "moduleErrors": []
+  },
+  "artifact": {
+    "archiveMatchesBuild": true,
+    "installedMatchesBuild": true,
+    "filesVerified": 293,
+    "version": "0.43.4",
+    "sha256": "3BC491454790C3EBAF2CEE2FA392D0D65E6DD33B802D187F9A6FD719B233E734"
+  },
+  "limits": [
+    "This patch covers spellcasting eligibility, not every polymorph counteract/replacement, speech, equipment or bespoke prose exception.",
+    "No live casts, resource refunds or form changes were made during diagnostics."
+  ]
+}

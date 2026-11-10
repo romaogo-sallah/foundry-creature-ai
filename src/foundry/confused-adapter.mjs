@@ -1,4 +1,5 @@
 import {movingMist} from './vampire-state.mjs';
+import {formSpellcastingRestriction} from './form-restrictions.mjs';
 import {PF2eCreatureAdapter} from './pf2e-adapter.mjs';
 import {confusedStrikes,confusedGear,executeConfusedGear} from './confused-gear.mjs';
 import {chooseConfusedAction,confusedCandidates} from '../framework/confused-policy.mjs';
@@ -50,6 +51,7 @@ export class PF2eConfusedAdapter extends PF2eCreatureAdapter{
     return canContinue();
   }
   spells(){
+    if(formSpellcastingRestriction(this.actor))return [];
     return spellBindings(this.actor).filter(b=>b.spell.isCantrip&&(b.definition.role==='damage'||b.definition.kind==='control-attack')&&!b.definition.area).map(({spell,entry})=>({
       id:spell.id,name:spell.name,slug:spell.slug,spell,entry,cantrip:true,actionCost:Number(spell.system.time?.value??2),
       attack:Boolean(spell.isAttack??spell.traits?.has('attack')),range:spell.system.range?.value==='touch'?5:Number.parseFloat(spell.system.range?.value??'30'),

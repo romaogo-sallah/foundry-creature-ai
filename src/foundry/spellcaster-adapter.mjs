@@ -22,6 +22,7 @@ import {visibleDispelTargets} from './counteract-spells.mjs';
 import {translocationDestinationsAsync} from './translocation.mjs';
 import {isTrueVampire} from './vampire-state.mjs';
 import {shieldImmune} from './spell-attack-buffs.mjs';
+import {formSpellcastingRestriction} from './form-restrictions.mjs';
 const ns='foundry-creature-ai';
 export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
  get profileId(){return 'spellcaster';}
@@ -43,7 +44,8 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
   const parts=this.parts(),knowledge=casterTargetKnowledge(this),attempts=this.token.document.getFlag(ns,'conditionCaster');
   // Persistent native regions continue outside the caster's turn. Do not
   // create autonomous damage sources when the GM selected rolls-only mode.
-  parts.descriptors=parts.descriptors.map(s=>s.kind==='lingering'&&s.slug!=='mist'&&!this.config.applyDamage||s.slug==='shield'&&shieldImmune(this.actor)||s.domination&&isTrueVampire(this.actor)&&this.actor.hasCondition('blinded')?{...s,available:false}:s);
+  const castingRestriction=formSpellcastingRestriction(this.actor);
+  parts.descriptors=parts.descriptors.map(s=>castingRestriction||s.kind==='lingering'&&s.slug!=='mist'&&!this.config.applyDamage||s.slug==='shield'&&shieldImmune(this.actor)||s.domination&&isTrueVampire(this.actor)&&this.actor.hasCondition('blinded')?{...s,available:false}:s);
   state.round=game.combat.round;state.spellAttempts=attempts?.combatId===game.combat.id?attempts.attempts??[]:[];
   state.witnessedCasts=witnessedSpellCasts(this.token);state.self.level=this.actor.level;
   state.self.hpFraction=this.actor.hitPoints.value/Math.max(1,this.actor.hitPoints.max);state.self.tempHP=this.actor.hitPoints.temp??0;
@@ -93,7 +95,7 @@ export class PF2eSpellcasterAdapter extends PF2eBasicNPCAdapter{
   if(ledger.actionsRemaining>=3)for(const move of [...state.moves].sort((a,b)=>(a.nearestEnemy??0)-(b.nearestEnemy??0)).slice(0,12))
    move.spells=await decorate(this.topLeft(move),state.enemies.map(e=>({...e,...move.targets[e.id]})));
   state.activeSustained=ongoingCasts(this.actor);state.sustained=state.activeSustained.filter(c=>c.lastRound<game.combat.round);
-  state.diagnostics={...state.diagnostics,manualAbilities:parts.unsupported,witnessedSpellCasts:state.witnessedCasts.map(c=>({slug:c.slug,targetId:c.targetId,immunity:c.immunity})),castingEntries:parts.entries.map(e=>({id:e.id,name:e.name,mode:e.system.prepared.value})),spellCatalog:parts.descriptors.map(s=>({name:s.name,rank:s.castRank,actions:s.actionCost,available:s.available,pool:s.poolId}))};
+  state.diagnostics={...state.diagnostics,spellcastingRestriction:castingRestriction,manualAbilities:parts.unsupported,witnessedSpellCasts:state.witnessedCasts.map(c=>({slug:c.slug,targetId:c.targetId,immunity:c.immunity})),castingEntries:parts.entries.map(e=>({id:e.id,name:e.name,mode:e.system.prepared.value})),spellCatalog:parts.descriptors.map(s=>({name:s.name,rank:s.castRank,actions:s.actionCost,available:s.available,pool:s.poolId}))};
   return state;
  }
  casterActions(state){return [...castingCandidates(state),...preparedStrikeCandidates(state),...this.extraCasterActions(state),

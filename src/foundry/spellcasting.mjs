@@ -15,6 +15,7 @@ import {vampireForm,isTrueVampire} from './vampire-state.mjs';
 import {consumeSureStrike} from './spell-attack-buffs.mjs';
 import {resistSpellDisruption} from './spell-disruption.mjs';
 import {liveDispelTarget} from './counteract-spells.mjs';
+import {formSpellcastingRestriction} from './form-restrictions.mjs';
 
 const ns = 'foundry-creature-ai';
 const outcomes = ['criticalFailure','failure','success','criticalSuccess'];
@@ -22,6 +23,7 @@ const outcomes = ['criticalFailure','failure','success','criticalSuccess'];
 import {spellMessage,spellDamage} from './spell-native-rolls.mjs';
 export {spellMessage,spellDamage};
 export async function executeSpell(adapter, choice, ledger, { canContinue = () => true,signal } = {}) {
+  const restriction=formSpellcastingRestriction(adapter.actor);if(restriction)return {skipped:true,skipReason:restriction};
   const origin=adapter.actualWaypoint();
   const valid = () => canContinue() && adapter.turnKey() === ledger.turn && !game.paused && game.users.activeGM?.id === game.user.id &&
     canvas.ready&&canvas.tokens.get(adapter.token.id)===adapter.token&&
@@ -68,7 +70,7 @@ export async function executeSpell(adapter, choice, ledger, { canContinue = () =
     if(interrupt.disrupted&&!await resistSpellDisruption(adapter.actor,adapter.token))return {resolved:true,note:'Reactive Strike disrupted the spell. Its actions and slot remain spent.'};
   }
   if (!valid() || adapter.turnEndReason()) return { resolved: true, endTurn: Boolean(adapter.turnEndReason()), incapacitationReason: adapter.turnEndReason() };
-  if(vampireForm(adapter.actor)==='mist')return {resolved:true,note:'Mist transformation prevented completion of the spell; its actions and resources remain spent.'};
+  const changedForm=formSpellcastingRestriction(adapter.actor);if(changedForm)return {resolved:true,note:`${changedForm} The committed actions and resource remain spent.`};
   if(!await resolveConditionChecks(adapter.actor,nativeRuleAction(spell),{token:adapter.token,valid}))
     return {resolved:true,note:'Condition flat check failed; spell actions and resources remain spent.'};
   if(!choice.area&&(!target||!clearAttackPath(adapter.token,target)||adapter.targetAt(adapter.originCell(),target,[],adapter.actualWaypoint()).distance>targetRange))

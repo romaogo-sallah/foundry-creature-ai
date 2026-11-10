@@ -16,6 +16,7 @@ export function ruleAction(action){
 export function conditionViolation(facts={},input){
   const action=ruleAction(input),has=trait=>action.traits.includes(trait);
   if(action.kind==='endTurn')return null;
+  if(facts.noSpellcasting&&(action.kind==='castSpell'||action.spellcasting))return facts.noSpellcasting;
   if(facts.fleeing&&!action.reaction&&!has('move')&&!['escape','force-open','forceOpen','interact','open','open-a-door','pitStow'].includes(action.kind))return 'Fleeing: use actions to escape the source.';
   if(facts.restrained&&(has('attack')||has('manipulate'))&&!['escape','force-open','forceOpen'].includes(action.kind))return 'Restrained: only Escape or Force Open can use attack/manipulate actions.';
   if(facts.immobilized&&has('move'))return 'Immobilized: cannot use move actions.';

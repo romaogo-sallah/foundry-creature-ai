@@ -56,7 +56,7 @@ export function spellAreaValue(state, spell, area) {
 }
 
 export function castingCandidates(state, { showcase = true } = {}) {
-  if (state.self.unable || state.self.restrained || state.retreatComplete || state.morale?.broken) return [];
+  if (state.conditionRules?.noSpellcasting || state.self.unable || state.self.restrained || state.retreatComplete || state.morale?.broken) return [];
   return [...genericCastingCandidates(state),...conditionCastingCandidates({...state,spells:state.spells.filter(s=>s.kind==='condition-save')}),...state.spells.filter(s=>s.resolver!=='outcomes').flatMap(spell => {
     if (spell.actionCost > state.actionsRemaining || !spell.available) return [];
     const reserve = spellReserveCost(state, spell);

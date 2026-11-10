@@ -79,7 +79,7 @@ export function blockedVoluntaryMovement(document,movement,options={}){
 // Hook functions are exported separately for deterministic native-boundary
 // tests and to avoid registering Check.roll a second time with libWrapper.
 export async function guardCast(wrapped,spell,options){
-  const reason=restrictionsEnabled()&&manualConditionViolation(this.actor,nativeRuleAction(spell,{targetIds:[...game.user?.targets??[]].map(token=>token.id)}));
+  const reason=restrictionsEnabled()&&manualConditionViolation(this.actor,nativeRuleAction(spell,{kind:'castSpell',targetIds:[...game.user?.targets??[]].map(token=>token.id)}));
   const restriction=(spell?.actionCost?.type==='reaction'?reactionRestriction(this.actor):actionRestriction(this.actor))??(reason?{kind:'condition-rule',reason}:null);
   if(restriction){notifyRestriction(this.actor,restriction);return;}
   return wrapped(spell,options);

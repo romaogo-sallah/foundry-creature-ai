@@ -2,10 +2,11 @@ import {conditionViolation,conditionFlatChecks,ruleAction} from '../framework/co
 import {rulesSetting} from './rules-settings.mjs';
 import {conditionDirective} from '../framework/condition-directives.mjs';
 import {vampireForm} from './vampire-state.mjs';
+import {formSpellcastingRestriction} from './form-restrictions.mjs';
 const ns='foundry-creature-ai';
 export function conditionFacts(actor){
   const condition=slug=>Boolean(actor?.hasCondition?.(slug));
-  return {restrained:condition('restrained'),grabbed:condition('grabbed')&&!condition('restrained'),
+  return {noSpellcasting:formSpellcastingRestriction(actor),restrained:condition('restrained'),grabbed:condition('grabbed')&&!condition('restrained'),
     immobilized:condition('immobilized')||condition('grabbed')||condition('restrained'),prone:condition('prone'),
     fascinated:condition('fascinated')&&!conditionDirective(actor),fleeing:conditionDirective(actor)==='fleeing',sickened:condition('sickened'),deafened:condition('deafened'),
     stupefied:condition('stupefied')?actor.getCondition('stupefied')?.value??1:0,
@@ -14,7 +15,7 @@ export function conditionFacts(actor){
 }
 export function nativeRuleAction(item,extra={}){
   const traits=[...(item?.traits??item?.system?.traits?.value??[])];
-  return ruleAction({kind:item?.type==='spell'?'castSpell':item?.slug??'item',traits,reaction:item?.actionCost?.type==='reaction',
+  return ruleAction({kind:item?.type==='spell'?'castSpell':item?.slug??'item',spellcasting:item?.type==='spell'||(item?.slug??item?.system?.slug)==='vampire-true-dominate',traits,reaction:item?.actionCost?.type==='reaction',
     ingest:item?.type==='consumable'&&['potion','elixir','drug','food','beverage'].includes(item.system?.category),...extra});
 }
 export function manualConditionViolation(actor,action){
