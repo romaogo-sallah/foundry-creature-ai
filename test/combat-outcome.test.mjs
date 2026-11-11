@@ -49,6 +49,12 @@ test('defeated, dying and dead states count, other scenes do not, recovery reope
   assert.equal(f.outcome().reason,'draw');
 });
 
+test('lich rejuvenation is post-encounter and does not keep a 0 HP lich in the fight',()=>{
+  const f=fixture();f.add('party','party');const lich=f.add('lich','opposition',{hp:0});
+  lich.actor.itemTypes={action:[{slug:'lich-rejuvenation',name:'Rejuvenation'}]};
+  assert.deepEqual(f.outcome().survivorIds,['party']);assert.equal(f.outcome().reason,'victory');
+});
+
 test('a third active hostile faction prevents declaring an early victory',()=>{
   const f=fixture();f.add('party','party');f.add('enemy','opposition',{hp:0});
   f.add('neutral',null,{config:{targetIds:['party']}});assert.equal(f.outcome(),null);

@@ -52,9 +52,9 @@ test('Dominate immunity is vampire-specific; 0 HP alone does not end existing co
  f.actor.hitPoints.value=0;f.saveDegree=1;await advanceDomination(f.player,'end');assert.equal(f.player.actor.hasCondition('controlled'),true);
  f.saveDegree=2;await advanceDomination(f.player,'end');assert.equal(f.player.actor.hasCondition('controlled'),false);
 });
-test('Mist Escape remains mobile and damage immune at 0 HP and prevents a premature battle stop',async()=>{
+test('Mist Escape remains narratively mobile and damage immune but counts as defeated in its encounter',async()=>{
  const f=fixture();f.actor.hitPoints.value=0;await f.actor.setFlag(ns,'vampire',{form:'mist',escape:true,expiresAt:7200});
- assert.equal(incapacitationReason(f.boss),null);assert.equal(encounterOutcome(),null);
+ assert.equal(incapacitationReason(f.boss),null);assert.equal(encounterOutcome().reason,'victory');
  let applied=0;await vampireDamage.call(f.actor,async()=>{applied++;},{damage:100});assert.equal(applied,0);
  const route=mistEscapeRoute(f.boss);assert.ok(route.path.length);assert.ok(route.cost<=10);
  const ledger=await f.adapter.readLedger(f.adapter.turnKey()),s=await f.adapter.snapshot(ledger,{movement:false}),choice=f.adapter.decide(s).chosen;

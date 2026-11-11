@@ -63,14 +63,14 @@ test('shared ranking selects another legal action after a known-unexecuted rejec
  assert.equal(d.chosen.id,'strike');
 });
 
-test('a real 0-HP mist turn passes through all attached adapters and advances after movement',async()=>{
+test('a real 0-HP mist is defeated for encounter purposes and does not prolong turn order',async()=>{
  const f=fixture({npcData:count,size:30});f.actor.hitPoints.value=0;
  f.flags.get(`token-boss:${ns}:config`).autoAdvance=true;
  await f.actor.setFlag(ns,'vampire',{form:'mist',escape:true,escapeTriggered:true,expiresAt:7200});
  f.boss.document.x=1400;f.boss.document.y=1400;
  const kinds=[];f.adapter.report=async(d,ledger,result)=>{kinds.push(d.chosen.kind);await f.adapter.recordOutcome(d.chosen,ledger,result);};
- const ledger=await new TurnRunner(f.adapter).run();assert.ok(kinds.includes('mistFly'));assert.equal(ledger.actionsRemaining,0);
- assert.equal(f.calls.filter(c=>c[0]==='next-turn').length,1);assert.equal(ledger.uncertain,false);
+ const ledger=await new TurnRunner(f.adapter).run();assert.deepEqual(kinds,['endTurn']);assert.equal(ledger.actionsRemaining,3);
+ assert.equal(ledger.completionReason,'battle-over');assert.equal(f.calls.filter(c=>c[0]==='next-turn').length,0);assert.equal(ledger.uncertain,false);
 });
 
 test('post-effect turn change recovers a missing mist start once, and respects Stop and existing ledgers',async()=>{

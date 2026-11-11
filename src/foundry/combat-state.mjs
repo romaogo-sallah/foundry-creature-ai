@@ -30,12 +30,21 @@ export function occupiesMovementSpace(token, combat = game.combat) {
   return !(combatant?.defeated||combatant?.isDefeated);
 }
 
+// Mist Escape and Rejuvenation determine what happens after a creature is
+// defeated; they do not keep that creature's side active in this encounter.
+// Keep incapacitationReason permissive for a mist that is still being moved
+// narratively, while encounter administration treats its 0 HP as defeat.
+function encounterDefeatReason(token, combat) {
+  const actor = token?.actor;
+  if (actor?.hitPoints?.value <= 0 && (pendingMistEscape(actor) || movingMist(actor))) return '0 HP';
+  return incapacitationReason(token, combat);
+}
+
 // Encounter administration uses the complete combat roster, never sensory
 // knowledge. Hidden, invisible, distant and unreachable opponents remain alive.
 // A single creature exhausting its manual target list is not a battle victory.
 export function encounterOutcome({ combat = game.combat, scene = canvas.scene, tokens = canvas.tokens } = {}) {
   if (!combat?.started || !scene) return null;
-  if(Array.from(combat.combatants??[]).some(c=>combatantSceneId(c,combat)===scene.id&&(movingMist(tokens.get(c.tokenId)?.actor)||pendingMistEscape(tokens.get(c.tokenId)?.actor))))return null;
   const roster = Array.from(combat.combatants ?? []).filter(c => combatantSceneId(c, combat) === scene.id);
   if(roster.some(c=>{const actor=tokens.get(c.tokenId)?.actor;return actor?.hitPoints?.value>0&&actor.hasCondition('controlled')&&actor.getFlag?.('foundry-creature-ai','domination');}))return null;
   const entries = roster.map(c => ({ combatant: c, token: tokens.get(c.tokenId) }));
@@ -56,10 +65,10 @@ export function encounterOutcome({ combat = game.combat, scene = canvas.scene, t
     const a = entries[i].token, b = entries[j].token;
     if (!hostile(a, b)) continue;
     participants.add(a); participants.add(b);
-    if (!incapacitationReason(a, combat) && !incapacitationReason(b, combat)) return null;
+    if (!encounterDefeatReason(a, combat) && !encounterDefeatReason(b, combat)) return null;
   }
   if (!participants.size) return null;
-  const survivors = [...participants].filter(token => !incapacitationReason(token, combat));
+  const survivors = [...participants].filter(token => !encounterDefeatReason(token, combat));
   return { combatId: combat.id, reason: survivors.length ? 'victory' : 'draw',
     survivorIds: survivors.map(token => token.id),
     message: survivors.length ? 'Battle won: no opposing combatants remain able to fight. Creature AI stopped.' :

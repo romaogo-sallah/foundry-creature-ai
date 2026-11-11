@@ -76,11 +76,12 @@ test('worker rejects living-only spells against an observed undead body and hono
  const retry=await f.adapter.planDecision(state);assert.notEqual(retry.chosen.id,first.chosen.id);
 });
 
-test('0-HP Mist Escape completes a movement turn through the real decision worker',async t=>{
+test('0-HP Mist Escape ends its defeated encounter before invoking the decision worker',async t=>{
  const data=JSON.parse(await readFile(new URL('./fixtures/vampire-count-mechanics.json',import.meta.url))),f=fixture({npcData:data,size:30});
  enable(t);f.actor.hitPoints.value=0;f.boss.document.x=1400;f.boss.document.y=1400;
  await f.actor.setFlag('foundry-creature-ai','vampire',{form:'mist',escape:true,escapeTriggered:true,expiresAt:7200});
- const result=await new TurnRunner(f.adapter).run();assert.equal(result.actionsRemaining,0);assert.equal(result.uncertain,false);assert.ok(decisionWorker.completed>=3);
+ const completed=decisionWorker.completed,result=await new TurnRunner(f.adapter).run();
+ assert.equal(result.actionsRemaining,3);assert.equal(result.completionReason,'battle-over');assert.equal(result.uncertain,false);assert.equal(decisionWorker.completed,completed);
 });
 test('native preparation batches can be cancelled between work items',async()=>{
  const controller=new AbortController(),work=planningBudget({signal:controller.signal,milliseconds:0});await work.checkpoint();controller.abort();await assert.rejects(work.checkpoint(),{name:'AbortError'});
