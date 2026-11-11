@@ -1,0 +1,45 @@
+{
+  "version": "0.43.8",
+  "date": "2026-11-11",
+  "review": {
+    "world": "arena",
+    "scene": "Stadium",
+    "combatId": "RWj9OULGeIeivHJa",
+    "inspectedRound": 120,
+    "reportVersion": "0.43.3",
+    "finding": "Two living liches repeatedly ended turns with three actions while four 0-HP vampire mist forms remained unescaped. The vampire ledgers had not advanced beyond rounds 2-3, so narrative Mist Escape prevented encounter victory indefinitely."
+  },
+  "policy": {
+    "mistEscape": "A 0-HP vampire is defeated for encounter outcome even while Mist Escape remains pending or mobile.",
+    "rejuvenation": "A 0-HP lich is defeated for encounter outcome even though Rejuvenation can return it later.",
+    "narrativeMechanics": "Mist movement and immunity remain available while another active combatant keeps the encounter running.",
+    "unchanged": "Living hidden, invisible, distant and unreachable hostile combatants still prevent victory."
+  },
+  "tests": {
+    "fullPassed": 1214,
+    "failed": 0,
+    "testFiles": 97,
+    "parallelProcesses": 11,
+    "elapsedSeconds": 27.0
+  },
+  "artifact": {
+    "archive": "releases/pf2e-tactical-suite-0.43.8.zip",
+    "archiveBytes": 709909,
+    "sha256": "D8EF8803F876D6B037EBA86CC5ADB255929D92B8E8FA503716CE4BBA71985D34",
+    "packages": 5,
+    "installedVersions": {
+      "pf2e-tactical-core": "0.43.8",
+      "pf2e-tactical-environment": "0.43.8",
+      "pf2e-tactical-conditions": "0.43.8",
+      "pf2e-tactical-movement": "0.43.8",
+      "foundry-creature-ai": "0.43.8"
+    },
+    "installedPath": "C:/Users/Roman/AppData/Local/FoundryVTT/Data/modules"
+  },
+  "native": {
+    "liveCombatMutated": false,
+    "worldDatabaseChanged": false,
+    "browserReloadRequired": true,
+    "liveReplayPending": true
+  }
+}
