@@ -153,6 +153,23 @@ test('Ordinary mist prohibits offensive actions and reverts instead of wasting s
  assert.match(manualConditionViolation(f.actor,{kind:'castSpell',traits:[]}),/Mist/);assert.equal(manualConditionViolation(f.actor,{kind:'fly',traits:['move']}),null);
  const l=await f.adapter.readLedger(f.adapter.turnKey()),s=await f.adapter.snapshot(l,{movement:false});assert.ok(f.adapter.candidates(s).every(c=>c.kind==='vampireForm'));
 });
+test('A critical vampire uses one bounded voluntary mist retreat, never Mist Escape',async t=>{
+ const f=fixture(),previous=globalThis.fromUuid;globalThis.fromUuid=async()=>({toObject:()=>({name:'Vapor Form',type:'effect',system:{rules:[],duration:{}},flags:{}})});
+ t.after(()=>{if(previous)globalThis.fromUuid=previous;else delete globalThis.fromUuid;});
+ f.actor.hitPoints.value=Math.floor(f.actor.hitPoints.max/5);f.boss.document.x=500;f.boss.document.y=500;f.player.document.x=900;
+ const ledger=await f.adapter.readLedger(f.adapter.turnKey()),state=await f.adapter.snapshot(ledger,{movement:false});
+ const retreat=f.adapter.candidates(state).find(c=>c.id==='vampire:mist-retreat');assert.ok(retreat);assert.equal(retreat.actionCost,1);
+ assert.ok(['left','right','top','bottom'].includes(retreat.retreatEdge));const edge=retreat.retreatEdge;
+ await f.adapter.executeProfileAction(retreat,ledger);let saved=f.actor.getFlag(ns,'vampire');
+ assert.equal(saved.form,'mist');assert.deepEqual(saved.retreat,{combatId:game.combat.id,startedRound:game.combat.round,moves:0,edge});assert.equal(saved.escape,false);
+ let mist=await f.adapter.snapshot({...ledger,actionsRemaining:2},{movement:false}),fly=f.adapter.candidates(mist)[0];assert.equal(fly.kind,'mistFly');
+ await f.adapter.execute(fly,ledger);saved=f.actor.getFlag(ns,'vampire');assert.equal(saved.retreat.moves,1);assert.equal(saved.escaped,false);
+ mist=await f.adapter.snapshot({...ledger,actionsRemaining:1},{movement:false});fly=f.adapter.candidates(mist)[0];assert.equal(fly.kind,'mistFly');
+ await f.adapter.execute(fly,ledger);mist=await f.adapter.snapshot({...ledger,actionsRemaining:0},{movement:false});assert.equal(mist.mistEscape.revert,true);
+ game.combat.round++;mist=await f.adapter.snapshot({...ledger,actionsRemaining:3},{movement:false});const reform=f.adapter.candidates(mist)[0];assert.equal(reform.kind,'vampireForm');
+ await f.adapter.executeProfileAction(reform,ledger);assert.equal(f.actor.getFlag(ns,'vampire').form,'vampire');
+ const again=await f.adapter.snapshot(ledger,{movement:false});assert.equal(again.vampire.retreatAvailable,false);
+});
 test('Fire Shield has a distinct Raise action, native shield HP and half hardness against water',async()=>{
  const f=fixture('mastermind');Object.defineProperty(f.actor.itemTypes,'shield',{get:()=>[...f.actor.items.values()].filter(i=>i.type==='shield')});
  const spell=f.actor.itemTypes.spell.find(s=>s.slug==='fire-shield');await createFireShield(f.actor,spell);const shield=f.actor.itemTypes.shield[0];assert.equal(shield.system.hp.max,40);

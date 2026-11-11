@@ -11,7 +11,7 @@ export function actionIntent({profileId,choice,state={}}){
     if(choice.kind==='drinkBlood')return 'Your blood will restore me.';
     if(choice.kind==='grab')return 'Hold still. The others are closing in.';
     if(choice.kind==='mistFly'||choice.kind==='escapeScene')return 'The vampire dissolves into mist and drifts toward a way out.';
-    if(choice.kind==='vampireForm')return choice.form==='bat'?'The vampire becomes a giant bat and spreads its wings.':'The mist gathers into the vampire’s familiar shape.';
+    if(choice.kind==='vampireForm')return choice.form==='bat'?'The vampire becomes a giant bat and spreads its wings.':choice.form==='mist'?'The wounded vampire dissolves into mist and withdraws.':'The mist gathers into the vampire’s familiar shape.';
     if(choice.kind==='sustainSpell')return 'Keep moving. The flames are following you.';
     if(choice.kind==='raiseFireShield')return 'A shield of fire rises between the vampire and its foes.';
     if(['vampireEquip','vampireStow'].includes(choice.kind))return 'A different weapon for a different opening.';

@@ -2,7 +2,7 @@ import {isTrueVampire,vampireAbility,vampireState,escapingMist} from './vampire-
 import {prepareFireShieldDamage,finishFireShieldDamage} from './fire-shield.mjs';
 import {magicShield,finishMagicShield} from './spell-attack-buffs.mjs';
 const ns='foundry-creature-ai',locks=new WeakMap(),formFlag='vampireFormEffect';
-export async function setVampireForm(token,form,{escape=false}={}){
+export async function setVampireForm(token,form,{escape=false,retreat=null}={}){
  const actor=token.actor,previous=vampireState(actor);
  if(!isTrueVampire(actor))throw new Error('This actor has no true-vampire form abilities');
  const effectIds=(actor.itemTypes.effect??[]).filter(e=>e.flags?.[ns]?.[formFlag]).map(e=>e.id);
@@ -31,7 +31,8 @@ export async function setVampireForm(token,form,{escape=false}={}){
      damage:{base:{dice:2,die:'d6',modifier:11,damageType:'piercing'}},replaceAll:true}]:[]]},flags:{[ns]:{[formFlag]:true}}};
   await actor.createEmbeddedDocuments('Item',[raw]);
  }
- await actor.setFlag(ns,'vampire',{...previous,form,escape,escapeTriggered:escape||previous.escapeTriggered,escaped:false,expiresAt:escape?now+7200:null});
+ await actor.setFlag(ns,'vampire',{...previous,form,escape,escapeTriggered:escape||previous.escapeTriggered,escaped:false,expiresAt:escape?now+7200:null,
+  retreat:mist&&!escape?retreat:null,retreatUsedCombatId:retreat?.combatId??previous.retreatUsedCombatId??null});
  if(escape&&game.combat){const updates=Array.from(game.combat.combatants).filter(c=>c.tokenId===token.id).map(c=>({_id:c.id,defeated:false}));
   if(updates.length)await game.combat.updateEmbeddedDocuments('Combatant',updates);}
 }

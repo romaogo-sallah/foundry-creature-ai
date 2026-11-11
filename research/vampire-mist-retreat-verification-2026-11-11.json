@@ -1,0 +1,63 @@
+{
+  "version": "0.43.7",
+  "date": "2026-11-11",
+  "review": {
+    "scene": "Stadium",
+    "combatId": "VQ806NzG0rLfMDub",
+    "reportVersion": "0.43.3",
+    "aiReports": 57,
+    "participants": [
+      "Lich",
+      "Lich",
+      "Vampire Mastermind",
+      "Vampire Count",
+      "Vampire Count",
+      "Vampire Guardian"
+    ],
+    "evidencePolicy": "Retained decisions and public encounter state only; voluntary retreat uses observed or remembered squares and never secret live enemy coordinates."
+  },
+  "finding": "A critically wounded Vampire Count selected Avoiding but ended with all three actions because no supported ground withdrawal improved its position. Turn to Mist was executable manually but absent from automatic action generation.",
+  "policy": {
+    "trigger": "True vampire at 25% HP or less, at least two actions, a known opponent, a reachable scene edge, and no prior emergency mist cycle in this combat.",
+    "selection": "The action competes with attacks and other useful actions at value 14; it is not a forced override.",
+    "knowledge": "Rank scene edges by distance from prepared observed or remembered opponent squares, then test actual wall and surface geometry in that order.",
+    "duration": "Fly toward one stored edge for at most two actions, then reform on the next turn; reform early at the edge or when the route is blocked.",
+    "separation": "Voluntary mist never offers escapeScene. Only 0-HP Mist Escape can remove a vampire from the encounter.",
+    "tableAdjudication": "Once per combat is an automation policy preventing repetitive at-will mist loops, not a universal PF2e frequency limit."
+  },
+  "rules": {
+    "nativeEffect": "Compendium.pf2e.spell-effects.Item.sILRkGTwoBywy0BU",
+    "vaporFlySpeedFeet": 10,
+    "wallOfFireSave": false,
+    "wallOfFireAutomation": "Damage on crossing or beginning a turn inside; normal immunity, weakness and resistance resolution remains native."
+  },
+  "tests": {
+    "fullPassed": 1213,
+    "failed": 0,
+    "testFiles": 97,
+    "parallelProcesses": 11,
+    "elapsedSeconds": 24.5,
+    "newRegression": "A critical vampire uses one bounded voluntary mist retreat, never Mist Escape"
+  },
+  "artifact": {
+    "archive": "releases/pf2e-tactical-suite-0.43.7.zip",
+    "archiveBytes": 709772,
+    "sha256": "902911241EA1294AA5C67D6D6B7A5A41372F986CD8883E41CD1CE753622BF6C2",
+    "packages": 5,
+    "filesVerified": 294,
+    "archiveMatchesBuild": true,
+    "installedMatchesBuild": true,
+    "installedPath": "C:/Users/Roman/AppData/Local/FoundryVTT/Data/modules"
+  },
+  "native": {
+    "liveCombatMutated": false,
+    "worldDatabaseChanged": false,
+    "browserReloadRequired": true,
+    "liveReplayPending": true
+  },
+  "limits": [
+    "Retreat targets a scene edge rather than a coffin, secret passage or arbitrary safe room.",
+    "The planner does not predict future enemy movement while the vampire is vapor.",
+    "A fresh live fight is required to compare emergent initiative, dice and player decisions."
+  ]
+}

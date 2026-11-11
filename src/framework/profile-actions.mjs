@@ -31,6 +31,10 @@ export function profileActions(state,facts={}){
  }
  if(facts.vampire&&state.vampire?.form!=='mist'){
   const v=state.vampire,last=v?.lastStrike,airThreat=state.enemies.some(e=>facts.elevations[e.id]>facts.elevation+10);
+  if(remaining>=2&&v?.form==='vampire'&&v.retreatAvailable&&state.enemies.length){const value=14;
+   result.push({id:'vampire:mist-retreat',kind:'vampireForm',form:'mist',retreat:true,retreatEdge:v.retreatEdge,legal:true,actionCost:1,
+    features:{avoidance:true,defensiveSetup:true,onceKey:'mist-retreat'},assessment:{value},
+    scoringTerms:[{label:'Critical health: become vapor and spend the remaining turn withdrawing',contribution:value}]});}
   if(remaining>0&&v?.form==='vampire'&&airThreat&&state.enemies.every(e=>!e.inReach))result.push({id:'vampire:bat',kind:'vampireForm',form:'bat',legal:true,actionCost:1,assessment:{value:12},scoringTerms:[{label:'Change into a giant bat to reach airborne opponents',contribution:12}]});
   if(remaining>0&&v?.form==='bat'&&facts.elevation===0&&!airThreat)result.push({id:'vampire:body',kind:'vampireForm',form:'vampire',legal:true,actionCost:1,assessment:{value:12},scoringTerms:[{label:'Resume the stronger vampire body at ground level',contribution:12}]});
   for(const e of state.enemies){if(!e.inReach||e.lineOfSight===false)continue;

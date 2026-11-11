@@ -4,7 +4,7 @@ import {PF2eSpellcasterAdapter} from './spellcaster-adapter.mjs';
 import {preparedNPCStrikes,basicMeleeStrikes} from './basic-npc-adapter.mjs';
 import {chooseTacticalAction} from '../framework/tactical-behaviors.mjs';
 import {preparedStrikeCandidates} from '../framework/strike-capability.mjs';
-import {vampireAbility,vampireState,vampireForm,movingMist,escapingMist} from './vampire-state.mjs';
+import {vampireAbility,vampireState,vampireForm,movingMist,escapingMist,retreatingMist} from './vampire-state.mjs';
 import {ensureMistEscape,setVampireForm} from './vampire-lifecycle.mjs';
 import {mistEscapeRoute,executeMistEscape} from './vampire-escape.mjs';
 import {bloodEligible,ownGrab,vampireGrab,drinkBlood} from './vampire-blood.mjs';
@@ -27,13 +27,31 @@ export class PF2eVampireAdapter extends PF2eSpellcasterAdapter{
   return {...base,native,strike:native.find(s=>s.item.isMelee)??base.strike,drink:(this.actor.itemTypes.action??[]).find(a=>a.slug?.endsWith('drink-blood')),
    abilityNames:[...base.abilityNames,'Grab','Drink Blood','Change Shape','Turn to Mist','Mist Escape'],
    unsupported:base.unsupported.filter(s=>!['Grab','Drink Blood','Change Shape','Turn to Mist','Mist Escape','Dominate','Fast Healing 7','Fast Healing 10','Void Healing','Coffin Restoration','Sneak Attack','Steady Spellcasting','Untaught ranged weapon/ammunition configuration'].includes(s))};}
- async assertReady(){if(movingMist(this.actor)){await this.assertTurnContext();this.validateFootprint();return;}return super.assertReady();}
- async prepareTurn(options={}){await ensureMistEscape(this.token);if(movingMist(this.actor)){await this.assertTurnContext();return true;}return super.prepareTurn(options);}
+ async assertReady(){if(vampireForm(this.actor)==='mist'){await this.assertTurnContext();this.validateFootprint();return;}return super.assertReady();}
+ async prepareTurn(options={}){await ensureMistEscape(this.token);if(vampireForm(this.actor)==='mist'){await this.assertTurnContext();return true;}return super.prepareTurn(options);}
  async snapshot(ledger,options={}){
-  if(vampireForm(this.actor)==='mist'){const route=movingMist(this.actor)?mistEscapeRoute(this.token):{revert:true,path:[]};return {...ledger,self:{cell:this.originCell(),threatened:false},enemies:[],moves:[],mistEscape:route,
-   diagnostics:{profileId:this.profileId,policy:'mist escape',movementBlocked:route.blocked?'No legal path to a scene border was found':null}};}
+  if(vampireForm(this.actor)==='mist'){
+   const mist=vampireState(this.actor),retreat=retreatingMist(this.actor),finished=retreat&&(mist.retreat.moves>=2||game.combat.round>mist.retreat.startedRound);
+   let route=movingMist(this.actor)?mistEscapeRoute(this.token):retreat&&!finished?mistEscapeRoute(this.token,{edge:mist.retreat.edge}):{revert:true,path:[]};
+   if(retreat&&(finished||route.atEdge||route.blocked))route={revert:true,path:[],retreat:true};else if(retreat)route={...route,retreat:true};
+   return {...ledger,self:{cell:this.originCell(),threatened:false},enemies:[],moves:[],mistEscape:route,
+    diagnostics:{profileId:this.profileId,policy:retreat?'voluntary mist retreat':'mist escape',movementBlocked:route.blocked?'No legal path to a scene border was found':null}};
+  }
   const state=await super.snapshot(ledger,options),parts=this.parts(),last=this.token.document.getFlag(ns,'vampireLastStrike');
-  state.vampire={...this.vampireSpec,lastStrike:last?.turn===ledger.turn?last:null,form:vampireForm(this.actor)};
+  const saved=vampireState(this.actor),critical=this.actor.hitPoints.value/Math.max(1,this.actor.hitPoints.max)<=0.25;
+  let retreatAvailable=false,retreatEdge=null;
+  if(critical&&ledger.actionsRemaining>=2&&vampireForm(this.actor)==='vampire'&&saved.retreatUsedCombatId!==game.combat.id){
+   const size=canvas.grid.size,rect=canvas.dimensions.sceneRect,positions=state.enemies.map(enemy=>enemy.awareness?.position).filter(Boolean);
+   const start={x:Math.round(this.token.document.x/size),y:Math.round(this.token.document.y/size)},bounds={left:Math.ceil(rect.x/size),top:Math.ceil(rect.y/size),
+    right:Math.floor((rect.x+rect.width)/size)-this.token.document.width,bottom:Math.floor((rect.y+rect.height)/size)-this.token.document.height};
+   const edges=['left','right','top','bottom'].map(edge=>{const goal={x:['left','right'].includes(edge)?bounds[edge]:start.x,y:['top','bottom'].includes(edge)?bounds[edge]:start.y};
+    const safety=positions.length?Math.min(...positions.map(p=>Math.max(Math.abs(goal.x*size-p.x),Math.abs(goal.y*size-p.y))/size)):0;
+    return {edge,safety,distance:Math.max(Math.abs(goal.x-start.x),Math.abs(goal.y-start.y))};}).sort((a,b)=>b.safety-a.safety||a.distance-b.distance);
+   let route;for(const option of edges){const possible=mistEscapeRoute(this.token,{edge:option.edge});if(possible.path.length&&!possible.blocked){route=possible;break;}}
+   retreatAvailable=Boolean(route);retreatEdge=route?.edge??null;
+  }
+  state.vampire={...this.vampireSpec,lastStrike:last?.turn===ledger.turn?last:null,form:vampireForm(this.actor),retreatAvailable,
+   retreatEdge,retreatUsedCombatId:saved.retreatUsedCombatId??null};
   for(const strike of state.strikes){const native=parts.native.find(s=>s.item.id===strike.id),linked=native?.item.linkedWeapon;
    strike.available=!linked||linked.system.equipped.carryType==='held'&&linked.system.equipped.handsHeld>=(strike.ranged?2:1);
    if(strike.ranged){strike.available&&=this.ammunition()>0;strike.rangeAversion=0.06;}
@@ -51,14 +69,21 @@ export class PF2eVampireAdapter extends PF2eSpellcasterAdapter{
  ammunition(){return (this.actor.itemTypes.ammo??[]).filter(i=>(i.slug??i.system.slug)==='arrows').reduce((n,i)=>n+i.system.quantity,0);}
  extraCasterActions(state){return profileActions(state,profileActionFacts(this,state));}
  candidates(state){if(state.mistEscape){const r=state.mistEscape;if(r.revert)return state.actionsRemaining>0?[{id:'mist:revert',kind:'vampireForm',form:'vampire',actionCost:1,legal:true,assessment:{value:20}}]:[{id:'mist:end',kind:'endTurn',actionCost:0,legal:true,assessment:{value:0}}];
-  return r.atEdge?[{id:'mist:exit',kind:'escapeScene',actionCost:0,legal:true,assessment:{value:10000}}]:r.path.length&&state.actionsRemaining>0?
+  return r.atEdge&&!r.retreat?[{id:'mist:exit',kind:'escapeScene',actionCost:0,legal:true,assessment:{value:10000}}]:r.path.length&&state.actionsRemaining>0?
   [{id:'mist:fly',kind:'mistFly',actionCost:1,legal:true,path:r.path,destination:r.path.at(-1),movementCost:r.cost,assessment:{value:10000}}]:[{id:'mist:end',kind:'endTurn',actionCost:0,legal:true,assessment:{value:0}}];}
   return super.candidates(state);}
  decide(state){if(state.mistEscape){const decision=chooseTacticalAction(this.candidates(state),{...state,behavior:null},{actionsRemaining:state.actionsRemaining});return {...decision,diagnostics:{...state.diagnostics,turnComplete:!state.mistEscape.path.length&&!state.mistEscape.atEdge}};}return super.decide(state);}
- async execute(choice,ledger,context={}){if(movingMist(this.actor))return executeMistEscape(this,choice);return super.execute(choice,ledger,context);}
+ async execute(choice,ledger,context={}){if((movingMist(this.actor)||retreatingMist(this.actor))&&['mistFly','escapeScene'].includes(choice.kind)){
+  const result=await executeMistEscape(this,choice);
+  if(retreatingMist(this.actor)&&choice.kind==='mistFly'&&!result.skipped){const state=vampireState(this.actor);await this.actor.setFlag(ns,'vampire',{...state,retreat:{...state.retreat,moves:(state.retreat.moves??0)+1}});}
+  return result;
+ }return super.execute(choice,ledger,context);}
  async executeProfileAction(choice,ledger,context={}){
   const valid=()=> (context.canContinue?.()??true)&&this.turnKey()===ledger.turn;
-  if(choice.kind==='vampireForm'){await setVampireForm(this.token,choice.form);return {resolved:true,note:`Changed to ${choice.form} form.`};}
+  if(choice.kind==='vampireForm'){
+   const retreat=choice.retreat?{combatId:game.combat.id,startedRound:game.combat.round,moves:0,edge:choice.retreatEdge}:null;
+   await setVampireForm(this.token,choice.form,{retreat});return {resolved:true,note:choice.retreat?'Turned to mist for an emergency withdrawal.':`Changed to ${choice.form} form.`};
+  }
   if(vampireForm(this.actor)==='mist')return {resolved:true,note:'The vampire became mist; its committed offensive action cannot finish.'};
   if(choice.kind==='raiseFireShield')return raiseFireShield(this.token);
   if(['vampireEquip','vampireStow'].includes(choice.kind)){

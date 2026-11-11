@@ -1,6 +1,8 @@
 # Foundry creature AI
 
-**Version 0.43.6:** improves the reviewed Lich-versus-vampire battle: short-range vampire hybrids make meaningful approaches, ordinary Hidden targets no longer trigger See the Unseen, Wall of Ice values current melee pressure and existing allied walls, and pit jumps reject routes through intact ice walls. [Analysis and policies](docs/lich-vampire-tactics-0.43.6.md). Reload clients with **Ctrl+F5**.
+**Version 0.43.7:** completes the next Lich-versus-vampire tactics pass. A true vampire at critical HP can use Turn to Mist once per encounter, choose a reachable scene edge away from its known opponents, spend the rest of the turn withdrawing, and reform next turn without triggering 0-HP Mist Escape. [Analysis and policy](docs/vampire-mist-retreat-0.43.7.md). Reload clients with **Ctrl+F5**.
+
+**Version 0.43.6:** improves the reviewed Lich-versus-vampire battle: short-range vampire hybrids make meaningful approaches, ordinary Hidden targets no longer trigger See the Unseen, Wall of Ice values current melee pressure and existing allied walls, and pit jumps reject routes through intact ice walls. [Analysis and policies](docs/lich-vampire-tactics-0.43.6.md).
 
 **Version 0.43.5:** Translocate rejects destinations beyond movement-blocking terrain-wall boundaries and checks the caster's whole body against walls, ice walls, surfaces and occupied space. Planner, pre-cast and post-reaction checks share the same destination rules. [Cause and placement policy](docs/teleport-destinations.md). Reload clients with **Ctrl+F5**.
 

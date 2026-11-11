@@ -40,7 +40,7 @@ function casterActions(state,model){return [...castingCandidates(state),...prepa
  ...(state.sustained??[]).filter(c=>state.actionsRemaining>0&&!state.plannedCapabilities?.includes(`sustain:${c.id}`)).map(c=>({id:`sustain:${c.id}`,kind:'sustainSpell',castId:c.id,legal:true,actionCost:1,features:{onceKey:`sustain:${c.id}`},assessment:{value:5},scoringTerms:[{label:'Maintain estimated ongoing benefit',contribution:5}]}))];}
 function mistCandidates(state){const r=state.mistEscape;
  if(r.revert)return state.actionsRemaining>0?[{id:'mist:revert',kind:'vampireForm',form:'vampire',actionCost:1,legal:true,assessment:{value:20}}]:[{id:'mist:end',kind:'endTurn',actionCost:0,legal:true,assessment:{value:0}}];
- return r.atEdge?[{id:'mist:exit',kind:'escapeScene',actionCost:0,legal:true,assessment:{value:10000}}]:r.path.length&&state.actionsRemaining>0?[{id:'mist:fly',kind:'mistFly',actionCost:1,legal:true,path:r.path,destination:r.path.at(-1),movementCost:r.cost,assessment:{value:10000}}]:[{id:'mist:end',kind:'endTurn',actionCost:0,legal:true,assessment:{value:0}}];
+ return r.atEdge&&!r.retreat?[{id:'mist:exit',kind:'escapeScene',actionCost:0,legal:true,assessment:{value:10000}}]:r.path.length&&state.actionsRemaining>0?[{id:'mist:fly',kind:'mistFly',actionCost:1,legal:true,path:r.path,destination:r.path.at(-1),movementCost:r.cost,assessment:{value:10000}}]:[{id:'mist:end',kind:'endTurn',actionCost:0,legal:true,assessment:{value:0}}];
 }
 function baseCandidates(state,model){
  if(state.mistEscape)return mistCandidates(state);
