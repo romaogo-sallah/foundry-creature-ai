@@ -2,6 +2,7 @@ import {PlanningWorker} from './planning-worker.mjs';
 import {decisionModel,planningData} from './decision-snapshot.mjs';
 import {flightWorldStamp} from './flight-worker-snapshot.mjs';
 import {planningBudget} from '../shared/planning-budget.mjs';
+import {withRayCache} from './attack-path.mjs';
 export const decisionWorker=new PlanningWorker({timeout:30000,interruptOnCancel:true});
 let revision=0;const installed=new WeakSet();
 const PLANNING_EVENTS=['createToken','updateToken','deleteToken','moveToken','updateActor','createItem','updateItem','deleteItem','createRegion','updateRegion','deleteRegion','createRegionBehavior','updateRegionBehavior','deleteRegionBehavior','createWall','updateWall','deleteWall','updateCombat','updateCombatant','updateSetting','canvasReady'];
@@ -38,7 +39,7 @@ export const stalePlanning=()=>Object.assign(new Error('Battlefield changed whil
 export function attachDecisionSystem(adapter){
  const snapshot=adapter.snapshot.bind(adapter),stamps=new WeakMap();
  const useWorker=()=>game.settings?.get?.('foundry-creature-ai','decisionPlanningBackend')!=='native';
- adapter.snapshot=async(ledger,options={})=>{
+ const prepare=async(ledger,options={})=>{
   if(!useWorker())return snapshot(ledger,options);
   installDecisionInvalidation();
   const initial=stamp(adapter),budget=options.budget??planningBudget({signal:options.signal}),started=performance.now(),parts=adapter.parts;
@@ -50,6 +51,8 @@ export function attachDecisionSystem(adapter){
    if(initial!==stamp(adapter))throw stalePlanning();stamps.set(state,initial);return state;
   }finally{adapter.parts=parts;}
  };
+ // Corner rays repeat across a plan's candidate squares; reuse them until the plan is built.
+ adapter.snapshot=(ledger,options)=>withRayCache(()=>prepare(ledger,options));
  async function request(state,operation,options={}){
   if(!useWorker())return operation==='candidates'?adapter.candidates(state):adapter.decide(state);
   if(!decisionWorker.available())throw new Error('Decision Web Worker unavailable. Reload this client; AI is paused with its actions preserved. Native compatibility mode is available in module settings.');
