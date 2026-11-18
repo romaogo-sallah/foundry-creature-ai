@@ -412,13 +412,23 @@ Hooks.on('moveToken', (document, movement, operation) => {
     } catch { /* Untaught actors do not gain an automatic perception policy. */ }
   }
 });
-// PF2e emits this after its start-of-turn effect processing has completed.
-Hooks.on('pf2e.startTurn', (combatant) => {
+// A turn that starts while Foundry is paused cannot run yet; it starts once play resumes.
+let pausedStart = null;
+function startAutomaticTurn(combatant) {
   if (!profile || automaticStartsPaused || game.users.activeGM?.id !== game.user.id || !canvas.ready) return;
   const token = canvas.tokens.get(combatant.tokenId), config = token?.document.getFlag(MODULE_ID, 'config');
-  if (config?.enabled && config.autoRun) runTurn(token, {
-    automatic: true, expectedTurn: `${game.combat.id}:${game.combat.round}:${combatant.id}`,
-  }).catch(showError);
+  if (!config?.enabled || !config.autoRun) return;
+  const expectedTurn = `${game.combat.id}:${game.combat.round}:${combatant.id}`;
+  if (game.paused) { pausedStart = expectedTurn; return; }
+  runTurn(token, { automatic: true, expectedTurn }).catch(showError);
+}
+// PF2e emits this after its start-of-turn effect processing has completed.
+Hooks.on('pf2e.startTurn', (combatant) => { pausedStart = null; startAutomaticTurn(combatant); });
+Hooks.on('pauseGame', paused => {
+  const expected = pausedStart, combat = game.combat, combatant = combat?.combatant;
+  if (paused || !expected) return;
+  pausedStart = null;
+  if (combat?.started && combatant && `${combat.id}:${combat.round}:${combatant.id}` === expected) startAutomaticTurn(combatant);
 });
 Hooks.on('combatTurnChange',combat=>{
   if(!profile)return;

@@ -2488,6 +2488,31 @@ test('Stop all suppresses automatic starts until a manual run resumes them', asy
   assert.equal(f.calls.some(c => c[0] === 'move'), true);
 });
 
+test('a turn that starts while Foundry is paused runs once play resumes', async () => {
+  const f = await controlsFixture('save', { autoRun: true, autoAdvance: true });
+  await f.main.openControls(f.wolf);
+  game.paused = true;
+  f.hooks.get('pf2e.startTurn')(game.combat.combatant);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.calls.some(c => c[0] === 'move'), false);
+  game.paused = false;
+  f.hooks.get('pauseGame')(false);
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert.equal(f.calls.some(c => c[0] === 'move'), true);
+});
+
+test('a paused start is dropped when the turn moves on before play resumes', async () => {
+  const f = await controlsFixture('save', { autoRun: true, autoAdvance: true });
+  await f.main.openControls(f.wolf);
+  game.paused = true;
+  f.hooks.get('pf2e.startTurn')(game.combat.combatant);
+  game.combat.round++;
+  game.paused = false;
+  f.hooks.get('pauseGame')(false);
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert.equal(f.calls.some(c => c[0] === 'move'), false);
+});
+
 test('bulk full-auto enabling resumes automatic starts after Stop without immediately running the selected creature',async()=>{
   const f=await controlsFixture('save',{autoRun:true,autoAdvance:true});
   await f.main.openControls(f.wolf);f.main.stop();
