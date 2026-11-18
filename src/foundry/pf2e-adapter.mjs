@@ -14,7 +14,7 @@ import { decisionExplanation } from '../wolf/decision-explanation.mjs';
 import { packAssessment, persistPackAssessment } from './pack-morale.mjs';
 import { frontlineAssessments } from './frontline.mjs';
 import { MANAGED_MOVEMENT } from './movement-options.mjs';
-import { targetKnowledge, rememberTargets } from './target-memory.mjs';
+import { targetKnowledge, rememberTargets, rememberedToken } from './target-memory.mjs';
 import { approachNavigation, approachNavigationAsync } from './approach-navigation.mjs';
 import { greaseExtraCost, prepareGreaseMove, withGreaseMode, inGrease } from './spell-zones.mjs';
 import { settleGreaseSlip, finishGreaseFall } from './grease-landing.mjs';
@@ -268,6 +268,12 @@ export class PF2eCreatureAdapter {
     return { id, name: target.name, target, reason: null };
   }
   liveTarget(id) { return this.assessTarget(id).target; }
+  // Shared modules such as pits, translocation and decision snapshots ask every profile for this, so the
+  // base class provides the same answer as the basic NPC: the live token, or its remembered square.
+  perceivedTarget(enemy) {
+    const token = canvas.tokens.get(enemy.id);
+    return enemy.awareness?.state === 'known-square' ? rememberedToken(token, enemy.awareness.position, enemy.awareness) : token;
+  }
   liveSpellTarget(id){const target=canvas.tokens.get(id);return target===this.token||target?.actor&&this.actor.isAllyOf(target.actor)&&!target.document.hidden&&this.sight(this.token.center,target)?target:this.liveTarget(id);}
   activeMovementRegions() {
     return unsupportedMovementRegions(canvas.scene);
