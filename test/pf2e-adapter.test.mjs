@@ -6,6 +6,8 @@ import { PF2eWolfAdapter, MODULE_ID, MANAGED_OPTION, MANAGED_TRIP_OPTION, SKIP_R
 import { TurnRunner } from '../src/wolf/turn-runner.mjs';
 import { ReactionEngine, REACTION_OPTION, REACTION_AUTO_DAMAGE } from '../src/foundry/reactions.mjs';
 import { packAssessment } from '../src/foundry/pack-morale.mjs';
+import { vampireDamage } from '../src/foundry/vampire-lifecycle.mjs';
+import { finishMagicShield } from '../src/foundry/spell-attack-buffs.mjs';
 
 const profile = resolveProfile(JSON.parse(await readFile(new URL('../profiles/creatures.json', import.meta.url))), 'wolf');
 
@@ -927,6 +929,93 @@ test('Shield Block prompts before wolf damage application and passes the choice 
   await new TurnRunner(f.adapter).run({ oneAction: true });
   assert.equal(f.calls.filter(c => c[0] === 'applyDamage').length, 1);
   assert.equal(f.target.actor.getFlag(MODULE_ID, 'reaction').uncertain, false);
+});
+
+// In Foundry every applyDamage passes through the suite's libWrapper (vampireDamage), which also ends
+// a Shield cantrip after Shield Block and adds the native Shield Immunity effect.
+test('Shield Block with the Shield cantrip finishes the wolf strike and confirms the reaction', async () => {
+  const f = fixture();
+  f.wolf.document.x = 100;
+  const prompts = addReactions(f, { answer: 'block' });
+  const a = f.target.actor;
+  const spell = { id: 'shield-spell', type: 'effect', name: 'Spell Effect: Shield', slug: 'spell-effect-shield', isExpired: false, flags: {} };
+  a.itemTypes = { feat: [{ slug: 'reactive-strike' }], action: [], effect: [spell] };
+  a.items = new Map([[spell.id, spell]]);
+  a.attributes.shield = { itemId: spell.id, raised: true, hardness: 5, broken: false, destroyed: false };
+  a.deleteEmbeddedDocuments = async (_type, ids) => {
+    for (const id of ids) { if (!a.items.has(id)) throw new Error(`Item ${id} does not exist`); a.items.delete(id); }
+    a.itemTypes.effect = a.itemTypes.effect.filter(effect => a.items.has(effect.id));
+    f.calls.push(['deleteEffect', ids]);
+  };
+  a.createEmbeddedDocuments = async (_type, data) => {
+    const made = data.map((raw, i) => ({ ...raw, id: `made-${i}`, slug: raw.system?.slug, isExpired: false, flags: {} }));
+    for (const item of made) { a.items.set(item.id, item); a.itemTypes.effect.push(item); }
+    f.calls.push(['createEffect', made.map(item => item.slug)]);
+    return made;
+  };
+  globalThis.fromUuid = async uuid => uuid.endsWith('QF6RDlCoTvkVHRo4')
+    ? { toObject: () => ({ _id: 'QF6RDlCoTvkVHRo4', name: 'Effect: Shield Immunity', type: 'effect', system: { slug: 'effect-shield-immunity' } }) } : null;
+  f.strike.damage = async () => ({ total: 5, instances: [{ type: 'piercing', total: 5 }] });
+  const native = a.applyDamage;
+  a.applyDamage = options => vampireDamage.call(a, native, options);
+  const ledger = await new TurnRunner(f.adapter).run({ oneAction: true });
+  assert.equal(prompts.length, 1, 'the owner was asked once');
+  assert.equal(f.calls.filter(c => c[0] === 'applyDamage').length, 1);
+  assert.equal(a.items.has(spell.id), false, 'the Shield cantrip ends');
+  assert.deepEqual(f.calls.filter(c => c[0] === 'createEffect').map(c => c[1]), [['effect-shield-immunity']]);
+  assert.equal(a.getFlag(MODULE_ID, 'reaction').spent, true);
+  assert.equal(a.getFlag(MODULE_ID, 'reaction').uncertain, false, 'the reaction is confirmed');
+  assert.equal(ledger.uncertain, false, 'the wolf turn is not left uncertain');
+  assert.equal(ledger.actionsRemaining, 2);
+});
+
+// pf2e-automations also ends the Shield cantrip on the damage-taken message: it deletes the effect without
+// awaiting and adds Shield Immunity itself. The server has already removed the effect when the suite's
+// wrapper, still seeing it locally, tries to delete it again.
+test('Shield Block with the Shield cantrip survives pf2e-automations ending the spell at the same time', async () => {
+  const f = fixture();
+  f.wolf.document.x = 100;
+  addReactions(f, { answer: 'block' });
+  const a = f.target.actor;
+  const spell = { id: 'shield-spell', type: 'effect', name: 'Spell Effect: Shield', slug: 'spell-effect-shield', isExpired: false, flags: {} };
+  const server = new Set([spell.id]);
+  a.itemTypes = { feat: [{ slug: 'reactive-strike' }], action: [], effect: [spell] };
+  a.items = new Map([[spell.id, spell]]);
+  a.attributes.shield = { itemId: spell.id, raised: true, hardness: 5, broken: false, destroyed: false };
+  const settle = () => { for (const id of [...a.items.keys()]) if (!server.has(id)) a.items.delete(id); a.itemTypes.effect = a.itemTypes.effect.filter(e => a.items.has(e.id)); };
+  a.deleteEmbeddedDocuments = async (_type, ids) => {
+    for (const id of ids) if (!server.delete(id)) throw new Error(`Item ${id} does not exist`);
+    await new Promise(resolve => setImmediate(resolve)); settle();
+  };
+  const immunities = [];
+  a.createEmbeddedDocuments = async (_type, data) => {
+    const made = data.map((raw, i) => ({ ...raw, id: `made-${immunities.length + i}`, slug: raw.system?.slug, isExpired: false, flags: {} }));
+    for (const item of made) { server.add(item.id); a.items.set(item.id, item); a.itemTypes.effect.push(item); immunities.push(item.slug); }
+    return made;
+  };
+  globalThis.fromUuid = async uuid => uuid.endsWith('QF6RDlCoTvkVHRo4')
+    ? { toObject: () => ({ _id: 'QF6RDlCoTvkVHRo4', name: 'Effect: Shield Immunity', type: 'effect', system: { slug: 'effect-shield-immunity' } }) } : null;
+  f.strike.damage = async () => ({ total: 5, instances: [{ type: 'piercing', total: 5 }] });
+  const native = a.applyDamage;
+  a.applyDamage = options => vampireDamage.call(a, async (...args) => {
+    const result = await native(...args);
+    // pf2e-automations' deleteShieldEffect, started by the damage-taken message and not awaited.
+    server.delete(spell.id); setImmediate(settle);
+    void a.createEmbeddedDocuments('Item', [{ name: 'Effect: Shield Immunity', type: 'effect', system: { slug: 'effect-shield-immunity' } }]);
+    return result;
+  }, options);
+  const ledger = await new TurnRunner(f.adapter).run({ oneAction: true });
+  assert.equal(server.has(spell.id), false, 'the Shield cantrip ends');
+  assert.equal(immunities.length, 1, 'one Shield Immunity, not two');
+  assert.equal(a.getFlag(MODULE_ID, 'reaction').uncertain, false, 'the reaction is confirmed');
+  assert.equal(ledger.uncertain, false, 'the wolf turn is not left uncertain');
+});
+
+test('a Shield cantrip that cannot be deleted still reports the error', async () => {
+  const spell = { id: 'shield-spell' };
+  const actor = { items: new Map([[spell.id, spell]]), itemTypes: { effect: [] },
+    deleteEmbeddedDocuments: async () => { throw new Error('permission denied'); }, createEmbeddedDocuments: async () => [] };
+  await assert.rejects(finishMagicShield(actor, spell), /permission denied/);
 });
 
 test('closing Shield Block keeps wolf damage unapplied and cannot advance or duplicate the strike', async () => {
