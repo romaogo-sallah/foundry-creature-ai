@@ -2,6 +2,7 @@
 // explain an action that has already been selected or executed.
 export function decisionExplanation(decision,{maxMovement=9}={}) {
   let movementRows = 0;
+  const probabilities=new Map((decision.selection?.candidates??[]).map(candidate=>[candidate.id,candidate.probability]));
   const options = (decision.ranked ?? []).filter(entry => {
     if (!entry.candidate.assessment?.movement) return true;
     return entry.candidate.id === decision.chosen?.id || movementRows++ < maxMovement;
@@ -11,6 +12,7 @@ export function decisionExplanation(decision,{maxMovement=9}={}) {
       area:candidate.area?{shapes:candidate.area.shapes,targetIds:candidate.area.enemies.map(enemy=>enemy.id),bystanderIds:candidate.area.bystanders.map(token=>token.id)}:null}:{}),
     actionCost: candidate.actionCost ?? 0, bonusActionCost: candidate.bonusActionCost ?? 0,
     destination: candidate.destination ?? null, selected: candidate.id === decision.chosen?.id,
+    selectionProbability:probabilities.get(candidate.id)??null,
     layer, value: utility, movement: Boolean(candidate.assessment?.movement),
     goodAttacksLeft: candidate.assessment?.goodAttacksLeft ?? null,
     nearestEnemy: candidate.assessment?.nearestEnemy ?? null, distanceMoved: candidate.assessment?.distanceMoved ?? null,
@@ -24,6 +26,7 @@ export function decisionExplanation(decision,{maxMovement=9}={}) {
     tactical: candidate.features?.tactical ?? null,
   }));
   return { chosenId: decision.chosen?.id ?? null, reason: decision.reason ?? '', tiedIds: decision.tiedIds ?? [],
+    randomizedIds:decision.randomizedIds??[],selection:decision.selection??null,
     options, totalOptions: decision.ranked?.length ?? 0,
     rejected: [...(decision.rejected ?? []), ...(decision.diagnostics?.rejectedTargets ?? []).map(target => ({
       id: target.id, kind: 'target', name: target.name, reason: target.reason,

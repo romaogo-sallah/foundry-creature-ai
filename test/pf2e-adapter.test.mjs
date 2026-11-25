@@ -2076,7 +2076,7 @@ async function controlsFixture(action, { saved = false, autoRun = false, autoAdv
     if (!firstDialog) return null;
     firstDialog = false;
     const button = config.buttons.find(b => b.action === action);
-    const form = { elements: { targetMode: { value: targetMode ?? (alliance ? 'alliance' : 'manual') }, autoRun: { checked: autoRun }, autoAdvance: { checked: autoAdvance }, applyDamage: { checked: true }, pauseForReactions: { checked: false } } };
+    const form = { elements: { targetMode: { value: targetMode ?? (alliance ? 'alliance' : 'manual') }, autoRun: { checked: autoRun }, autoAdvance: { checked: autoAdvance }, applyDamage: { checked: true }, pauseForReactions: { checked: false },decisionVariety:{value:'0'} } };
     return button.callback({}, { form });
   } } } } };
   const main = await import(`../src/foundry/main.mjs?controls-test=${++controlsInstance}`);
@@ -2101,7 +2101,7 @@ test('controls calculate front line automatically while saving pacing, showcase 
     assert.ok(!config.content.includes('name="frontline_'));
     const elements = { targetMode: { value: 'alliance' }, autoRun: { checked: false }, autoAdvance: { checked: true },
       applyDamage: { checked: true }, pauseForReactions: { checked: true }, entertaining: { checked: true },
-      packMorale: { checked: false }, showcaseBonus: { value: '6' }, packGroup: { value: 'west pack' } };
+      packMorale: { checked: false }, showcaseBonus: { value: '6' },decisionVariety:{value:'55'}, packGroup: { value: 'west pack' } };
     return config.buttons.find(button => button.action === 'save').callback({}, { form: { elements } });
   };
   await f.main.openControls(f.wolf);
@@ -2109,6 +2109,7 @@ test('controls calculate front line automatically while saving pacing, showcase 
   assert.equal(saved.entertaining, true);
   assert.equal(saved.packMorale, false);
   assert.equal(saved.showcaseBonus, 6);
+  assert.equal(saved.decisionVariety,55);
   assert.equal(saved.packGroup, 'west pack');
   assert.equal(saved.frontlineTargetIds, null);
   assert.equal(saved.autoAdvance, true);
@@ -2246,7 +2247,7 @@ test('shared core installs the reaction query and AI exposes the same reaction c
   f.hooks.get('init')();
   assert.equal(typeof CONFIG.queries[`${MODULE_ID}.reactionPrompt`], 'function');
   assert.equal(typeof game.modules.get(MODULE_ID).api.reactions.openControls, 'function');
-  assert.equal(game.modules.get(MODULE_ID).api.version,'0.45.2');
+  assert.equal(game.modules.get(MODULE_ID).api.version,'0.46.0');
   assert.equal(typeof game.modules.get(MODULE_ID).api.resetActors,'function');
 });
 

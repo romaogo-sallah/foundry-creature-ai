@@ -1,0 +1,64 @@
+{
+  "version": "0.46.0",
+  "date": "2026-11-25",
+  "feature": "Bounded weighted pseudorandom choice among close-scoring actions",
+  "policy": {
+    "configuredRange": "0-100 percent",
+    "proposedControlDefault": 35,
+    "legacyUnsavedValue": 0,
+    "eligibleLayers": [5, 6],
+    "strictLayers": [1, 2, 3, 4, 7],
+    "fullWidth": "15 percent of the best utility, clamped to 2-10 utility points",
+    "weighting": "exponential softmax-like weighting with temperature equal to competitive width / 2.25",
+    "exactTies": "uniform",
+    "directivesExcluded": ["Fleeing", "Confused", "creature override"]
+  },
+  "automatedVerification": {
+    "command": "npm test",
+    "testFiles": 103,
+    "workers": 11,
+    "tests": 1266,
+    "passed": 1266,
+    "failed": 0,
+    "durationSeconds": 31.2,
+    "newCoverage": [
+      "a close lower score can be selected by a controlled high roll",
+      "the best score remains more probable",
+      "weak options and other priority layers are excluded",
+      "mandatory layer-7 actions remain deterministic",
+      "the probability distribution normalizes to one",
+      "decision explanations record the completed roll without rerolling",
+      "the graph marks weighted candidates and displays their probabilities",
+      "Alt+W persists the configured percentage"
+    ]
+  },
+  "build": {
+    "packages": 5,
+    "sourceModules": 216,
+    "archive": "releases/pf2e-tactical-suite-0.46.0.zip",
+    "archiveBytes": 876076,
+    "archiveSha256": "ab683e83b6652cce8e65bbc4b0cfdb7ec2870a725cb7c31c412736dacd9c4360"
+  },
+  "installation": {
+    "dataPath": "C:/Users/Roman/AppData/Local/FoundryVTT/Data/modules",
+    "installedVersions": {
+      "pf2e-tactical-core": "0.46.0",
+      "pf2e-tactical-environment": "0.46.0",
+      "pf2e-tactical-conditions": "0.46.0",
+      "pf2e-tactical-movement": "0.46.0",
+      "foundry-creature-ai": "0.46.0"
+    },
+    "installedSourceMatchesBuild": [
+      "src/dawnsbury/chooser.mjs",
+      "src/foundry/decision-graph.mjs",
+      "src/foundry/main.mjs"
+    ],
+    "reload": "Ctrl+F5 sent to the Foundry Virtual Tabletop window after installation",
+    "liveWorld": {
+      "id": "arena",
+      "foundry": "14.370",
+      "system": "pf2e 8.7.1",
+      "mcpReconnectedAfterReload": true
+    }
+  }
+}

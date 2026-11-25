@@ -15,7 +15,8 @@ const optionLabel=(option,rank,nameOf)=>{
   const subject=option.spellName??option.kind??option.id;
   const target=option.targetId?` -> ${nameOf(option.targetId)}`:'';
   const movement=option.destination?`\nto ${option.destination.x}, ${option.destination.y}${option.destination.elevation!=null?`, ${option.destination.elevation} ft`:''}`:'';
-  return `${rank}. ${subject}${target}\nLayer ${option.layer} | value ${Number(option.value).toFixed(2)} | ${option.actionCost} action${option.actionCost===1?'':'s'}${movement}`;
+  const chance=option.selectionProbability!=null?` | roll ${Math.round(option.selectionProbability*1000)/10}%`:'';
+  return `${rank}. ${subject}${target}\nLayer ${option.layer} | value ${Number(option.value).toFixed(2)} | ${option.actionCost} action${option.actionCost===1?'':'s'}${chance}${movement}`;
 };
 
 /** Build a serializable graph of the recorded tactic and action ranking. */
@@ -66,15 +67,16 @@ export function buildDecisionGraph(record,catalog={components:[],plans:[]},{name
     if(isActive)activeComponentNodes.push(id);
   }
   const actionGate=addNode('action-ranking','3. Rank legal actions\npriority layer, then value','gate',[],{
-    reason:record.reason,tiedIds:record.tiedIds,totalOptions:record.totalOptions,
+    reason:record.reason,tiedIds:record.tiedIds,randomizedIds:record.randomizedIds,selection:record.selection,totalOptions:record.totalOptions,
   });
   if(activeComponentNodes.length)for(const id of activeComponentNodes)addEdge(id,actionGate,'contributes');
   else addEdge(componentGate,actionGate,'generate and score');
   const optionIds=new Map();
   (record.options??[]).forEach((option,index)=>{
-    const classes=[option.selected?'chosen':'',record.tiedIds?.includes(option.id)?'tied':''].filter(Boolean);
+    const randomized=record.randomizedIds?.includes(option.id);
+    const classes=[option.selected?'chosen':'',record.tiedIds?.includes(option.id)?'tied':'',randomized?'randomized':''].filter(Boolean);
     const id=addNode(`option-${option.id}`,optionLabel(option,index+1,nameOf),'option',classes,option);optionIds.set(option.id,id);
-    addEdge(actionGate,id,option.selected?'chosen':record.tiedIds?.includes(option.id)?'tied':'ranked');
+    addEdge(actionGate,id,option.selected?'chosen':randomized?`${Math.round((option.selectionProbability??0)*1000)/10}% chance`:'ranked',randomized?['randomized']:[]);
     for(const [termIndex,term] of (option.terms??[]).entries()){
       const termId=addNode(`term-${option.id}-${termIndex}`,`${signed(term.contribution)}\n${term.label}`,'term',[term.contribution<0?'negative':'positive'],term);
       addEdge(id,termId,'score term');
@@ -108,7 +110,7 @@ export function renderDecisionGraphShell(graph,{recorded=false}={}){
       <div class="decision-debugger__canvas" data-graph-canvas role="img" aria-label="Creature decision graph"></div>
       <aside class="decision-debugger__details" data-graph-details><strong>Select a node</strong><p>Click a tactic, component, option, or score term to inspect its recorded data.</p></aside>
     </div>
-    <footer class="decision-debugger__legend"><span class="chosen">Chosen path</span><span class="tied">Equal best option</span>
+    <footer class="decision-debugger__legend"><span class="chosen">Chosen path</span><span class="randomized">Weighted roll candidate</span><span class="tied">Equal best option</span>
       <span class="inactive">Inactive</span><span class="rejected">Rejected</span><span>Drag to pan; wheel to zoom.</span></footer>
   </div>`;
 }
@@ -133,12 +135,14 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
       {selector:'node.component',style:{'background-color':'#174f59','border-color':'#49a6b5'}},
       {selector:'node.option',style:{'background-color':'#30455c'}},{selector:'node.term',style:{'background-color':'#403a47','font-size':9,'text-max-width':150}},
       {selector:'node.positive',style:{'border-color':'#65c466'}},{selector:'node.negative',style:{'border-color':'#dd7777'}},
-      {selector:'.selected, node.chosen',style:{'background-color':'#176b3a','border-color':'#7ee2a8','border-width':5,'font-weight':'bold'}},
+      {selector:'node.randomized',style:{'border-color':'#d6b756','border-width':4}},
       {selector:'node.tied',style:{'border-color':'#66bfff','border-width':4}},{selector:'node.inactive',style:{'opacity':0.34,'border-style':'dashed'}},
+      {selector:'.selected, node.chosen',style:{'background-color':'#176b3a','border-color':'#7ee2a8','border-width':5,'font-weight':'bold'}},
       {selector:'node.rejected',style:{'background-color':'#542f35','border-color':'#e47b86','opacity':0.65}},
       {selector:'edge',style:{'width':1.5,'line-color':'#748094','target-arrow-color':'#748094','target-arrow-shape':'triangle','curve-style':'bezier',
         'label':'data(label)','font-size':8,'color':'#aeb7c5','text-rotation':'autorotate','text-background-color':'#111827','text-background-opacity':0.75,'text-background-padding':'2px'}},
       {selector:'edge.rejected',style:{'line-style':'dashed','line-color':'#a84d58','target-arrow-color':'#a84d58'}},
+      {selector:'edge.randomized',style:{'line-color':'#d6b756','target-arrow-color':'#d6b756','width':2.5}},
       {selector:'.search-match',style:{'overlay-color':'#ffd166','overlay-opacity':0.28,'overlay-padding':8}},
     ],layout:{name:'breadthfirst',directed:true,roots:'#situation',padding:35,spacingFactor:1.25,avoidOverlap:true,animate:false}});
   const details=root.querySelector('[data-graph-details]');

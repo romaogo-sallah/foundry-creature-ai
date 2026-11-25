@@ -28,6 +28,21 @@ test('the chosen movement survives log trimming even when a creature override ch
   assert.equal(decisionExplanation(decision,{maxMovement:Infinity}).options.length,30);
 });
 
+test('the explanation records weighted choice probabilities without rerolling',()=>{
+  let samples=0;
+  const decision=chooseOption([
+    {id:'spell',kind:'castSpell',legal:true,actionCost:2,assessment:{value:10}},
+    {id:'strike',kind:'strike',legal:true,actionCost:1,assessment:{value:9.5}},
+  ],{actionsRemaining:3,variation:0.5,random:()=>{samples++;return 0.999;}});
+  const record=decisionExplanation(decision);
+  assert.equal(samples,1);
+  assert.equal(record.selection.mode,'weighted');
+  assert.deepEqual(record.randomizedIds,['spell','strike']);
+  assert.equal(record.options.find(option=>option.id==='strike').selected,true);
+  assert.ok(record.options.every(option=>option.selectionProbability>0));
+  assert.match(renderDecisionExplanation(record),/weighted roll/i);
+});
+
 test('rendered decisions include rejection reasons and escape untrusted token names and labels', () => {
   const decision = { chosen: { id: 'bite' }, reason: 'ranked', ranked: [{ candidate: {
     id: 'bite', kind: 'strike', targetId: 'enemy', assessment: { value: 4 }, features: { packAllies: 2 },

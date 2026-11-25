@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.46.0:** adds configurable [decision variety](docs/decision-variety.md). The AI can make a weighted pseudorandom choice among close-scoring actions in the highest eligible priority layer, while excluding mandatory/recovery actions, lower layers, and options outside the score band. Alt+W defaults the new control to 35%; set it to 0 for deterministic ranking except exact ties. Decision explanations and the graph show the exact pool and probability of every rolled option. Reload with **Ctrl+F5**.
+
 **Patch 0.45.2:** makes decision-graph wheel zoom relative to the current scale and anchors it beneath the mouse cursor. Pixel, trackpad, line, and page wheel deltas share one bounded exponential scale. Reload with **Ctrl+F5**.
 
 **Patch 0.45.1:** fixes the decision graph on Foundry 14, whose read-only `Array.prototype.equals` collided with Cytoscape's collection prototype. The vendored renderer now shadows that helper locally without changing Foundry globals. Select a taught NPC and use **Alt+W → Decision graph** after reloading with **Ctrl+F5**.

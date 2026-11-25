@@ -9,7 +9,7 @@ The debugger displays the runtime decision pipeline rather than pretending the A
 1. **Situation** contains the prepared combat facts available to the NPC.
 2. **Tactical plans** show every configured plan. The selected plan is green. Plans whose conditions were not met remain visible as inactive nodes.
 3. **Behavior components** show the actor's attached ECS-style abilities and policies. Only the components active under the selected plan feed the action ranking.
-4. **Action ranking** shows legal candidates ordered by Dawnsbury priority layer and then value. The chosen option is green; equal best options are blue; rejected candidates are red.
+4. **Action ranking** shows legal candidates ordered by Dawnsbury priority layer and then value. The chosen option is green; weighted-roll candidates are gold and include their probabilities; equal best options are blue; rejected candidates are red.
 5. **Score terms** show the recorded contributions that produced an action's value. Selecting any node opens its exact serialized diagnostic data.
 
 Use the checkboxes to hide inactive plans/components, rejected candidates, or score terms. Drag the canvas to pan. The mouse wheel zooms relative to the current level and keeps the point beneath the cursor fixed; trackpads and line/page scrolling use the same scale. Search by node label, and use **Fit** to restore the full view. **PNG** exports the current visible graph. **JSON** exports the complete graph data for bug reports.

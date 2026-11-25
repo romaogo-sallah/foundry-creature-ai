@@ -16,15 +16,16 @@ test('behavior selection records applicable and inactive plan evaluations',()=>{
 });
 
 test('decision graph exposes tactic, component, ranking, terms and rejection path',()=>{
-  const record={chosenId:'bite',reason:'dawnsbury ranking',tiedIds:['bite'],totalOptions:2,
+  const record={chosenId:'bite',reason:'dawnsbury ranking',tiedIds:[],randomizedIds:['bite','stride'],
+    selection:{mode:'weighted',variation:0.5,roll:0.2,maxGap:1,candidates:[{id:'bite',probability:0.8},{id:'stride',probability:0.2}]},totalOptions:2,
     tactic:{planId:'aggressive',label:'Aggressive',reason:'A useful attack is available',goal:{kind:'engage',label:'Engage Fighter'},
       context:{health:0.75,knownEnemies:2,visibleEnemies:1,forceRatio:0.8,immediateAttack:true},
       configuration:{plans:['aggressive','hiding'],components:['strikes','pressure','protection']},activeComponents:['strikes','pressure'],
       scores:[{id:'aggressive',label:'Aggressive',value:5,reason:'A useful attack is available'}],
       evaluations:[{id:'aggressive',label:'Aggressive',applicable:true,value:5,baseValue:5,reason:'A useful attack is available',continuity:0,preference:0},
         {id:'hiding',label:'Hiding',applicable:false,value:null,reason:'Current tactical conditions do not activate this plan'}]},
-    options:[{id:'bite',kind:'strike',targetId:'fighter',selected:true,layer:6,value:7.4,actionCost:1,terms:[{label:'Attack',contribution:7},{label:'Aggressive: Press the attack',contribution:0.4}]},
-      {id:'stride',kind:'stride',selected:false,layer:5,value:3,actionCost:1,terms:[]}],
+    options:[{id:'bite',kind:'strike',targetId:'fighter',selected:true,layer:6,value:7.4,actionCost:1,selectionProbability:0.8,terms:[{label:'Attack',contribution:7},{label:'Aggressive: Press the attack',contribution:0.4}]},
+      {id:'stride',kind:'stride',selected:false,layer:6,value:7,actionCost:1,selectionProbability:0.2,terms:[]}],
     rejected:[{id:'trip',kind:'trip',reason:'target is already prone'}]};
   const catalog={components:[{id:'strikes',label:'Strikes',kind:'ability',actionKinds:['strike']},{id:'pressure',label:'Press the attack',kind:'policy',actionKinds:[]},
     {id:'protection',label:'Use protection',kind:'policy',actionKinds:[]}],plans:[{id:'aggressive',label:'Aggressive'},{id:'hiding',label:'Hiding'}]};
@@ -34,6 +35,8 @@ test('decision graph exposes tactic, component, ranking, terms and rejection pat
   assert.match(node('plan-hiding').classes,/inactive/);
   assert.match(node('component-protection').classes,/inactive/);
   assert.match(node('option-bite').classes,/chosen/);
+  assert.match(node('option-stride').classes,/randomized/);
+  assert.match(node('option-stride').data.label,/20%/);
   assert.match(node('term-bite-1').data.label,/Press the attack/);
   assert.match(node('rejected-trip-0').data.label,/already prone/);
   assert.ok(graph.edges.some(edge=>edge.data.source==='option-bite'&&edge.data.target==='term-bite-1'));
@@ -48,6 +51,7 @@ test('decision graph shell escapes diagnostics and provides filters and export c
   assert.match(html,/data-graph-control="png"/);
   assert.match(html,/data-graph-filter="rejected"/);
   assert.match(html,/data-graph-search/);
+  assert.match(html,/Weighted roll candidate/);
 });
 
 test('vendored Cytoscape loads the decision graph with its directed layout',async()=>{

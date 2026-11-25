@@ -141,6 +141,7 @@ export class BehaviorSystem {
 // share the same plan/component gate and the same final legality/budget checks.
 export function chooseBehaviorAction(system, candidates, state, options = {}) {
   candidates=candidates.filter(c=>!state.rejectedActionIds?.includes(c.id));
-  return state.behavior ? system.decide(state,candidates,options) : chooseOption(filterConditionActions(candidates,state.conditionRules),{
-    actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened,...options});
+  const selectionOptions={variation:state.decisionVariation??0,...options};
+  return state.behavior ? system.decide(state,candidates,selectionOptions) : chooseOption(filterConditionActions(candidates,state.conditionRules),{
+    actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened,...selectionOptions});
 }

@@ -183,6 +183,7 @@
 }
 
 .decision-debugger__legend .chosen { color: #7ee2a8; }
+.decision-debugger__legend .randomized { color: #d6b756; }
 .decision-debugger__legend .tied { color: #66bfff; }
 .decision-debugger__legend .inactive { color: #969eaa; }
 .decision-debugger__legend .rejected { color: #e47b86; }

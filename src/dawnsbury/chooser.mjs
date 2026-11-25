@@ -54,8 +54,38 @@ export function compareOptions(a, b) {
   return (b.distanceMoved ?? 0) - (a.distanceMoved ?? 0) || Number(Boolean(a.step)) - Number(Boolean(b.step));
 }
 
+const boundedVariation=value=>Number.isFinite(value)?Math.max(0,Math.min(1,value)):0;
+const selectionEntry=(candidate,weight,total)=>({id:candidate.id,weight,probability:weight/total,
+  layer:priorityLayer(candidate.assessment),value:candidate.assessment.value});
+
+// Variety never crosses the recovered priority layers. Only positive ordinary
+// action layers can form a competitive pool; recovery and mandatory actions,
+// and low-value navigation fallbacks, retain their strict ordering.
+function competitivePool(ranked,best,variation){
+  const exact=ranked.filter(entry=>compareOptions(entry.candidate.assessment,best.assessment)===0).map(entry=>entry.candidate);
+  const amount=boundedVariation(variation),layer=priorityLayer(best.assessment);
+  if(!amount||![5,6].includes(layer)||best.assessment.value<=0)return {pool:exact,maxGap:0};
+  const scale=Math.max(2,Math.min(10,Math.abs(best.assessment.value)*0.15)),maxGap=amount*scale;
+  const floor=best.assessment.value-maxGap;
+  return {pool:ranked.filter(entry=>entry.layer===layer&&entry.utility>=floor).map(entry=>entry.candidate),maxGap};
+}
+
+function weightedSelection(pool,{random,variation,maxGap}){
+  if(pool.length===1)return {chosen:pool[0],selection:{mode:'deterministic',variation:boundedVariation(variation),roll:null,
+    candidates:[selectionEntry(pool[0],1,1)]}};
+  const sameScore=pool.every(candidate=>candidate.assessment.value===pool[0].assessment.value);
+  const temperature=Math.max(0.05,maxGap/2.25),weights=sameScore?pool.map(()=>1):
+    pool.map(candidate=>Math.exp((candidate.assessment.value-pool[0].assessment.value)/temperature));
+  const total=weights.reduce((sum,weight)=>sum+weight,0),roll=random();
+  if(!Number.isFinite(roll)||roll<0||roll>=1)throw new Error('Random source must return a number in [0, 1)');
+  let threshold=roll*total,index=weights.length-1;
+  for(let i=0;i<weights.length;i++){threshold-=weights[i];if(threshold<0){index=i;break;}}
+  return {chosen:pool[index],selection:{mode:sameScore?'uniform-tie':'weighted',variation:boundedVariation(variation),roll,
+    maxGap:sameScore?0:maxGap,candidates:pool.map((candidate,i)=>selectionEntry(candidate,weights[i],total))}};
+}
+
 /** Shared chooser, including the game's threat/tie/Step/door branches when supplied. */
-export function chooseOption(candidates, { actionsRemaining, bonusMovementActions = 0, threatened = false, random = Math.random, override } = {}) {
+export function chooseOption(candidates, { actionsRemaining, bonusMovementActions = 0, threatened = false, random = Math.random, override, variation = 0 } = {}) {
   if (!Number.isInteger(actionsRemaining) || actionsRemaining < 0) throw new Error('Invalid action budget');
   const ranked = [], rejected = [], ids = new Set();
   for (const candidate of candidates) {
@@ -73,18 +103,20 @@ export function chooseOption(candidates, { actionsRemaining, bonusMovementAction
   }
   const legal = ranked.map(entry => entry.candidate);
   ranked.sort((a, b) => compareOptions(b.candidate.assessment, a.candidate.assessment));
-  if (!ranked.length) return { chosen: null, ranked, rejected, reason: 'no legal options', tiedIds: [] };
+  if (!ranked.length) return { chosen: null, ranked, rejected, reason: 'no legal options', tiedIds: [], randomizedIds: [], selection: null };
   const forced = override?.(legal);
   if (forced != null) {
     if (!ranked.some(entry => entry.candidate === forced)) throw new Error('Creature override must return a supplied legal option');
-    return { chosen: forced, ranked, rejected, reason: 'creature override', tiedIds: [forced.id] };
+    return { chosen: forced, ranked, rejected, reason: 'creature override', tiedIds: [forced.id],randomizedIds:[],
+      selection:{mode:'override',variation:boundedVariation(variation),roll:null,candidates:[selectionEntry(forced,1,1)]} };
   }
   const best = ranked[0].candidate;
-  let pool = ranked.filter(entry => compareOptions(entry.candidate.assessment, best.assessment) === 0).map(entry => entry.candidate);
+  const exactIds=ranked.filter(entry=>compareOptions(entry.candidate.assessment,best.assessment)===0).map(entry=>entry.candidate.id);
+  let {pool,maxGap}=competitivePool(ranked,best,variation);
   let reason = 'dawnsbury ranking';
   if (threatened) {
     const safe = pool.filter(candidate => !candidate.provokes);
-    if (safe.length) { pool = safe; reason = 'dawnsbury ranking; nonprovoking tie'; }
+    if (safe.length) { pool = safe; reason = 'dawnsbury ranking; nonprovoking choice'; }
     else if (actionsRemaining >= 3) {
       const steps = legal.filter(candidate => candidate.assessment.step &&
         candidate.assessment.value === best.assessment.value && priorityLayer(candidate.assessment) === priorityLayer(best.assessment) &&
@@ -98,8 +130,9 @@ export function chooseOption(candidates, { actionsRemaining, bonusMovementAction
     const door = legal.find(candidate => candidate.kind === 'openDoor');
     if (door) { pool = [door]; reason = 'dawnsbury open door'; }
   }
-  const roll = pool.length > 1 ? random() : 0;
-  if (!Number.isFinite(roll) || roll < 0 || roll >= 1) throw new Error('Random source must return a number in [0, 1)');
-  return { chosen: pool[Math.floor(roll * pool.length)], ranked, rejected,
-    reason: `${reason}${pool.length > 1 ? '; random tie' : ''}`, tiedIds: pool.map(candidate => candidate.id) };
+  const selected=weightedSelection(pool,{random,variation,maxGap});
+  const randomizedIds=pool.length>1?pool.map(candidate=>candidate.id):[];
+  const suffix=selected.selection.mode==='weighted'?'; weighted competitive choice':selected.selection.mode==='uniform-tie'?'; random tie':'';
+  return { chosen:selected.chosen, ranked, rejected, reason:`${reason}${suffix}`,
+    tiedIds:pool.filter(candidate=>exactIds.includes(candidate.id)).map(candidate=>candidate.id),randomizedIds,selection:selected.selection };
 }

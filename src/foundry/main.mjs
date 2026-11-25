@@ -197,6 +197,7 @@ export async function openControls(token = selected()) {
     entertaining: button.form.elements.entertaining?.checked ?? config.entertaining !== false,
     packMorale: button.form.elements.packMorale?.checked ?? config.packMorale !== false,
     showcaseBonus: Number(button.form.elements.showcaseBonus?.value ?? config.showcaseBonus ?? 4),
+    decisionVariety:Number(button.form.elements.decisionVariety?.value??config.decisionVariety??35),
     packGroup: button.form.elements.packGroup?.value.trim() ?? config.packGroup ?? 'default' });
   const answer = await foundry.applications.api.DialogV2.wait({
     ...creatureControlsLayout(`Creature AI — ${token.name}`),
@@ -224,6 +225,8 @@ export async function openControls(token = selected()) {
       <p>Action pauses, intent speech bubbles and private NPC rolls are configured for the world in <strong>Configure Settings → Foundry Creature AI</strong>.</p>
       <div class="form-group"><label>Entertainment preferences: showcase abilities and engage the front line</label><input name="entertaining" type="checkbox" ${config.entertaining !== false ? 'checked' : ''}></div>
       <div class="form-group"><label>First special ability showcase bonus (0–20)</label><input name="showcaseBonus" type="number" min="0" max="20" step="0.5" value="${escapeHTML(config.showcaseBonus ?? 4)}"></div>
+      <div class="form-group"><label>Decision variety (0–100%)</label><input name="decisionVariety" type="number" min="0" max="100" step="5" value="${escapeHTML(config.decisionVariety ?? 35)}"></div>
+      <p>Decision variety makes a weighted roll among close-scoring actions in the best priority layer. Higher scores remain more likely; mandatory, recovery, and clearly inferior actions are excluded. Set 0 for deterministic ranking except exact ties.</p>
       <p>Front-line characters are calculated automatically: maximum HP and current AC must both be in the upper half of eligible opposing characters. They receive a small engagement preference once per creature turn.</p>
       ${!['kobold-scout','goblin-pyro'].includes(taught.id) ? `<div class="form-group"><label>Pack morale: retreat when the fight is lost</label><input name="packMorale" type="checkbox" ${config.packMorale !== false ? 'checked' : ''}></div>
       <div class="form-group"><label>Pack group (same actor/alliance; use different names to separate packs)</label><input name="packGroup" value="${escapeHTML(config.packGroup ?? 'default')}"></div>
@@ -256,11 +259,12 @@ export async function openControls(token = selected()) {
     const targetMode = targetingMode(token.actor, { targetMode: answer.targetMode });
     if (targetMode === 'manual' && !targetIds.length) throw new Error('Target at least one known enemy with Foundry’s target tool first for manual targeting');
     if (!Number.isFinite(answer.showcaseBonus) || answer.showcaseBonus < 0 || answer.showcaseBonus > 20) throw new Error('Showcase bonus must be between 0 and 20');
+    if(!Number.isFinite(answer.decisionVariety)||answer.decisionVariety<0||answer.decisionVariety>100)throw new Error('Decision variety must be between 0 and 100');
     if (!Number.isInteger(answer.refuseCount) || answer.refuseCount < 0 || answer.refuseCount > 999) throw new Error('Refuse remaining must be a whole number from 0 to 999');
     if(taught.id==='manticore-quill'&&(!Number.isInteger(answer.quillsRemaining)||answer.quillsRemaining<0||answer.quillsRemaining>12))throw new Error('Spikes remaining must be a whole number from 0 to 12');
     if (!/^[a-zA-Z0-9 _-]{0,40}$/.test(answer.packGroup)) throw new Error('Use up to 40 letters, numbers, spaces, underscores or hyphens for the pack group');
     nextConfig = { ...config, enabled: true, targetIds, targetMode, autoRun: answer.autoRun, autoAdvance: answer.autoAdvance, applyDamage: answer.applyDamage,
-      entertaining: answer.entertaining, showcaseBonus: answer.showcaseBonus, frontlineTargetIds: null,
+      entertaining: answer.entertaining, showcaseBonus: answer.showcaseBonus,decisionVariety:answer.decisionVariety, frontlineTargetIds: null,
       packMorale: answer.packMorale, packGroup: answer.packGroup || 'default', pauseForReactions: answer.pauseForReactions, autoReactions: answer.autoReactions,
       ...(taught.id === 'ogre' ? { refuseCount: answer.refuseCount } : {}),
       ...(taught.id==='manticore-quill'&&['preview','graph'].includes(answer.action)?{quillPreviewRemaining:answer.quillsRemaining}:{}),

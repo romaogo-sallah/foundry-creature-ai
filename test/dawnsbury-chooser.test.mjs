@@ -67,6 +67,30 @@ test('random ties select only equal maxima and known threats favor nonprovoking 
   assert.equal(chooseOption(candidates, { actionsRemaining: 3, threatened: true, random: () => 0 }).chosen.id, 'b');
 });
 
+test('decision variety rolls among close scores without crossing layers or admitting weak options',()=>{
+  const candidates=[option('best',{value:10}),option('close',{value:9.5}),option('weak',{value:8.5}),
+    option('movement',{value:100,movement:true})];
+  const first=chooseOption(candidates,{actionsRemaining:3,variation:0.5,random:()=>0});
+  assert.equal(first.chosen.id,'best');
+  assert.equal(first.selection.mode,'weighted');
+  assert.deepEqual(first.randomizedIds,['best','close']);
+  assert.deepEqual(first.selection.candidates.map(candidate=>candidate.id),['best','close']);
+  assert.ok(first.selection.candidates[0].probability>first.selection.candidates[1].probability);
+  assert.ok(Math.abs(first.selection.candidates.reduce((sum,candidate)=>sum+candidate.probability,0)-1)<1e-12);
+  assert.equal(chooseOption(candidates,{actionsRemaining:3,variation:0.5,random:()=>0.999}).chosen.id,'close');
+  const deterministic=chooseOption(candidates,{actionsRemaining:3,variation:0,random:()=>0.999});
+  assert.equal(deterministic.chosen.id,'best');
+  assert.deepEqual(deterministic.randomizedIds,[]);
+});
+
+test('decision variety cannot displace a mandatory priority action',()=>{
+  const decision=chooseOption([option('mandatory',{value:PRIORITY}),option('tempting',{value:PRIORITY-1})],
+    {actionsRemaining:3,variation:1,random:()=>0.999});
+  assert.equal(decision.chosen.id,'mandatory');
+  assert.equal(decision.selection.mode,'deterministic');
+  assert.deepEqual(decision.randomizedIds,[]);
+});
+
 test('a safe Step can replace a provoking maximum with equal layer/value when three actions remain', () => {
   const candidates = [option('stride', { value: 5, movement: true, goodAttacksLeft: true, distanceMoved: 1 }, { provokes: true }),
     option('step', { value: 5, movement: true, goodAttacksLeft: true, distanceMoved: 2, step: true },
