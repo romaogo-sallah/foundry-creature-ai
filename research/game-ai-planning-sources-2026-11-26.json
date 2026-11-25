@@ -1,0 +1,130 @@
+{
+  "date": "2026-11-26",
+  "scope": "Primary research and practitioner sources for a six-action PF2e tactical planner",
+  "runtimeChanges": false,
+  "sources": [
+    {
+      "title": "Evolutionary MCTS with Flexible Search Horizon",
+      "authors": ["Hendrik Baier", "Peter I. Cowling"],
+      "publisher": "AAAI AIIDE 2018",
+      "url": "https://cdn.aaai.org/ojs/13023/13023-52-16540-1-2-20201228.pdf",
+      "relevance": [
+        "turn-based games with several atomic actions per turn",
+        "complete action-sequence search",
+        "cross-turn horizons with fast behavior models",
+        "branching-factor and search-depth tradeoffs"
+      ]
+    },
+    {
+      "title": "Combining Utility AI and MCTS Towards Creating Intelligent Agents in Video Games, with the Use Case of Tactical Troops: Anthracite Shift",
+      "authors": ["Maciej Świechowski", "Daniel Lewiński", "Rafał Tyl"],
+      "publisher": "IEEE SSCI 2021",
+      "url": "https://doi.org/10.1109/SSCI50451.2021.9660170",
+      "relevance": [
+        "hierarchical combination of strategic utility and tactical search",
+        "commercial squad tactics game",
+        "playing strength and believability as separate evaluation goals"
+      ]
+    },
+    {
+      "title": "Tactical Position Selection",
+      "authors": ["Matthew Jack"],
+      "publisher": "Game AI Pro",
+      "url": "https://www.gameaipro.com/GameAIPro/GameAIPro_Chapter26_Tactical_Position_Selection.pdf",
+      "relevance": [
+        "context-specific position queries",
+        "candidate generation, filtering and weighted evaluation",
+        "late asynchronous raycasts",
+        "normalized criteria, upper bounds and debugging"
+      ]
+    },
+    {
+      "title": "Modular Tactical Influence Maps",
+      "authors": ["Dave Mark"],
+      "publisher": "Game AI Pro 2",
+      "url": "https://www.gameaipro.com/GameAIPro2/GameAIPro2_Chapter30_Modular_Tactical_Influence_Maps.pdf",
+      "relevance": [
+        "small-group RPG combat",
+        "modular attractor and repeller layers",
+        "shared battlefield computation",
+        "area spells, tank positioning, spacing and safe withdrawal"
+      ]
+    },
+    {
+      "title": "Choosing Effective Utility-Based Considerations",
+      "authors": ["Mike Lewis"],
+      "publisher": "Game AI Pro 3",
+      "url": "https://www.gameaipro.com/GameAIPro3/GameAIPro3_Chapter13_Choosing_Effective_Utility-Based_Considerations.pdf",
+      "relevance": [
+        "normalized utility inputs",
+        "preferred-distance response curves",
+        "oscillation and continuity",
+        "visual authoring tools"
+      ]
+    },
+    {
+      "title": "Three States and a Plan: The AI of F.E.A.R.",
+      "authors": ["Jeff Orkin"],
+      "publisher": "GDC 2006",
+      "url": "https://gdcvault.com/play/1013459/Three-States-and-a-Plan",
+      "relevance": [
+        "GOAP and action planning",
+        "adaptive re-planning",
+        "high-level squad behaviors"
+      ]
+    },
+    {
+      "title": "SquadSmart: Hierarchical Planning and Coordinated Plan Execution for Squads of Characters",
+      "authors": ["Peter Gorniak", "Ian Davis"],
+      "publisher": "AAAI AIIDE 2007",
+      "url": "https://cdn.aaai.org/ojs/18775/18775-52-22468-1-10-20210929.pdf",
+      "relevance": [
+        "HTN task decomposition",
+        "interruptible and time-sliced planning",
+        "shared reservations and synchronization",
+        "sensed effects, plan failure and re-planning"
+      ]
+    },
+    {
+      "title": "Asymmetric Action Abstractions for Multi-Unit Control in Adversarial Real-Time Games",
+      "authors": ["Rubens Moraes", "Levi Lelis"],
+      "publisher": "AAAI 2018",
+      "url": "https://doi.org/10.1609/aaai.v32i1.11432",
+      "relevance": [
+        "restricting search to promising actions",
+        "adversarial planning under real-time budgets",
+        "preserving detail where it matters"
+      ]
+    },
+    {
+      "title": "Guiding Monte Carlo Tree Search by Scripts in Real-Time Strategy Games",
+      "authors": ["Zuozhi Yang", "Santiago Ontañón"],
+      "publisher": "AAAI AIIDE 2019",
+      "url": "https://doi.org/10.1609/aiide.v15i1.5231",
+      "relevance": [
+        "script-guided search",
+        "large action-space pruning",
+        "limited computation budgets"
+      ]
+    },
+    {
+      "title": "Real-Time Planning as Decision-Making under Uncertainty",
+      "authors": ["Andrew Mitchell", "Wheeler Ruml", "Fabian Spaniol", "Jörg Hoffmann", "Marek Petrik"],
+      "publisher": "AAAI 2019",
+      "url": "https://cdn.aaai.org/ojs/4073/4073-13-7130-1-10-20190704.pdf",
+      "relevance": [
+        "bounded local lookahead",
+        "frontier-state evaluation",
+        "heuristic uncertainty",
+        "commitment to the next action under a fixed planning budget"
+      ]
+    }
+  ],
+  "recommendation": {
+    "architecture": "Hierarchical utility-guided receding-horizon beam search",
+    "horizon": "Current own turn, abstract opponent/ally response, next own turn",
+    "spatialModel": "Named normalized influence layers combined by role-specific tactical position queries",
+    "execution": "Execute one native action, observe, repair or re-plan",
+    "firstBackend": "Deterministic beam or weighted best-first search; retain MCTS as a later experimental backend"
+  }
+}
