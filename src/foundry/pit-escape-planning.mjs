@@ -1,6 +1,6 @@
 import {pitAt} from './pit-geometry.mjs';
 import {pitHeldItems} from './pit-actions.mjs';
-import {flySpeed} from './flight-costs.mjs';
+import {climbSpeed,flySpeed} from './flight-costs.mjs';
 import {flightCollision,flightCost,flightPoint} from './flight-movement.mjs';
 import {occupiesMovementSpace} from './combat-state.mjs';
 import {tokenAt,volumesOverlap} from './vertical-geometry.mjs';
@@ -10,9 +10,8 @@ import {tokenAt,volumesOverlap} from './vertical-geometry.mjs';
 export async function pitEscapeFacts(adapter,pit,options={}){
  const actor=adapter.actor,origin={...adapter.originCell(),elevation:adapter.actualWaypoint().elevation},height=pit.rim-origin.elevation;
  if(height<=.1)return null;
- const speed=flySpeed(actor),landSpeed=adapter.groundSpeed(),climb=actor.getStatistic('athletics'),
-  climbSpeed=actor.system.movement?.speeds.climb?.value??actor.system.attributes.speed?.otherSpeeds?.find(s=>s.type==='climb')?.value??0;
- const facts={height,dc:pit.climbDC,climbBonus:climb?.mod??climb?.check?.mod??0,climbSpeed,landSpeed,flySpeed:speed,heldItems:pitHeldItems(actor).length,flightExitCost:null,flightMoves:[]};
+ const speed=flySpeed(actor),landSpeed=adapter.groundSpeed(),climb=actor.getStatistic('athletics'),preparedClimb=climbSpeed(actor);
+ const facts={height,dc:pit.climbDC,climbBonus:climb?.mod??climb?.check?.mod??0,climbSpeed:preparedClimb,landSpeed,flySpeed:speed,heldItems:pitHeldItems(actor).length,flightExitCost:null,flightMoves:[]};
  const paths=[],vertical=[origin];
  for(let z=origin.elevation;z<pit.rim-.1;){z=Math.min(z+5,pit.rim);vertical.push({...origin,elevation:z});}
  const rect=canvas.dimensions.sceneRect,occupied=canvas.tokens.placeables.filter(t=>t!==adapter.token&&occupiesMovementSpace(t));

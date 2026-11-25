@@ -1,0 +1,55 @@
+{
+  "version": "0.44.0",
+  "verifiedAt": "2026-11-25T18:00:00+02:00",
+  "installedRuntime": {
+    "statusEndpoint": "http://127.0.0.1:30000/api/status",
+    "foundry": "14.370",
+    "world": "arena",
+    "system": "pf2e",
+    "systemVersion": "8.7.1"
+  },
+  "releaseNotes": {
+    "foundry": "https://foundryvtt.com/releases/14.370",
+    "pf2e": "https://github.com/foundryvtt/pf2e/releases/tag/pf2e-8.7.1",
+    "pf2eChangelog": "https://github.com/foundryvtt/pf2e/blob/v14-dev/CHANGELOG.md#870"
+  },
+  "compatibilityFindings": [
+    "Foundry 14.370 Grid Space Region shapes can define exact water and terrain cells, including holes.",
+    "Foundry native TokenDocument.move, preMoveToken/moveToken, getCompleteMovementPath, movement actions, terrain effects and cost measurement remain available.",
+    "PF2e 8.7 delegates token management to the upstream Foundry API used by the suite.",
+    "PF2e 8.7 prepared land Speed can be null and the legacy system.attributes.speed object is removed during actor preparation; shared speed access now handles that state explicitly.",
+    "PF2e 8.7.1 unlinked-token grant reevaluation and native Keen NPC Strike support apply through prepared actors and native Strike rolls without module copies."
+  ],
+  "waterPolicy": {
+    "owner": "pf2e-tactical-movement",
+    "regionBehavior": "water",
+    "volume": "Region horizontal shapes plus Region elevation bottom and top",
+    "movementAction": "swim",
+    "budget": "prepared PF2e Swim Speed",
+    "negativeElevation": true,
+    "ordinaryAthleticsSwim": "left to PF2e/manual adjudication when no Swim Speed is prepared",
+    "aiPlanning": "not included in this manual-play release"
+  },
+  "verification": {
+    "testFiles": 102,
+    "tests": 1257,
+    "passed": 1257,
+    "failed": 0,
+    "parallelWorkers": 11,
+    "builtPackages": 5,
+    "sourceModules": 214,
+    "installedPackageVersions": [
+      "pf2e-tactical-core 0.44.0",
+      "pf2e-tactical-environment 0.44.0",
+      "pf2e-tactical-conditions 0.44.0",
+      "pf2e-tactical-movement 0.44.0",
+      "foundry-creature-ai 0.44.0"
+    ]
+  },
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.44.0.zip",
+    "bytes": 726228,
+    "sha256": "AEF384E052B5567846DE6B897CF5F9AFFC26DE6B23AD424ECACB7C377DCAA9EB"
+  },
+  "liveState": "The running Foundry server was not stopped. A server restart is required once to reload the package manifest and discover the new RegionBehavior subtype."
+}

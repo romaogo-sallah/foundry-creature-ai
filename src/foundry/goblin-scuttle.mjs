@@ -5,6 +5,7 @@ import { occupiesMovementSpace } from './combat-state.mjs';
 import { hazardousAt } from './hazardous-terrain.mjs';
 import { withGreaseMode } from './spell-zones.mjs';
 import { terrainMovementPath } from './movement-regions.mjs';
+import {landSpeed} from './flight-costs.mjs';
 
 const ns='foundry-creature-ai';
 export class GoblinScuttle {
@@ -19,7 +20,7 @@ export class GoblinScuttle {
           !token.actor.itemTypes.action.some(item=>item.slug==='goblin-scuttle'||item.id==='otqsXx9gjh7rnOpU'||item.name==='Goblin Scuttle')||
           !this.reactions.available(token)||token.actor.hasCondition('prone','immobilized','grabbed','restrained')||
           token.document.level!==mover.document.level||token.document.elevation!==mover.document.elevation||token.distanceTo(mover)>5)continue;
-        const speed=token.actor.system.movement?.speeds.land?.value??token.actor.system.attributes.speed.total??token.actor.system.attributes.speed.value;
+        const speed=landSpeed(token.actor);
         if(!(speed>=10))continue;
         const foes=canvas.tokens.placeables.filter(enemy=>enemy.actor?.isEnemyOf(token.actor)&&enemy.actor.hitPoints?.value>0&&
           !enemy.document.hidden&&clearSightPath(token,enemy)&&!['undetected','unnoticed'].includes(detectionFor(token,enemy).state));

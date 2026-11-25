@@ -22,6 +22,7 @@ import { sameSurfaceElevation } from './surface-terrain.mjs';
 import {pitWalkable} from './pit-geometry.mjs';
 import {iceBlocksMovement} from './ice-wall-geometry.mjs';
 import { distanceToPosition, rayAt, tokenAt,tokenHeight } from './vertical-geometry.mjs';
+import {landSpeed} from './flight-costs.mjs';
 import { nonvisualSense } from './perception-senses.mjs';
 import {conditionFacts,resolveConditionChecks,nativeRuleAction,manualConditionViolation} from './condition-actions.mjs';
 import {initialActionBudget,settleStunned,valuedStunned} from './action-economy.mjs';
@@ -103,7 +104,7 @@ export class PF2eCreatureAdapter {
   get targetMode() { return targetingMode(this.actor, this.config); }
   targetIds() { return targetRoster(this.token, this.config); }
   async waitForReactions(options) { return await this.reactions?.barrier.wait(options) ?? true; }
-  groundSpeed() { return this.actor.system.movement?.speeds.land?.value ?? this.actor.system.attributes.speed.total ?? this.actor.system.attributes.speed.value; }
+  groundSpeed() { return landSpeed(this.actor); }
   planningSpeed() { return this.groundSpeed(); }
   planningReach() { return this.actor.getReach({action:'attack'}); }
   groundSpeedFor() { return this.groundSpeed(); }

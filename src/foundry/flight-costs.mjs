@@ -1,13 +1,25 @@
 import {flightStepCost} from '../shared/flight-cost.mjs';
 export {flightStepCost};
-export function flySpeed(actor){
-  const speed=actor?.system?.movement?.speeds?.fly;
+function preparedSpeed(actor,type){
+  const speed=actor?.system?.movement?.speeds?.[type];
   const prepared=speed?.total??speed?.value;
-  const other=actor?.system?.attributes?.speed?.otherSpeeds?.find(speed=>speed.type==='fly');
-  const legacy=other?.total??other?.value;
+  const other=actor?.system?.attributes?.speed?.otherSpeeds?.find(speed=>speed.type===type);
+  const legacy=type==='land'?(actor?.system?.attributes?.speed?.total??actor?.system?.attributes?.speed?.value):(other?.total??other?.value);
   const value=prepared??legacy;
   return Number.isFinite(value)&&value>0?value:0;
 }
+export function landSpeed(actor,fallback=0){
+  const prepared=actor?.system?.movement?.speeds;
+  const legacy=actor?.system?.attributes?.speed;
+  return (prepared&&Object.hasOwn(prepared,'land'))||legacy?preparedSpeed(actor,'land'):fallback;
+}
+export function flySpeed(actor){
+  return preparedSpeed(actor,'fly');
+}
+export function swimSpeed(actor){
+  return preparedSpeed(actor,'swim');
+}
+export function climbSpeed(actor){return preparedSpeed(actor,'climb');}
 let installed=false;
 export function creatureMovementCost(native,document){
   return (from,to,distance,segment)=>{

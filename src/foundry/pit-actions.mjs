@@ -3,7 +3,7 @@ import {resolveFlightFall} from './flight-falling.mjs';
 import {MANAGED_MOVEMENT} from './movement-options.mjs';
 import {rulesAPI} from './rules-api.mjs';
 import {occupiesMovementSpace} from './combat-state.mjs';
-import {flySpeed} from './flight-costs.mjs';
+import {climbSpeed,flySpeed,landSpeed} from './flight-costs.mjs';
 import {iceBlocksMovement} from './ice-wall-geometry.mjs';
 import {tokenHeight} from './vertical-geometry.mjs';
 const ns='foundry-creature-ai';
@@ -16,10 +16,10 @@ export function pitActionChoices(token,{actionsRemaining=3}={}){
  if(!(token.document.parent?.regions?.contents??[]).some(pitConfig))return [];
  if(actionsRemaining<1||token.actor.hasCondition('immobilized','grabbed','restrained','prone','unconscious','paralyzed'))return [];
  const document=token.document,origin={x:document.x,y:document.y,elevation:document.elevation,level:document.level},size=canvas.grid.size,pit=pitAt(document),
-  speed=token.actor.system.movement?.speeds.land?.value??token.actor.system.attributes.speed.total??token.actor.system.attributes.speed.value,
+  speed=landSpeed(token.actor),
   leap=speed>=30?15:speed>=15?10:0,result=[];
  if(pit&&origin.elevation<pit.rim-0.1&&flySpeed(token.actor)&&!token.actor.hasCondition('prone','unconscious','paralyzed','petrified'))return [];
- if(pit&&origin.elevation<pit.rim-0.1&&!token.actor.system.movement?.speeds.climb?.value){
+ if(pit&&origin.elevation<pit.rim-0.1&&!climbSpeed(token.actor)){
   const held=pitHeldItems(token.actor)[0];
   if(held)return [{id:`pit:stow:${held.id}`,kind:'pitStow',weaponId:held.id,actionCost:1,legal:true,traits:['manipulate'],assessment:{value:35},scoringTerms:[{label:'Free hands before climbing from the pit',contribution:35}]}];
  }
@@ -59,20 +59,20 @@ export async function executePitAction(token,choice,{valid=()=>true,reactions=ru
  const origin={x:token.document.x,y:token.document.y,elevation:token.document.elevation,level:token.document.level};
  const provoke=async()=>{const r=await reactions?.action({mover:token,kind:'move',valid,applyDamage:true});return r?.pause||r?.endTurn?r:null;};
  if(choice.kind==='climb'){
-  const climbSpeed=token.actor.system.movement?.speeds.climb?.value??token.actor.system.attributes.speed?.otherSpeeds?.find(s=>s.type==='climb')?.value;
+  const preparedClimb=climbSpeed(token.actor);
   const held=pitHeldHands(token.actor);
-  if(held&&!climbSpeed)throw new Error('Climb requires two free hands; release or stow held equipment first');
+  if(held&&!preparedClimb)throw new Error('Climb requires two free hands; release or stow held equipment first');
   const r=await provoke();if(r)return r;if(!valid())return {resolved:true};
-  const roll=climbSpeed?null:await token.actor.getStatistic('athletics').check.roll({skipDialog:true,token:token.document,dc:{value:current.dc},action:'climb',extraRollOptions:[`${ns}:managed`,'action:climb','skip-handling-message']});
-  if(!climbSpeed&&!Number.isInteger(roll?.degreeOfSuccess))throw new Error('Climb check was not resolved');
-  const degree=climbSpeed?2:roll.degreeOfSuccess;
+  const roll=preparedClimb?null:await token.actor.getStatistic('athletics').check.roll({skipDialog:true,token:token.document,dc:{value:current.dc},action:'climb',extraRollOptions:[`${ns}:managed`,'action:climb','skip-handling-message']});
+  if(!preparedClimb&&!Number.isInteger(roll?.degreeOfSuccess))throw new Error('Climb check was not resolved');
+  const degree=preparedClimb?2:roll.degreeOfSuccess;
   if(degree===0){await resolveFlightFall(token,{force:true,reactions});if(!token.actor.hasCondition('prone'))await token.actor.increaseCondition('prone');return {resolved:true,note:'Climb critically failed; the creature fell.'};}
   if(degree===1)return {resolved:true,note:'Climb failed; no height gained.'};
-  const pit=pitAt(token.document),speed=token.actor.system.movement?.speeds.land?.value??token.actor.system.attributes.speed.value,
-   gain=climbSpeed??5+Math.max(0,Math.floor((speed-20)/20))*5+(degree===3?5:0),z=Math.min(pit.rim,origin.elevation+gain),to=z>=pit.rim?current.destination:{...origin,elevation:z};
+  const pit=pitAt(token.document),speed=landSpeed(token.actor),
+   gain=preparedClimb||5+Math.max(0,Math.floor((speed-20)/20))*5+(degree===3?5:0),z=Math.min(pit.rim,origin.elevation+gain),to=z>=pit.rim?current.destination:{...origin,elevation:z};
   await token.document.move([{...to,action:'climb',snapped:true}],{[MANAGED_MOVEMENT]:true,showRuler:true});
   if(Math.abs((await settled(token)).elevation-to.elevation)>0.1)return {resolved:true,note:'Foundry stopped the Climb. Its action remains spent; reassessing the actual position.'};
-  if(!climbSpeed&&!token.actor.itemTypes.effect.some(e=>e.flags?.[ns]?.pitClimb))await token.actor.createEmbeddedDocuments('Item',[{name:'Climbing: off-guard',type:'effect',img:'icons/svg/anchor.svg',system:{slug:'pit-climbing',duration:{value:-1,unit:'unlimited',expiry:null,sustained:false},rules:[{key:'GrantItem',uuid:'Compendium.pf2e.conditionitems.Item.AJh5ex99aV6VTggg',inMemoryOnly:true}]},flags:{[ns]:{pitClimb:true}}}]);
+  if(!preparedClimb&&!token.actor.itemTypes.effect.some(e=>e.flags?.[ns]?.pitClimb))await token.actor.createEmbeddedDocuments('Item',[{name:'Climbing: off-guard',type:'effect',img:'icons/svg/anchor.svg',system:{slug:'pit-climbing',duration:{value:-1,unit:'unlimited',expiry:null,sustained:false},rules:[{key:'GrantItem',uuid:'Compendium.pf2e.conditionitems.Item.AJh5ex99aV6VTggg',inMemoryOnly:true}]},flags:{[ns]:{pitClimb:true}}}]);
   if(z>=pit.rim){const ids=token.actor.itemTypes.effect.filter(e=>e.flags?.[ns]?.pitClimb).map(e=>e.id);if(ids.length)await token.actor.deleteEmbeddedDocuments('Item',ids);}
   return {resolved:true,note:`Climbed ${z-origin.elevation} feet${z>=pit.rim?' and reached the bank':''}.`};
  }
@@ -84,7 +84,7 @@ export async function executePitAction(token,choice,{valid=()=>true,reactions=ru
  const actual=token.document._source??token.document,from={x:actual.x,y:actual.y,elevation:actual.elevation,level:actual.level};
  const check=choice.actionCost===2?await token.actor.getStatistic('athletics').check.roll({skipDialog:true,token:token.document,dc:{value:15},action:'long-jump',extraRollOptions:[`${ns}:managed`,'action:long-jump','skip-handling-message']}):null;
  if(choice.actionCost===2&&!Number.isInteger(check?.degreeOfSuccess))throw new Error('Long Jump check was not resolved');
- const speed=token.actor.system.movement?.speeds.land?.value??token.actor.system.attributes.speed.value,
+ const speed=landSpeed(token.actor),
   limit=check?.degreeOfSuccess>=2?Math.min(speed,Math.floor(check.total/5)*5):current.leapDistance,
   fraction=Math.min(1,limit/current.jumpDistance),to={...current.destination,x:from.x+(current.destination.x-from.x)*fraction,y:from.y+(current.destination.y-from.y)*fraction};
  await token.document.move([{...to,action:'jump',snapped:true}],{[MANAGED_MOVEMENT]:true,showRuler:true,constrainOptions:{ignoreWalls:false,ignoreCost:true}});

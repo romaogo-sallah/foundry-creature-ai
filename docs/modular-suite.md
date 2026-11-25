@@ -1,4 +1,4 @@
-# PF2e Tactical Rules suite — 0.37.0
+# PF2e Tactical Rules suite — 0.44.0
 
 The release contains five Foundry modules. Manual rules remain available with Creature AI disabled. All packages use one shared reaction barrier and one contextual Check.roll wrapper, and every source module has exactly one installed owner.
 
@@ -7,7 +7,7 @@ The release contains five Foundry modules. Manual rules remain available with Cr
 | PF2e Tactical Rules — Core | Shared native rule library, service registry, API version 1, settings migration, roll pipeline and reaction synchronization | libWrapper |
 | PF2e Tactical Rules — Environment | Cover/concealment zones, observer-relative captions, detection visibility, terrain and hazards | Core |
 | PF2e Tactical Rules — Conditions & Spells | Action restrictions, recovery, supported lingering spells, poisons and external automation compatibility | Core, Environment |
-| PF2e Tactical Rules — Movement | Native Step/Sneak choices, player Stealth, validated movement/reactions, Fly costs and falls | Core, Environment, Conditions |
+| PF2e Tactical Rules — Movement | Native Step/Sneak choices, player Stealth, validated movement/reactions, ramps, pits, Water volumes, Fly/Swim costs and falls | Core, Environment, Conditions |
 | Foundry Creature AI | Profiles, tactical plans, worker search, pacing and automatic NPC turns | All four manual packages |
 
 ```mermaid
@@ -34,7 +34,7 @@ Existing `foundry-creature-ai` document flags remain intact. Core registers that
 
 ## Flight and movement
 
-Step, Sneak, [manual Ramp / stairs behaviors](ramps.md) and Fly costs are installed by Movement. Native Region behavior forms configure ramp elevations and uphill direction. The native ruler, actual movement, AI path validation and worker estimates use the same pure vertical-cost function for flight:
+Step, Sneak, [manual Ramp / stairs behaviors](ramps.md), [Water volumes](water-zones.md) and Fly costs are installed by Movement. Native Region behavior forms configure ramp elevations, slopes, pit drops and water depth. Water uses PF2e's prepared Swim Speed and Foundry's native Swim action for horizontal and vertical movement. The native ruler, actual movement, AI path validation and worker estimates use the same pure vertical-cost function for flight:
 
 | Grid step | Cost |
 | --- | --- |

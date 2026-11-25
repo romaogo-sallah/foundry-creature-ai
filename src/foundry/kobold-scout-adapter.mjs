@@ -10,6 +10,7 @@ import { stealthBelief, projectStealth } from './stealth-belief.mjs';
 import { scoutGroup } from './scout-group.mjs';
 import {scoutTacticalMap,scoutTacticalMapAsync,scoutMotionMemory} from './tactical-map.mjs';
 import { executeSharedHide, executeSharedSneak, sneakSpeed } from './shared-stealth.mjs';
+import {landSpeed} from './flight-costs.mjs';
 
 const held=(item,hands=1)=>item.system.equipped.carryType==='held'&&item.system.equipped.handsHeld>=hands;
 const average=strike=>Object.values(strike.item.system.damageRolls).filter(d=>!d.category).reduce((sum,d)=>sum+averageFormula(d.damage),0);
@@ -62,7 +63,7 @@ export class PF2eKoboldScoutAdapter extends PF2eCreatureAdapter {
       const reaches=strikes.filter(s=>s.item?.isMelee&&s.ready!==false).map(s=>actor.getReach({action:'attack',weapon:s.item}));
       const ranged=strikes.filter(s=>s.item?.isRanged);
       entries[check.id]={reach:Math.max(5,...reaches.filter(Number.isFinite)),
-        speed:actor.system.movement?.speeds?.land?.value??actor.system.attributes?.speed?.total??actor.system.attributes?.speed?.value??25,
+        speed:landSpeed(actor,25),
         ranged:ranged.length>0,range:Math.max(0,...ranged.map(s=>s.item.system?.range?.increment??s.item.range?.increment??120)),
         reactive:[...(actor.itemTypes.action??[]),...(actor.itemTypes.feat??[])].some(item=>['reactive-strike','attack-of-opportunity'].includes(item.slug))};
     }

@@ -14,8 +14,9 @@ test('each source has one owner; manual closures exclude AI; generated imports r
    assert.ok(targetOwner===owner||DEPENDENCIES[owner].includes(targetOwner));
   }
  }
- for(const id of PACKAGE_IDS){const manifest=packageManifest(id,'0.43.21');assert.deepEqual(manifest.esmodules,[ENTRIES[id]]);
-  if(id==='pf2e-tactical-movement')assert.deepEqual(manifest.documentTypes,{RegionBehavior:{ramp:{},pit:{}}});
+ for(const id of PACKAGE_IDS){const manifest=packageManifest(id,'0.44.0');assert.deepEqual(manifest.esmodules,[ENTRIES[id]]);
+  assert.equal(manifest.compatibility.verified,'14.370');assert.equal(manifest.relationships.systems[0].compatibility.maximum,'8.7.1');
+  if(id==='pf2e-tactical-movement')assert.deepEqual(manifest.documentTypes,{RegionBehavior:{ramp:{},pit:{},water:{}}});
   if(id!=='foundry-creature-ai')assert.equal(manifest.relationships.requires.some(d=>d.id==='foundry-creature-ai'),false);
  }
 });
@@ -26,7 +27,7 @@ test('built manual packages start without AI; AI consumes the same services with
  const add=(map,name,fn)=>map.set(name,[...map.get(name)??[],fn]);
  globalThis.Hooks={once:(name,fn)=>add(once,name,fn),on:(name,fn)=>add(events,name,fn),off:()=>{}};
  const run=async name=>{const callbacks=once.get(name)??[];once.delete(name);await Promise.all(callbacks.map(fn=>fn()));};
- game.modules=new Map(PACKAGE_IDS.filter(id=>id!=='foundry-creature-ai').map(id=>[id,{active:true,version:'0.43.21'}]));
+ game.modules=new Map(PACKAGE_IDS.filter(id=>id!=='foundry-creature-ai').map(id=>[id,{active:true,version:'0.44.0'}]));
  game.settings={settings:registry,storage:new Map([...storage].map(([scope,data])=>[scope,scope==='world'?{getSetting:(key,fallback)=>data.get(key)??fallback}:{getItem:key=>data.get(key)??null}])),
   register:(namespace,key,data)=>registry.set(`${namespace}.${key}`,data),
   get:(namespace,key)=>{const id=`${namespace}.${key}`,meta=registry.get(id);if(!meta)return undefined;const raw=storage.get(meta.scope??'client').get(id);return raw===undefined?meta.default:JSON.parse(raw);},
@@ -62,6 +63,7 @@ test('built manual packages start without AI; AI consumes the same services with
  assert.equal(captionBinding.onUp(),false);assert.equal(core.runtime.environmentAwareness.captionHeld,false);
  assert.equal(typeof core.rules.conditions.open,'function');assert.equal(typeof CONFIG.Token.movement.actions.step.canSelect,'function');
  assert.equal(typeof core.rules.ramps.configure,'function');assert.equal(typeof game.modules.get('pf2e-tactical-movement').api.ramps.open,'function');
+ assert.equal(typeof core.rules.waters.configure,'function');assert.equal(typeof game.modules.get('pf2e-tactical-movement').api.waters.open,'function');
  assert.equal(typeof core.rules.pits.install,'function');assert.equal(typeof game.modules.get('pf2e-tactical-movement').api.pits.execute,'function');
  assert.equal(core.rules.conditions.owners().managedFlatChecks,'pf2e-tactical-core');
  assert.equal(game.modules.get('pf2e-tactical-environment').api.stealth.hide,undefined,'Environment does not expose Movement-only controls');
@@ -71,6 +73,7 @@ test('built manual packages start without AI; AI consumes the same services with
  const buttons={tokens:{tools:{}},regions:{tools:{}}};for(const hook of events.get('getSceneControlButtons')??[])hook(buttons);
  assert.ok(buttons.tokens.tools.conditionActions&&buttons.tokens.tools.playerStealth&&buttons.tokens.tools.pitControls);
  assert.ok(buttons.regions.tools.environmentZones&&buttons.regions.tools.rampControls);
+ assert.ok(buttons.regions.tools.waterControls);
  assert.equal(buttons.tokens.tools.environmentZones,undefined);assert.equal(buttons.tokens.tools.rampControls,undefined);
  assert.equal(buttons.tokens.tools.wolfAI,undefined);assert.equal(game.modules.has('foundry-creature-ai'),false);
  let pathRefreshes=0;const recalculate=canvas.tokens.recalculatePlannedMovementPaths;

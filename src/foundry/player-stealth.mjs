@@ -3,6 +3,7 @@ import { coverAlongPath } from './environment-zones.mjs';
 import { combatStamp } from './reaction-prompts.mjs';
 import { sneakMode, setSneakMode } from './sneak-mode.mjs';
 import {actionRestriction} from './action-restrictions.mjs';
+import {landSpeed} from './flight-costs.mjs';
 
 const ns='foundry-creature-ai';
 export const PLAYER_STEALTH_QUERY=`${ns}.playerStealth`;
@@ -14,7 +15,7 @@ const equal=(a,b)=>Object.keys(a).every(key=>a[key]===b[key]);
 const has=(options,key)=>options?.has?.(key)??options?.includes?.(key)??false;
 const center=(token,point)=>({x:point.x+token.document.width*canvas.grid.size/2,y:point.y+token.document.height*canvas.grid.size/2});
 export function playerSneakSpeed(actor){
-  const speed=actor.system.movement?.speeds.land?.value??actor.system.attributes.speed?.total??actor.system.attributes.speed?.value;
+  const speed=landSpeed(actor);
   const swift=(actor.itemTypes?.feat??[]).some(item=>['swift-sneak','legendary-sneak'].includes(item.slug));
   return Number.isFinite(speed)?speed/(swift?1:2):0;
 }

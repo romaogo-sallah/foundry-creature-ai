@@ -48,11 +48,11 @@ export function packageManifest(id,version){
   'pf2e-tactical-core':['PF2e Tactical Rules — Core','Shared native PF2e rule services, one reaction barrier, roll pipeline and stable API; no NPC decision engine.'],
   'pf2e-tactical-environment':['PF2e Tactical Rules — Environment','Cover, concealment, visibility captions, terrain zones and hazards for manual play.'],
   'pf2e-tactical-conditions':['PF2e Tactical Rules — Conditions & Spells','Condition action restrictions, recovery, lingering supported spell effects and existing automation integration.'],
-  'pf2e-tactical-movement':['PF2e Tactical Rules — Movement','Native Step/Sneak modes, player stealth, awaited movement reactions and shared upward/downward flight costs.'],
+  'pf2e-tactical-movement':['PF2e Tactical Rules — Movement','Native Step/Sneak/Swim modes, player stealth, ramps, pits, water volumes, awaited movement reactions and shared flight costs.'],
   'foundry-creature-ai':['Foundry Creature AI','NPC tactical plans, creature profiles, worker planning and automatic turns using the independent Tactical Rules modules.']};
- return {id,title:info[id][0],description:info[id][1],version,compatibility:{minimum:'14.361',verified:'14.369',maximum:'14'},
-  relationships:{systems:[{id:'pf2e',type:'system',compatibility:{minimum:'8.6.1',maximum:'8.6.1'}}],
+ return {id,title:info[id][0],description:info[id][1],version,compatibility:{minimum:'14.361',verified:'14.370',maximum:'14'},
+  relationships:{systems:[{id:'pf2e',type:'system',compatibility:{minimum:'8.6.1',maximum:'8.7.1'}}],
    requires:[...DEPENDENCIES[id].map(dependency=>({id:dependency,type:'module',compatibility:{minimum:version},reason:'Use shared Tactical Rules services and their public API'})),
     ...id==='pf2e-tactical-core'?[{id:'lib-wrapper',type:'module',reason:'Install each native rule wrapper once'}]:[]]},
-  esmodules:[ENTRIES[id]],...id==='pf2e-tactical-movement'?{documentTypes:{RegionBehavior:{ramp:{},pit:{}}}}:{},...id==='foundry-creature-ai'?{styles:['styles/creature-ai.css']}:{}};
+  esmodules:[ENTRIES[id]],...id==='pf2e-tactical-movement'?{documentTypes:{RegionBehavior:{ramp:{},pit:{},water:{}}}}:{},...id==='foundry-creature-ai'?{styles:['styles/creature-ai.css']}:{}};
 }

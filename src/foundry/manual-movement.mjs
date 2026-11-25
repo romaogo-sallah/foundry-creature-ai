@@ -12,6 +12,8 @@ import { settleGreaseSlip, finishGreaseFall } from './grease-landing.mjs';
 import { surfaceMovementPath } from './surface-terrain.mjs';
 import { selectedGroundAction } from './native-movement-modes.mjs';
 import {withConditionActivity} from './condition-activity.mjs';
+import {waterMovementPath} from './water-geometry.mjs';
+import {landSpeed,swimSpeed} from './flight-costs.mjs';
 
 export const MOVEMENT_QUERY = `${MODULE_ID}.manualMovement`;
 const positionKeys = ['x', 'y', 'elevation', 'level'];
@@ -62,13 +64,13 @@ export class ManualMovement {
       }
     }
   }
-  path(token, points) {
+  path(token, points, mode=selectedGroundAction(token.document,points)) {
     if (canvas.grid.type !== 1 || canvas.grid.distance !== 5 || points.length > 512 || points.length < 2) throw new Error('Manual reaction movement needs a 5-foot square grid and a bounded path.');
     const document=token.document,origin = position(document);
     points=requestedMovementPath(document,points).slice(1);
-    const surface=surfaceMovementPath(document,points);
+    const surface=surfaceMovementPath(document,points),water=waterMovementPath(document,points);
     if(points.some(point=>!Number.isFinite(point.x)||!Number.isFinite(point.y)||
-      !surface&&point.elevation!==origin.elevation||point.level!==origin.level||
+      !surface&&!water&&point.elevation!==origin.elevation||point.level!==origin.level||
       ['width','height','depth','shape'].some(key=>point[key]!==undefined&&document[key]!==undefined&&point[key]!==document[key]))) {
       throw new Error('Keep this ground movement on one elevation/level without resizing the token. Resolve other movement manually.');
     }
@@ -84,11 +86,12 @@ export class ManualMovement {
     }
     // Native token traversal honors footprint-specific snapping and integer
     // rounding, including Small/Tiny footprints, rather than x/y modulo size.
-    const complete=surface??document.getCompleteMovementPath?.(points)??canvas.grid.getDirectPath(points.map(({x,y})=>({x,y})))
+    const complete=surface??water??document.getCompleteMovementPath?.(points)??canvas.grid.getDirectPath(points.map(({x,y})=>({x,y})))
       .map(offset=>({...origin,...canvas.grid.getTopLeftPoint(offset)}));
     const path=complete.filter((point,index)=>index===0||!samePosition(point,complete[index-1]));
     if (path.length > 256) throw new Error('Split this movement into individual move actions.');
-    return path.map(point=>({...origin,...point,action:'walk',snapped:surface?Boolean(point.snapped):true}));
+    const action=mode==='stride'?'walk':mode;
+    return path.map(point=>({...origin,...point,action,snapped:surface||water?Boolean(point.snapped):true}));
   }
   sneakActionPaths(token,path,budget,history=[...(token.document.movementHistory??[])],progress=null){
     if(!(budget>0)||path.length<2)throw new Error('This creature has no usable Sneak movement budget.');
@@ -186,18 +189,20 @@ export class ManualMovement {
     const token = document.object ?? canvas.tokens.get(document.id);
     const points = options[REQUESTED_MOVEMENT] ?? [movement.origin, ...movement.passed.waypoints, ...movement.pending.waypoints];
     let mode;try{mode=selectedGroundAction(document,points);}catch(error){this.onError(error);return false;}
-    const explicitMode=['step','sneak'].includes(mode);
+    let aquatic=false;
+    if(mode==='swim')try{aquatic=Boolean(waterMovementPath(document,points,options));}catch(error){this.onError(error);return false;}
+    const explicitMode=['step','sneak'].includes(mode)||aquatic;
     const player = this.playerStealth?.movementEnabled(token)||mode==='sneak'&&this.playerStealth?.supports(token);
-    const greasy = token?.actor && greaseOnPath(token,points);
+    const greasy = mode!=='swim'&&token?.actor&&greaseOnPath(token,points);
     if (!this.enabled() && !player && !greasy&&!explicitMode || !game.combat?.started && !player && !greasy&&!explicitMode) return;
     const scopedCombatId=token?stealthContext(token).combatId:null;
     if (!token?.actor || scopedCombatId && (game.combat.combatant?.tokenId !== token.id || game.combat.combatant?.sceneId &&
       game.combat.combatant.sceneId !== document.parent.id)) return;
-    if (points.slice(1).every(point => point.x === points[0].x && point.y === points[0].y) ||
+    if (points.slice(1).every(point => point.x === points[0].x && point.y === points[0].y&&point.elevation===points[0].elevation) ||
       points.slice(1).every(point => point.action === 'displace')) return;
     // Other movement modes keep their native/manual workflow. They must not be
     // recast as walking just because an automated ogre exists in the encounter.
-    if (!['stride','step','sneak'].includes(mode)) return;
+    if (!['stride','step','sneak'].includes(mode)&&!aquatic) return;
     // Avoid touching ordinary movement in encounters without automated reactors.
     if (!player && !greasy&&!explicitMode && !canvas.tokens.placeables.some(reactor => reactor !== token && this.reactions.automaticReactiveStrike(reactor) &&
       this.reactions.available(reactor) && reactor.actor.isEnemyOf(token.actor))) return;
@@ -206,7 +211,7 @@ export class ManualMovement {
     }
     let path;
     try {
-      path = this.path(token, points);
+      path = this.path(token, points,mode);
       if (!player && !greasy&&!explicitMode&&!this.hasThreat(token, path)) { this.explainUnready(token, path); return; }
     } catch (error) { this.onError(error); return false; }
     const data = { sceneId: document.parent.id, tokenId: token.id, origin: position(document), path,
@@ -228,10 +233,10 @@ export class ManualMovement {
     if (game.users.activeGM?.id !== game.user.id || !sender?.active) throw new Error('Movement needs the active GM.');
     const token = canvas.scene?.id === data.sceneId ? canvas.tokens.get(data.tokenId) : null;
     const mode=data.mode??selectedGroundAction(token?.document??{},data.path);
-    if(!['stride','step','sneak'].includes(mode))throw new Error('Unsupported ground movement mode');
-    const explicitMode=['step','sneak'].includes(mode);
+    if(!['stride','step','sneak','swim'].includes(mode))throw new Error('Unsupported movement mode');
+    const explicitMode=['step','sneak','swim'].includes(mode);
     const player = this.playerStealth?.movementEnabled(token)||mode==='sneak'&&this.playerStealth?.supports(token);
-    const greasy = token?.actor && greaseOnPath(token,data.path);
+    const greasy = mode!=='swim'&&token?.actor&&greaseOnPath(token,data.path);
     if (!this.enabled() && !player && !greasy&&!explicitMode) throw new Error('Manual movement automation is disabled');
     if (!token?.actor || !sender.isGM && !token.actor.testUserPermission(sender, 'OWNER')) throw new Error('You do not own this combatant.');
     if (!Number.isFinite(data.expires) || data.expires > Date.now() + 180000) throw new Error('Invalid movement expiry.');
@@ -242,7 +247,7 @@ export class ManualMovement {
       canvas.tokens.get(token.id) === token && (!stealthContext(token).combatId ? player || greasy||explicitMode : game.combat.combatant?.tokenId === token.id) &&
       (sender.isGM || token.actor.testUserPermission(sender, 'OWNER'));
     if (!valid() || !samePosition(position(token.document), data.origin)) throw new Error('The movement trigger changed; move again from the current position.');
-    let path = this.path(token, data.path);
+    let path = this.path(token, data.path,mode);
     if (!samePosition(path[0], data.origin)) throw new Error('Movement origin does not match the token.');
     this.running = true;
     try {
@@ -250,11 +255,12 @@ export class ManualMovement {
         const stillAtOrigin = () => valid() && samePosition(position(token.document), data.origin);
         if (!player && !greasy&&!explicitMode&&!this.hasThreat(token, path)) return false; // Never replay a stale reaction request.
         if (incapacitationReason(token) || token.actor.hasCondition('prone', 'grabbed', 'restrained', 'immobilized')) throw new Error('Resolve the movement-blocking condition before moving.');
-        const speed = token.actor.system.movement?.speeds.land?.value ?? token.actor.system.attributes.speed?.total ?? token.actor.system.attributes.speed?.value;
+        const speed = mode==='swim'?swimSpeed(token.actor):landSpeed(token.actor);
         const history = [...(token.document.movementHistory ?? [])];
         const historyCost = history.length ? token.measureMovementPath(history).cost : 0;
         const terrainPath = terrainMovementPath(token, path);
         const cost = token.measureMovementPath([...history, ...terrainPath]).cost - historyCost;
+        if(mode==='swim'&&!(speed>0))throw new Error('This creature has no prepared Swim Speed. Resolve an Athletics-based Swim action manually.');
         if (!Number.isFinite(speed) || !Number.isFinite(cost) || cost <= 0) throw new Error('Cannot measure this movement path.');
         const freshCost = withGreaseMode(token,'step',()=>token.measureMovementPath(terrainMovementPath(token,path)).cost);
         const uncertainTerrain = unsupportedMovementRegions(canvas.scene).length > 0;
@@ -262,7 +268,7 @@ export class ManualMovement {
         const sneakLimit = player ? playerSneakSpeed(token.actor) : 0;
         const automaticSneak = player && this.playerStealth.armed(token);
         const answer=mode==='stride'&&automaticSneak&&token.document._source?.movementAction!=='walk'?'sneak':mode;
-        if(answer!=='sneak'&&cost>speed+1e-8)throw new Error('This path exceeds one Stride. Split it into individual move actions.');
+        if(answer!=='sneak'&&cost>speed+1e-8)throw new Error(`This path exceeds one ${answer==='swim'?'Swim':'Stride'}. Split it into individual move actions.`);
         if(answer==='sneak'&&(!player||uncertainTerrain))throw new Error(`Sneak cannot automate this path because its terrain is unsupported.`);
         if(answer!=='sneak')this.playerStealth?.clearSneakAction(token);
         const sneakProgress=answer==='sneak'?this.playerStealth.sneakAction(token,{stamp:data.stamp,budget:sneakLimit}):null;
@@ -271,11 +277,11 @@ export class ManualMovement {
         if(answer==='sneak'&&game.combat?.started&&lastSneakAction>3)
           throw new Error(`This path requires ${lastSneakAction} Sneak actions; a combat turn normally has only three.`);
         if(answer==='step'&&!stepLegal)throw new Error('Step allows one legal 5-foot square and requires Speed 10 feet or more. Check difficult terrain or select Walk.');
-        if (!stillAtOrigin() || !['stride', ...(stepLegal ? ['step'] : []), ...(sneakActions.length ? ['sneak'] : [])].includes(answer)) {
+        if (!stillAtOrigin() || !['stride','swim', ...(stepLegal ? ['step'] : []), ...(sneakActions.length ? ['sneak'] : [])].includes(answer)) {
           this.reactions.onPause(); return false;
         }
         if(answer==='sneak')return this.executeSneakActions(token,sneakActions,{valid,data,automaticSneak,sneakLimit});
-        const grease = await prepareGreaseMove(token,path,{kind:answer,valid:stillAtOrigin,speed,
+        const grease = answer==='swim'?{path,mode:'swim'}:await prepareGreaseMove(token,path,{kind:answer,valid:stillAtOrigin,speed,
           baseCost:points=>Math.max(0,token.measureMovementPath([...history,...terrainMovementPath(token,points)]).cost-historyCost)});
         if (grease.note) ui.notifications.info(grease.note);
         if (grease.blocked) return false;
