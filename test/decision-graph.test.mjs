@@ -61,3 +61,19 @@ test('vendored Cytoscape loads the decision graph with its directed layout',asyn
   assert.doesNotThrow(()=>cy.layout({name:'breadthfirst',directed:true,roots:'#situation'}).run());
   cy.destroy();
 });
+
+test('vendored Cytoscape tolerates Foundry read-only Array prototype helpers',async()=>{
+  const descriptor=Object.getOwnPropertyDescriptor(Array.prototype,'equals');
+  Object.defineProperty(Array.prototype,'equals',{value(){return false;},writable:false,configurable:true});
+  try{
+    const {default:cytoscape}=await import(`../src/vendor/cytoscape.esm.min.mjs?foundry-array=${Date.now()}`);
+    const cy=cytoscape({headless:true,elements:[{data:{id:'root'}},{data:{id:'child'}},{data:{id:'edge',source:'root',target:'child'}}],
+      layout:{name:'breadthfirst',directed:true,roots:'#root'}});
+    assert.equal(cy.nodes().length,2);
+    assert.equal(cy.edges().length,1);
+    cy.destroy();
+  }finally{
+    if(descriptor)Object.defineProperty(Array.prototype,'equals',descriptor);
+    else delete Array.prototype.equals;
+  }
+});

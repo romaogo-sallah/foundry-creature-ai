@@ -1,5 +1,9 @@
 # Foundry creature AI
 
+**Patch 0.45.1:** fixes the decision graph on Foundry 14, whose read-only `Array.prototype.equals` collided with Cytoscape's collection prototype. The vendored renderer now shadows that helper locally without changing Foundry globals. Select a taught NPC and use **Alt+W → Decision graph** after reloading with **Ctrl+F5**.
+
+**Version 0.45.0:** adds the interactive [Decision graph debugger](docs/decision-debugger.md), showing tactic selection, behavior components, ranked and rejected actions, score terms, ties, and the selected path.
+
 **Version 0.44.0:** verifies the five-module suite against Foundry 14.370 and PF2e 8.7.1, including PF2e's nullable prepared land Speed and upstream token movement path. Movement adds a native **Water** Region behavior: draw an exact Region footprint, set its bottom and surface elevation, then use the native Swim action to move horizontally or vertically at Swim Speed, including below elevation 0. [Water zones](docs/water-zones.md) and [14.370 / 8.7.1 compatibility review](docs/compatibility-14.370-pf2e-8.7.1.md). Restart Foundry once to discover the new Region behavior type, then reload clients with **Ctrl+F5**.
 
 **Patch 0.43.21:** renders an Observed target when the campaign's footprint-corner wall test succeeds but Foundry's center-origin vision polygon remains blocked. The fallback retains Foundry's detection mode, range, facing, lighting, invisibility, and level checks; it replaces only the wall LOS result. [Stealth and corner visibility](docs/stealth-corner-visibility-0.43.11.md). Reload clients with **Ctrl+F5**.

@@ -1,0 +1,36 @@
+{
+  "version": "0.45.1",
+  "verifiedAt": "2026-11-25T23:15:00+02:00",
+  "runtimeTarget": {
+    "foundry": "14.370",
+    "system": "pf2e",
+    "systemVersion": "8.7.1"
+  },
+  "failure": {
+    "message": "Cannot assign to read only property 'equals' of object '[object Object]'",
+    "location": "Cytoscape collection prototype initialization",
+    "cause": "Foundry defines a read-only Array.prototype.equals; Cytoscape derives its collection prototype from Array.prototype and installs its own equals method with assignment."
+  },
+  "resolution": {
+    "policy": "Define a writable own equals property on Cytoscape's collection prototype before its standard method mixins are installed.",
+    "globalMutation": false,
+    "renderer": "Cytoscape.js 3.35.0",
+    "patchedRendererSha256": "1C8150F9E7BA2584FAF7CE9024C914574C671F1CC0015EF001162B55FCC054C0"
+  },
+  "verification": {
+    "testFiles": 103,
+    "tests": 1262,
+    "passed": 1262,
+    "failed": 0,
+    "parallelWorkers": 11,
+    "regression": "Renderer imported and laid out a directed graph while Array.prototype.equals was read-only, then restored the original descriptor.",
+    "installedVersion": "foundry-creature-ai 0.45.1",
+    "installedRendererHashMatches": true
+  },
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.45.1.zip",
+    "bytes": 872876,
+    "sha256": "F585F8D92E025096986C0CC6902B5412DC08B204241C9B18704F1AE01D2CA040"
+  },
+  "activation": "This is a code-only update to an already enabled module. Reload the Foundry client with Ctrl+F5; no server restart is required."
+}

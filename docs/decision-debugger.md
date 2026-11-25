@@ -16,4 +16,6 @@ Use the checkboxes to hide inactive plans/components, rejected candidates, or sc
 
 The renderer is Cytoscape.js 3.35.0, distributed under the MIT license. Its built-in directed breadth-first layout keeps the debugger self-contained and offline while supporting pan, zoom, filtering, selection, and image export. The vendored license is included beside the runtime library.
 
+Foundry 14 defines a read-only `Array.prototype.equals`. Cytoscape also names a collection method `equals`, so the vendored build creates a writable property on its own collection prototype before installing that method. It does not modify Foundry's global Array prototype.
+
 The decision graph is GM-only. It uses the same prepared belief state as the AI, so secret check results that the actor does not know are not added to the graph.
