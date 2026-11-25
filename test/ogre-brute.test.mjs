@@ -40,7 +40,7 @@ test('full melee turn uses the NPC axe at ten-foot reach and progresses MAP with
 });
 
 test('a ranged javelin turn throws once and can use its last action to draw the next javelin',async()=>{
-  const f=fixture();f.player.document.x=1500;
+  const f=fixture();f.player.document.x=600;f.actor.system.attributes.speed.value=0;
   const ledger=await new TurnRunner(f.adapter).run();const parts=f.adapter.parts();
   assert.equal(parts.thrown.item.isRanged,true);assert.equal(parts.refuse.item.isRanged,true);
   assert.equal(parts.javelin.system.quantity,5);assert.equal(parts.javelin.system.equipped.handsHeld,1);
@@ -49,7 +49,7 @@ test('a ranged javelin turn throws once and can use its last action to draw the 
 });
 
 test('Refuse requires an Interact pickup, spends configured stock once on a throw, and keeps the physical javelins',async()=>{
-  const f=fixture();configureRefuse(f,1);await f.adapter.configure();f.player.document.x=800;
+  const f=fixture();configureRefuse(f,1);await f.adapter.configure();f.player.document.x=600;f.actor.system.attributes.speed.value=0;
   const parts=f.adapter.parts(), turn=f.adapter.turnKey();
   assert.equal(f.adapter.rangedReady(parts.refuse),false);
   await f.adapter.execute({kind:'drawRefuse'},{turn,attacksMade:0,actionsRemaining:2});
@@ -91,7 +91,7 @@ test('a javelin occupying the throwing hand prevents picking up Refuse',async()=
 });
 
 test('a cancelled Refuse attack keeps stock spent and its action reservation uncertain',async()=>{
-  const f=fixture();configureRefuse(f,1);await f.adapter.configure();f.player.document.x=800;
+  const f=fixture();configureRefuse(f,1);await f.adapter.configure();f.player.document.x=600;f.actor.system.attributes.speed.value=0;
   await f.boss.document.setFlag(MODULE_ID,'ogreGear',{refuseHeld:true});
   await f.adapter.saveLedger({...await f.adapter.readLedger(f.adapter.turnKey()),actionsRemaining:1});
   f.adapter.parts().refuse.variants[0].roll=async()=>null;

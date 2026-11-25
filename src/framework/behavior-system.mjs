@@ -24,9 +24,11 @@ export class BehaviorSystem {
   }
   configuration(raw, defaults) {
     if(raw?.components!==undefined&&!Array.isArray(raw.components)||raw?.plans!==undefined&&!Array.isArray(raw.plans)||
-      raw?.preferredPlan!==undefined&&raw.preferredPlan!==null&&typeof raw.preferredPlan!=='string')throw new Error('Behavior configuration needs component/plan ID arrays and an optional preferred plan ID');
+      ['preferredPlan','backupPlan','desperatePlan'].some(key=>raw?.[key]!==undefined&&raw[key]!==null&&typeof raw[key]!=='string'))
+      throw new Error('Behavior configuration needs component/plan ID arrays and optional preferred, backup and desperate plan IDs');
     const result = { components: [...new Set(raw?.components ?? defaults.components)],
-      plans: [...new Set(raw?.plans ?? defaults.plans)], preferredPlan: raw?.preferredPlan ?? null };
+      plans: [...new Set(raw?.plans ?? defaults.plans)], preferredPlan: raw?.preferredPlan ?? null,
+      backupPlan:raw?.backupPlan??null,desperatePlan:raw?.desperatePlan??null };
     const parameters=JSON.stringify(raw?.parameters??{},(_key,value)=>{
       if(['function','symbol','bigint','undefined'].includes(typeof value)||typeof value==='number'&&!Number.isFinite(value))throw new Error('Component parameters must be JSON data');
       return value;
@@ -37,7 +39,8 @@ export class BehaviorSystem {
     for (const id of result.components) if (!this.components.has(id)) throw new Error(`Unknown behavior component: ${id}`);
     for (const id of result.plans) if (!this.plans.has(id)) throw new Error(`Unknown tactical plan: ${id}`);
     if (!result.plans.length) throw new Error('At least one tactical plan is required');
-    if (result.preferredPlan && !result.plans.includes(result.preferredPlan)) throw new Error('Preferred plan must be in the allowed plans');
+    for(const [key,label]of [['preferredPlan','Preferred'],['backupPlan','Backup'],['desperatePlan','Desperate']])
+      if(result[key]&&!result.plans.includes(result[key]))throw new Error(`${label} plan must be in the allowed plans`);
     // Recovery, visibility investigation, basic attacks and movement remain
     // available when a specialized plan has no useful action left.
     for (const [id, component] of this.components) if (component.core && !result.components.includes(id)) result.components.push(id);
@@ -63,11 +66,30 @@ export class BehaviorSystem {
     // Every default includes aggressive. An actor's optional plans can all be
     // temporarily unavailable; retain the shared abilities rather than stall.
     const selected = scores[0] ?? { id: 'aggressive', label: 'Engage', value: 0, reason: 'No optional tactic is currently applicable' };
+    const remaining=scores.filter(score=>score.id!==selected.id);
+    const configuredBackup=remaining.find(score=>score.id===configuration.backupPlan);
+    const backup=configuredBackup??remaining[0]??null;
+    const configuredDesperate=remaining.find(score=>score.id===configuration.desperatePlan&&score.id!==backup?.id);
+    const desperate=configuredDesperate??remaining.find(score=>score.id==='desperate')??null;
+    const summary=(entry,source)=>entry?{planId:entry.id,label:entry.label,reason:entry.reason,score:entry.value,source}:null;
+    const hierarchy={preferred:summary(selected,configuration.preferredPlan===selected.id?'configured':'ranked'),
+      backup:summary(backup,configuredBackup?'configured':'next-best'),
+      desperate:summary(desperate,configuredDesperate?'configured':'engagement-fallback'),used:'preferred'};
+    return this.selection(state,evaluations,selected,hierarchy,'preferred');
+  }
+  selection(state,evaluations,selected,hierarchy,stage){
+    const {configuration,context,previous}=state.behavior;
     const policies = this.plans.get(selected.id)?.components ?? [];
     const active = configuration.components.filter(id => this.components.get(id).kind !== 'policy' || policies.includes(id));
     const goal=this.plans.get(selected.id)?.objective?.(context,state,previous)??{kind:selected.id,label:selected.label};
-    return { planId: selected.id, label: selected.label, reason: selected.reason, goal, activeComponents: active, scores,evaluations,
-      context: { ...context }, configuration };
+    return { planId: selected.id, label: selected.label, reason: selected.reason, goal, activeComponents: active,
+      scores:evaluations.filter(evaluation=>evaluation.applicable).sort((a,b)=>b.value-a.value||a.id.localeCompare(b.id)),evaluations,
+      hierarchy:{...hierarchy,used:stage},stage,context: { ...context }, configuration };
+  }
+  fallbackSelection(state,primary,stage){
+    const target=primary.hierarchy?.[stage];if(!target)return null;
+    const selected=primary.evaluations.find(evaluation=>evaluation.id===target.planId&&evaluation.applicable);
+    return selected?this.selection(state,primary.evaluations,selected,primary.hierarchy,stage):null;
   }
   candidates(state, offered, selection = this.select(state)) {
     const enabled = new Set(selection.activeComponents);
@@ -130,10 +152,22 @@ export class BehaviorSystem {
       maintenance?flightSafe.filter(c=>['fly','eagleDive'].includes(c.kind)||c.actionCost<state.actionsRemaining):flightSafe,rejected,selection};
   }
   decide(state, offered, options = {}) {
-    const built = this.candidates(state,offered,state.behavior.selection??this.select(state));
-    const decision = chooseOption(built.candidates,{actionsRemaining:state.actionsRemaining,
+    const primary=state.behavior.selection??this.select(state),attempted=[],rejected=[];
+    for(const stage of ['preferred','backup','desperate']){
+      const selection=stage==='preferred'?primary:this.fallbackSelection(state,primary,stage);
+      if(!selection||attempted.includes(selection.planId))continue;attempted.push(selection.planId);
+      const built = this.candidates(state,offered,selection);
+      const decision = chooseOption(built.candidates,{actionsRemaining:state.actionsRemaining,
+        bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened,...options});
+      rejected.push(...built.rejected);
+      const deliberateHold=['hiding','lay-low','avoiding'].includes(selection.planId);
+      if(decision.chosen?.kind!=='endTurn'||deliberateHold||state.actionsRemaining<1||stage==='desperate'||
+        !primary.hierarchy?.backup&&!primary.hierarchy?.desperate)
+        return {...decision,rejected:[...decision.rejected,...rejected],diagnostics:{...state.diagnostics,tactic:built.selection}};
+    }
+    const built=this.candidates(state,offered,primary),decision=chooseOption(built.candidates,{actionsRemaining:state.actionsRemaining,
       bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened,...options});
-    return {...decision,rejected:[...decision.rejected,...built.rejected],diagnostics:{...state.diagnostics,tactic:built.selection}};
+    return {...decision,rejected:[...decision.rejected,...rejected,...built.rejected],diagnostics:{...state.diagnostics,tactic:built.selection}};
   }
 }
 

@@ -22,6 +22,28 @@ test('plans respond to the global situation rather than the creature name',()=>{
   ])assert.equal(system.select(state(context)).planId,expected);
 });
 
+test('a penalized ranged option selects explicit range-closing tactics and records fallback stages',()=>{
+  const s=state({ranged:true,melee:true,immediateAttack:false,rangedAttackAvailable:true,bestRangePenalty:2,canCloseRange:true,
+    rangedAttackValue:2,meleeAttackValue:6});
+  const selection=system.select(s);
+  assert.equal(selection.planId,'ranged');assert.equal(selection.hierarchy.preferred.planId,'ranged');
+  assert.ok(selection.hierarchy.backup);assert.equal(selection.hierarchy.desperate.planId,'desperate');
+  assert.match(selection.reason,/-2/);
+});
+
+test('configured backup and desperate plans are tried only when an earlier tactic has no useful action',()=>{
+  const custom=new BehaviorSystem().registerComponent({id:'signal',label:'Signal',kind:'policy',candidates:(_state,selection)=>
+    selection.planId==='backup'?[action('signal','signal',2)]:[]})
+    .registerPlan({id:'preferred',label:'Preferred',components:[],score:()=>({value:5,reason:'First choice'})})
+    .registerPlan({id:'backup',label:'Backup',components:['signal'],score:()=>({value:3,reason:'Second choice'})})
+    .registerPlan({id:'desperate',label:'Desperate',components:[],score:()=>({value:1,reason:'Last choice'})});
+  const s=state();s.behavior.configuration=custom.configuration({backupPlan:'backup',desperatePlan:'desperate'},
+    {components:['signal'],plans:['preferred','backup','desperate']});
+  const result=custom.decide(s,[action('end','endTurn',0,0)]);
+  assert.equal(result.chosen.kind,'signal');assert.equal(result.diagnostics.tactic.stage,'backup');
+  assert.equal(result.diagnostics.tactic.hierarchy.used,'backup');
+});
+
 test('continuity prevents plan flicker but critical danger immediately permits a switch',()=>{
   const s=state({caster:true,melee:false,hideUseful:true,immediateAttack:false});
   s.behavior.previous={planId:'defensive'};

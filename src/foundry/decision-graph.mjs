@@ -37,6 +37,14 @@ export function buildDecisionGraph(record,catalog={components:[],plans:[]},{name
   ].filter(Boolean).join('\n')||'Recorded combat state'}`,'situation',[],context);
   const planGate=addNode('plan-ranking','1. Select tactical plan','gate',[],{selected:tactic.planId,reason:tactic.reason});
   addEdge(state,planGate,'evaluate');
+  const hierarchy=tactic.hierarchy??{},stageNodes=new Map();
+  for(const stage of ['preferred','backup','desperate']){
+    const entry=hierarchy[stage];if(!entry)continue;
+    const used=hierarchy.used===stage,id=addNode(`tactic-stage-${stage}`,`${stage[0].toUpperCase()+stage.slice(1)} tactic\n${entry.label}\n${entry.source??''}`,
+      'tactic-stage',[used?'selected':''],entry);
+    addEdge(planGate,id,used?'used':stage==='preferred'?'first choice':'fallback');
+    if(!stageNodes.has(entry.planId))stageNodes.set(entry.planId,[]);stageNodes.get(entry.planId).push({id,stage,used});
+  }
   const planCatalog=new Map((catalog.plans??[]).map(plan=>[plan.id,plan]));
   const scores=new Map((tactic.scores??[]).map(score=>[score.id,score]));
   const evaluations=tactic.evaluations??(configuration.plans??[...scores.keys()]).map(id=>scores.get(id)??{
@@ -47,7 +55,9 @@ export function buildDecisionGraph(record,catalog={components:[],plans:[]},{name
     const selected=evaluation.id===tactic.planId,classes=[selected?'selected':'',evaluation.applicable===false?'inactive':''].filter(Boolean);
     const value=evaluation.applicable===false?'inactive':`score ${Number(evaluation.value).toFixed(2)}`;
     const id=addNode(`plan-${evaluation.id}`,`${evaluation.label??evaluation.id}\n${value}\n${evaluation.reason??''}`,'plan',classes,evaluation);
-    addEdge(planGate,id,evaluation.applicable===false?'not applicable':selected?'selected':'ranked');
+    const stages=stageNodes.get(evaluation.id);
+    if(stages)for(const stage of stages)addEdge(stage.id,id,stage.used?'selected':stage.stage);
+    else addEdge(planGate,id,evaluation.applicable===false?'not applicable':selected?'selected':'ranked');
     if(selected)selectedPlan=id;
   }
   if(!selectedPlan){selectedPlan=addNode(`plan-${tactic.planId??'fallback'}`,`${tactic.label??'Fallback plan'}\n${tactic.reason??''}`,'plan',['selected'],tactic);addEdge(planGate,selectedPlan,'fallback');}
@@ -132,6 +142,7 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
       {selector:'node.gate',style:{'background-color':'#243b53','border-color':'#5fa8d3','font-weight':'bold'}},
       {selector:'node.situation',style:{'background-color':'#3b2f63','border-color':'#a78bfa'}},
       {selector:'node.plan',style:{'background-color':'#3d4a5c'}},{selector:'node.objective',style:{'background-color':'#3f3a24','border-color':'#d6b756'}},
+      {selector:'node.tactic-stage',style:{'background-color':'#263b4d','border-color':'#86a8c7','font-weight':'bold'}},
       {selector:'node.component',style:{'background-color':'#174f59','border-color':'#49a6b5'}},
       {selector:'node.option',style:{'background-color':'#30455c'}},{selector:'node.term',style:{'background-color':'#403a47','font-size':9,'text-max-width':150}},
       {selector:'node.positive',style:{'border-color':'#65c466'}},{selector:'node.negative',style:{'border-color':'#dd7777'}},

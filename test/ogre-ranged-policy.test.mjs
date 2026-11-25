@@ -21,18 +21,18 @@ const choose=s=>chooseOption(options(s),{actionsRemaining:s.actionsRemaining}).c
 test('a held javelin with two actions prefers moving into a better range increment before throwing',()=>{
   const s=state();assert.equal(choose(s).kind,'stride');
   const move=options(s).find(c=>c.kind==='stride'),shot=options(s).find(c=>c.kind==='strike');
-  assert.ok(move.assessment.value>shot.assessment.value);assert.equal(move.assessment.goodAttacksLeft,true);
-  assert.equal(move.features.rangedFollowUp,true);
+  assert.ok(move.assessment.value>shot.assessment.value);assert.equal(move.assessment.fullTurnPlan,true);
+  assert.equal(move.features.rangeApproach.rangePenalty,2,'the stronger melee option wins the comparison after closing');
 });
 
-test('ogres do not move just to throw at the same accuracy, or spend their last throwing action on movement',()=>{
+test('ogres keep a clear throw, but close instead of accepting even the first range penalty',()=>{
   assert.equal(choose(state({rangePenalty:0,afterPenalty:0})).kind,'strike');
-  assert.equal(choose(state({actions:1})).kind,'strike');
+  assert.equal(choose(state({actions:1})).kind,'stride');
 });
 
-test('moving then drawing and throwing needs three normal actions',()=>{
+test('moving then drawing and throwing needs three normal actions, while melee approach can start sooner',()=>{
   assert.equal(choose(state({held:false,actions:3})).kind,'stride');
-  assert.equal(choose(state({held:false,actions:2})).kind,'drawJavelin');
+  assert.equal(choose(state({held:false,actions:2})).kind,'stride');
   const s=state({held:false,actions:2});
   assert.equal(options(s).find(c=>c.kind==='stride').features.rangedFollowUp,false);
 });
@@ -44,7 +44,7 @@ test('cover and concealment reduce target, Draw, and destination scores consiste
   assert.equal(choose(s).targetId,'foe');
   assert.ok(rangedPreparationScore(s,ranged,covered)<rangedPreparationScore(s,ranged,clear));
   const blocked=state();blocked.moves[0].targets.foe.strikes.javelin.coverBonus=4;
-  assert.equal(choose(blocked).kind,'strike','a shorter range is worse if the destination adds too much cover');
+  assert.equal(choose(blocked).kind,'stride','melee approach remains preferable to a penalized throw through cover');
   const fog=state({rangePenalty:0});fog.enemies[0].strikes.javelin.concealmentDC=5;
   assert.equal(choose(fog).kind,'stride','an available clear lane is worth repositioning for');
   const hidden=state({held:false,actions:3});hidden.enemies[0].strikes.javelin.coverBonus=2;hidden.enemies[0].strikes.javelin.concealmentDC=5;
@@ -119,17 +119,17 @@ test('poor-range pursuit can use the last action or advance without crossing an 
     const s=state({held:true,actions,rangePenalty:6,afterPenalty:6});
     assert.equal(choose(s).kind,'stride',`${actions} action(s), same range increment`);
   }
-  assert.equal(choose(state({held:true,actions:1,rangePenalty:2,afterPenalty:0})).kind,'strike',
-    'a small penalty keeps the normal immediate-attack preference');
+  assert.equal(choose(state({held:true,actions:1,rangePenalty:2,afterPenalty:0})).kind,'stride',
+    'even the first increment penalty prefers a useful approach');
 });
 
 test('range aversion is a scoring cost, scaled by lost accuracy, never an additional roll penalty',()=>{
   const s=state({rangePenalty:6}),throwing=s.strikes[1];s.moves=[];
   const poor=strikeScore(s,throwing,s.enemies[0]);
-  const small=state({rangePenalty:2}),moderate=strikeScore(small,small.strikes[1],small.enemies[0]);
-  assert.ok(poor.rangeCost>moderate.rangeCost);assert.ok(poor.value>0);
+  const small=state({rangePenalty:2});small.moves=[];const moderate=strikeScore(small,small.strikes[1],small.enemies[0]);
+  assert.ok(poor.value<moderate.value);assert.ok(poor.value>0);
   const option=choose(s);assert.equal(option.kind,'strike','no legal approach still permits the poor throw');
-  assert.ok(option.scoringTerms.some(term=>/poor ranged accuracy/.test(term.label)&&term.contribution<0));
+  assert.ok(option.scoringTerms.some(term=>/poor ranged accuracy/i.test(term.label)&&term.contribution<0));
   assert.equal(throwing.bonus,17);assert.equal(s.enemies[0].strikes.javelin.rangePenalty,6);
   const clear=state({rangePenalty:0});assert.equal(strikeScore(clear,clear.strikes[1],clear.enemies[0]).rangeCost,0);
 });

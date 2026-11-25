@@ -12,6 +12,7 @@ import { movementSight } from '../framework/pursuit.mjs';
 import { flySpeed } from './flight-costs.mjs';
 import {groundThreats} from './ground-threats.mjs';
 import {movingMist,vampireForm} from './vampire-state.mjs';
+import {preparedStrikeCandidates} from '../framework/strike-capability.mjs';
 
 const ns='foundry-creature-ai';
 const attached=new WeakSet();
@@ -20,6 +21,11 @@ const scoped=value=>value?.combatId===game.combat?.id&&value?.sceneId===canvas.s
 export function behaviorConfiguration(adapter) {
   const actor=adapter.actor.getFlag?.(ns,'behaviors'),token=adapter.token.document.getFlag(ns,'behaviors');
   const raw={...actor,...token,parameters:{...actor?.parameters,...token?.parameters}},defaults=defaultBehaviorConfiguration(adapter.profileId);
+  // Configurations saved before ranged tactics existed inherit the new shared
+  // policy and graph card without requiring every token to be reconfigured.
+  if(raw.plans&&!raw.plans.includes('ranged'))raw.plans=[...raw.plans,'ranged'];
+  if(raw.plans&&!raw.plans.includes('desperate'))raw.plans=[...raw.plans,'desperate'];
+  if(raw.components&&!raw.components.includes('effective-range'))raw.components=[...raw.components,'effective-range'];
   if(adapter.hasSpellcasting){for(const id of ['spellcasting','spell-control','spell-damage','spell-drain','spell-support'])if(!defaults.components.includes(id))defaults.components.push(id);
     for(const id of ['spell-control','spell-damage','spell-drain','spell-support'])if(!defaults.plans.includes(id))defaults.plans.push(id);}
   if(flySpeed(adapter.actor)){defaults.components.push('flight');defaults.plans.push('aerial-hunt','aerial-engage','aerial-disengage');}
@@ -38,8 +44,16 @@ export function battleContext(adapter,state,{deferDecision=false}={}) {
     detectionFor(adapter.token,token).state==='observed'&&clearSightPath(adapter.token,token));
   const known=state.enemies.length,visible=state.enemies.filter(enemy=>enemy.awareness?.state==='observed'&&enemy.lineOfSight!==false);
   const hp=adapter.actor.hitPoints,health=Math.max(0,Math.min(1,hp.value/Math.max(1,hp.max)));
-  const immediate=state.enemies.some(enemy=>enemy.inReach||Object.values(enemy.strikes??{}).some(position=>position.usable))||
-    !deferDecision&&state.spells&&castingCandidates(state).some(candidate=>candidate.assessment.value>0);
+  const strikeOptions=preparedStrikeCandidates(state),strikeById=new Map((state.strikes??[]).map(strike=>[strike.id,strike]));
+  const rangedOptions=strikeOptions.filter(candidate=>strikeById.get(candidate.strikeId)?.ranged);
+  const meleeOptions=strikeOptions.filter(candidate=>!strikeById.get(candidate.strikeId)?.ranged);
+  const bestRanged=rangedOptions.reduce((best,candidate)=>candidate.assessment.value>best.assessment.value?candidate:best,
+    {assessment:{value:0},features:{rangePenalty:Infinity}});
+  const bestRangePenalty=Number.isFinite(bestRanged.features?.rangePenalty)?bestRanged.features.rangePenalty:0;
+  const canCloseRange=rangedOptions.some(candidate=>candidate.features?.rangePenalty>0&&candidate.features?.rangeClosingAvailable);
+  const spellAttack=!deferDecision&&state.spells&&castingCandidates(state).some(candidate=>candidate.assessment.value>0);
+  const immediate=meleeOptions.length>0||rangedOptions.some(candidate=>(candidate.features?.rangePenalty??0)===0)||
+    rangedOptions.length>0&&!canCloseRange||spellAttack;
   const hostileSpells=(state.spells??[]).filter(spell=>spell.available&&
     !['buff','heal','ward','counteract'].includes(spell.kind)&&!spell.teleport);
   const ranged=Boolean(hostileSpells.some(spell=>spell.range>30)||state.bowReady&&state.loaded&&state.bolts>0||
@@ -53,6 +67,8 @@ export function battleContext(adapter,state,{deferDecision=false}={}) {
     state.supportRecipients??(state.commandRecipients??[]).filter(ally=>ally.needsMovement!==false).length;
   return {health,allies:allies.length,knownEnemies:known,visibleEnemies:visible.length,forceRatio:(allies.length+1)/Math.max(1,known),
     immediateAttack:Boolean(immediate),ranged,melee,caster:Boolean(state.spells?.length),
+    rangedAttackAvailable:rangedOptions.length>0,bestRangePenalty,canCloseRange,
+    rangedAttackValue:bestRanged.assessment.value,meleeAttackValue:Math.max(0,...meleeOptions.map(candidate=>candidate.assessment.value)),
     closingMelee:visible.some(enemy=>enemy.tactics?.role!=='ranged'&&enemy.distance<=40),
     pack:configuration.components.includes('pack'),
     swarmOpportunity:state.enemies.some(enemy=>enemy.alliesInReach>0||enemy.flanked)||Object.values(state.group?.targets??{}).some(target=>target.swarm),

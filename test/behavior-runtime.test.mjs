@@ -176,7 +176,7 @@ test('the compact tactic controls save only a token preference and preserve acto
   }}}}};
   const {openBehaviorControls}=await import('../src/foundry/main.mjs?behavior-dialog');
   await openBehaviorControls(f.boss);
-  assert.deepEqual(f.boss.document.getFlag(ns,'behaviors'),{preferredPlan:'defensive'});
+  assert.deepEqual(f.boss.document.getFlag(ns,'behaviors'),{preferredPlan:'defensive',backupPlan:null,desperatePlan:null});
 });
 
 function huntedWolf(){

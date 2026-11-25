@@ -1,0 +1,56 @@
+{
+  "version": "0.47.0",
+  "date": "2026-11-26",
+  "feature": "Range-aware attack scoring with preferred, backup, and desperate tactic stages",
+  "policy": {
+    "rangePenalty": "Any non-zero range-increment penalty is a major utility cost when a useful approach exists",
+    "maximumPenalty": "A -10 ranged attack remains legal only as a low-value desperate option when no useful approach exists",
+    "comparison": "Ranged utility is evaluated against the actor's best melee alternative and the value of closing distance",
+    "approachSafety": "Closing routes with excessive hazard or reaction exposure are not treated as useful alternatives",
+    "tacticHierarchy": [
+      "preferred",
+      "backup",
+      "desperate"
+    ],
+    "fallback": "Later tactic stages are evaluated only when an earlier stage produces no useful action",
+    "deliberateHold": "Hiding, lay-low, and avoiding plans can deliberately hold position without triggering an offensive fallback"
+  },
+  "automatedVerification": {
+    "command": "npm test",
+    "testFiles": 104,
+    "workers": 11,
+    "tests": 1271,
+    "passed": 1271,
+    "failed": 0,
+    "durationSeconds": 28.2,
+    "newCoverage": [
+      "a penalized ranged attack loses to a useful approach",
+      "maximum-range attacks remain available only when closing is unavailable",
+      "melee alternatives influence ranged scoring",
+      "blocked but viable detours remain approach candidates",
+      "preferred, backup, and desperate tactic stages resolve in order",
+      "deliberate stealth and avoidance holds do not fall through",
+      "older saved behavior sets migrate to the new ranged components",
+      "the decision graph renders ranged and tactic-stage cards"
+    ]
+  },
+  "build": {
+    "packages": 5,
+    "sourceModules": 217,
+    "archive": "releases/pf2e-tactical-suite-0.47.0.zip",
+    "archiveBytes": 879878,
+    "archiveSha256": "6fea39061b8d4735961360ee6dcf7448aaf143a162219385cb0d4bdebc19a31d"
+  },
+  "installation": {
+    "dataPath": "C:/Users/Roman/AppData/Local/FoundryVTT/Data/modules",
+    "installedVersions": {
+      "pf2e-tactical-core": "0.47.0",
+      "pf2e-tactical-environment": "0.47.0",
+      "pf2e-tactical-conditions": "0.47.0",
+      "pf2e-tactical-movement": "0.47.0",
+      "foundry-creature-ai": "0.47.0"
+    },
+    "reload": "Ctrl+F5 required in the Foundry browser after installation",
+    "liveVerification": "Unavailable because the Foundry MCP bridge was not connected after installation"
+  }
+}

@@ -1,6 +1,8 @@
 # Foundry creature AI
 
-**Version 0.46.0:** adds configurable [decision variety](docs/decision-variety.md). The AI can make a weighted pseudorandom choice among close-scoring actions in the highest eligible priority layer, while excluding mandatory/recovery actions, lower layers, and options outside the score band. Alt+W defaults the new control to 35%; set it to 0 for deterministic ranking except exact ties. Decision explanations and the graph show the exact pool and probability of every rolled option. Reload with **Ctrl+F5**.
+**Version 0.47.0:** adds [ranged and fallback tactics](docs/ranged-tactics.md). Any range-increment penalty now strongly favors a safe approach or a better melee option; a maximum-range attack remains available only as a low-value desperation shot when no approach exists. Alt+W exposes preferred, backup and desperate tactics, and the [decision graph](docs/decision-debugger.md) displays those stage cards plus the new Ranged engagement plan. Reload with **Ctrl+F5**.
+
+**Version 0.46.0:** added configurable [decision variety](docs/decision-variety.md). The AI can make a weighted pseudorandom choice among close-scoring actions in the highest eligible priority layer, while excluding mandatory/recovery actions, lower layers, and options outside the score band.
 
 **Patch 0.45.2:** makes decision-graph wheel zoom relative to the current scale and anchors it beneath the mouse cursor. Pixel, trackpad, line, and page wheel deltas share one bounded exponential scale. Reload with **Ctrl+F5**.
 

@@ -43,6 +43,22 @@ test('decision graph exposes tactic, component, ranking, terms and rejection pat
   assert.doesNotThrow(()=>structuredClone(graph));
 });
 
+test('decision graph shows preferred, backup and desperate tactic cards including ranged engagement',()=>{
+  const record={chosenId:'move',reason:'ranked',totalOptions:1,tactic:{planId:'ranged',label:'Ranged engagement',reason:'Close first',
+    goal:{kind:'effective-range'},context:{},configuration:{plans:['ranged','aggressive'],components:[]},activeComponents:[],
+    hierarchy:{preferred:{planId:'ranged',label:'Ranged engagement',source:'ranked'},backup:{planId:'aggressive',label:'Aggressive',source:'next-best'},
+      desperate:{planId:'aggressive',label:'Aggressive',source:'engagement-fallback'},used:'preferred'},
+    evaluations:[{id:'ranged',label:'Ranged engagement',applicable:true,value:7,reason:'Close first'},
+      {id:'aggressive',label:'Aggressive',applicable:true,value:5,reason:'Engage'}]},
+    options:[{id:'move',kind:'stride',selected:true,layer:6,value:5,actionCost:1,terms:[]}],rejected:[]};
+  const graph=buildDecisionGraph(record,{plans:[{id:'ranged',label:'Ranged engagement'},{id:'aggressive',label:'Aggressive'}]});
+  const node=id=>graph.nodes.find(entry=>entry.data.id===id);
+  assert.match(node('tactic-stage-preferred').data.label,/Ranged engagement/);
+  assert.match(node('tactic-stage-backup').data.label,/Aggressive/);
+  assert.ok(node('tactic-stage-desperate'));assert.ok(node('plan-ranged'));
+  assert.ok(graph.edges.some(edge=>edge.data.source==='tactic-stage-preferred'&&edge.data.target==='plan-ranged'));
+});
+
 test('decision graph shell escapes diagnostics and provides filters and export controls',()=>{
   const graph={summary:{reason:'<script>bad</script>',optionCount:1,totalOptions:1,rejectedCount:0}};
   const html=renderDecisionGraphShell(graph);

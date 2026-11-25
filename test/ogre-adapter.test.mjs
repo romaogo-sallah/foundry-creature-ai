@@ -74,7 +74,8 @@ test('using the ordinary reaction prevents Sweeping Hook and a final-action Trip
 
 test('javelins require Draw, release a hook hand, consume real ammunition, and need another draw', async () => {
   const f=fixture();
-  f.player.document.x=1500;
+  f.player.document.x=600;
+  f.actor.system.attributes.speed.value=0; // isolate ranged equipment when no approach exists
   const ledger=await new TurnRunner(f.adapter).run();
   const parts=f.adapter.parts();
   assert.equal(parts.thrown.item.isRanged,true,'blank source range is normalized from the taught thrown attack');

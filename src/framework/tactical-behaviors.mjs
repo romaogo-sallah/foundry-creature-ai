@@ -30,6 +30,10 @@ tacticalBehaviors.registerComponent({id:'advance',label:'Close to effective reac
   adjust:(candidate,state)=>movement(candidate)&&!state.behavior.context.immediateAttack&&
     candidate.assessment.nearestEnemy<state.nearestEnemy&&!candidate.provokes?
       Math.min(2,Math.max(0.4,(state.nearestEnemy-candidate.assessment.nearestEnemy)/2.5)):0});
+tacticalBehaviors.registerComponent({id:'effective-range',label:'Fight inside an effective range increment',kind:'policy',
+  adjust:candidate=>candidate.features?.rangeApproach?1.25:
+    candidate.assessment?.movement&&candidate.features?.rangedFollowUp?0.65:
+    candidate.features?.ranged&&candidate.features?.rangePenalty>0?-Math.min(2,0.5+candidate.features.rangePenalty*0.2):0});
 tacticalBehaviors.registerComponent({id:'protection',label:'Use protection',kind:'policy',
   candidates:(state,selection)=>['defensive','hiding','lay-low','avoiding'].includes(selection.planId)?
     (state.sharedBehaviors?.protectedMoves??[]).filter(candidate=>selection.planId!=='defensive'||!candidate.features.visibility.losesAll):[],
@@ -68,6 +72,9 @@ function objective(id,context,state,previous){
   if(id==='hiding')return {kind:'break-observation',label:'Hide from known observers',observerIds:state.enemies.map(enemy=>enemy.id)};
   if(id==='lay-low')return {kind:'avoid-hunter',label:'Take cover, Hide and Sneak until the hunter can be opposed',observerIds:state.groundThreats.ids};
   if(id==='supporting')return {kind:'enable-allies',label:'Enable allies who can benefit',recipientIds:(state.commandRecipients??[]).filter(ally=>ally.needsMovement!==false).map(ally=>ally.id)};
+  if(id==='ranged')return {kind:'effective-range',label:context.bestRangePenalty>0?
+    `Close before firing at -${context.bestRangePenalty}`:`Use the strongest ranged lane against ${target?.name??'known opponents'}`,
+    targetId:target?.id??null,maximumPreferredPenalty:0};
   return {kind:id==='kiting'?'keep-range':id==='swarming'?'surround':id==='charge'?'approach':'engage',
     label:`${id==='kiting'?'Keep range from':id==='swarming'?'Surround':id==='charge'?'Close to':'Engage'} ${target?.name??'known opponents'}`,
     targetId:target?.id??null,...id==='kiting'?{minimumDistance:(target?.tactics?.reach??5)+10}:id==='charge'?{desiredDistance:(state.self.reachSquares??1)*5}:{}};
@@ -75,8 +82,14 @@ function objective(id,context,state,previous){
 const plan=(id,label,components,score)=>tacticalBehaviors.registerPlan({id,label,components,score,
   ...(id==='hiding'?{requires:['stealth']}:{}),objective:(context,state,previous)=>objective(id,context,state,previous)});
 plan('aggressive','Aggressive',['pressure'],c=>({value:3+(c.immediateAttack?2:0),reason:c.immediateAttack?'A useful attack is available':'Engage known opponents'}));
+plan('desperate','Desperate engagement',['advance','pressure'],()=>({value:0.25,reason:'Last-resort engagement when preferred and backup tactics produce no useful legal action'}));
 plan('charge','Charge',['advance','pressure'],c=>c.melee&&!c.immediateAttack&&c.knownEnemies>0&&c.health>0.4&&c.forceRatio>=0.5?
   {value:5,reason:c.visibleEnemies?'Melee attacks need a safe approach':'Close on remembered opponents and regain contact'}:null);
+plan('ranged','Ranged engagement',['effective-range','advance','pressure'],c=>!c.rangedAttackAvailable?null:
+  c.bestRangePenalty>0&&c.canCloseRange?{value:6.75+Math.min(1,c.bestRangePenalty/10),
+    reason:`A ranged attack is available at -${c.bestRangePenalty}; close to an effective increment before firing`}:
+  c.meleeAttackValue>c.rangedAttackValue*1.15?{value:2.5,reason:'Melee currently has greater expected value than the ranged option'}:
+  {value:5.25,reason:'A clear ranged attack has competitive expected value'});
 plan('defensive','Defensive',['protection'],c=>({value:c.caster&&!(c.melee&&!c.immediateAttack)?5.5:c.health<0.5||c.forceRatio<0.6?5:2,
   reason:c.caster?'Preserve a protected casting position':'Reduce exposure while remaining able to fight'}));
 plan('avoiding','Avoiding',['withdraw','protection'],c=>c.emergency?{value:100,reason:c.broken?'The group has broken':'Own HP is critically low'}:
@@ -107,9 +120,9 @@ export const defaultBehaviorConfiguration = profileId => ({
     ...(profileId==='manticore-quill'?['volleys']:[]),
     ...(['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spellcasting']:[]),...(['ogre-boss','generic'].includes(profileId)?['leadership']:[]),
     ...['wolf','kobold-scout'].includes(profileId)?['pack']:[],
-    'pressure','advance','protection','distance','surround','assist','withdraw',
+    'pressure','advance','effective-range','protection','distance','surround','assist','withdraw',
     ...['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain','spell-support']:[]],
-  plans:['aggressive','defensive','avoiding','hiding','lay-low','charge','kiting','swarming','supporting',
+  plans:['aggressive','ranged','defensive','avoiding','hiding','lay-low','charge','kiting','swarming','supporting','desperate',
     ...['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain','spell-support']:[]],
 });
 

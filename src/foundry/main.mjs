@@ -125,14 +125,17 @@ export async function openBehaviorControls(token=selected()) {
     ...creatureControlsLayout(`Creature AI — Tactics — ${token.name}`),
     content:`<p>The creature selects a tactic from its known combat situation, then chooses legal actions through its attached behaviors.</p>
       <p>Last selected tactic: <strong>${escapeHTML(last?.label??'None yet')}</strong>${last?.reason?` — ${escapeHTML(last.reason)}`:''}.</p>
-      <div class="form-group"><label>Preferred tactic</label><select name="preferredPlan"><option value="">Automatic</option>
-        ${options.map(plan=>`<option value="${escapeHTML(plan.id)}" ${configuration.preferredPlan===plan.id?'selected':''}>${escapeHTML(plan.label)}</option>`).join('')}</select></div>
-      <p>A preference influences selection when the tactic is useful. It does not override missing abilities, critical danger, or rules requirements.</p>
+      ${[['preferredPlan','Preferred tactic','Automatic — highest score'],['backupPlan','Backup tactic','Automatic — next best'],
+        ['desperatePlan','Desperate tactic','Automatic — basic engagement']].map(([name,label,automatic])=>
+        `<div class="form-group"><label>${label}</label><select name="${name}"><option value="">${automatic}</option>
+        ${options.map(plan=>`<option value="${escapeHTML(plan.id)}" ${configuration[name]===plan.id?'selected':''}>${escapeHTML(plan.label)}</option>`).join('')}</select></div>`).join('')}
+      <p>The preferred tactic is tried first. If it produces no useful legal action, the backup is tried, then the desperate tactic. Critical danger and rules requirements still take precedence.</p>
       <p>Attached behaviors: ${configuration.components.map(id=>escapeHTML(catalog.components.find(component=>component.id===id)?.label??id)).join(', ')}.</p>
       <p>Last active set: ${(last?.activeComponents??[]).map(escapeHTML).join(', ')||'Selected when the creature acts'}.</p>
       <p>Saving applies to this token. Actor behavior configuration is inherited unless overridden here.</p>`,
-    buttons:[{action:'save',label:'Save preference',default:true,callback:(_event,button)=>({preferredPlan:button.form.elements.preferredPlan.value||null})}],rejectClose:false});
-  if(answer)await configureBehaviors(token.document,{preferredPlan:answer.preferredPlan});
+    buttons:[{action:'save',label:'Save tactics',default:true,callback:(_event,button)=>({preferredPlan:button.form.elements.preferredPlan?.value||null,
+      backupPlan:button.form.elements.backupPlan?.value||null,desperatePlan:button.form.elements.desperatePlan?.value||null})}],rejectClose:false});
+  if(answer)await configureBehaviors(token.document,answer);
   return answer;
 }
 

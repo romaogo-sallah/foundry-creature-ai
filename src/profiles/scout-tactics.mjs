@@ -2,6 +2,7 @@ import { attackValue } from '../dawnsbury/chooser.mjs';
 import { setupUtility } from '../framework/setup-utility.mjs';
 import { scoutGroupPosition, scoutMeleeProgress } from './scout-group-tactics.mjs';
 import {tacticalPosition} from '../framework/tactical-field.mjs';
+import {rangedAttackPolicy} from '../framework/ranged-policy.mjs';
 
 const chance=value=>Math.max(0,Math.min(1,value??0));
 export function scoutAttackValue(state,enemy,position,strike){
@@ -9,8 +10,9 @@ export function scoutAttackValue(state,enemy,position,strike){
   const value=offGuard=>attackValue({bonus:strike.bonus+strike.mapPenalties[Math.min(state.attacksMade,2)]-(position.rangePenalty??0),
     referenceAC:state.self.referenceAC,damage:strike.damage+(offGuard?state.sneakDamage:0),
     defenseAdjustment:(position.coverBonus??0)-(offGuard?2:0),concealmentDC:position.concealmentDC});
-  if(enemy.prone||enemy.offGuard||!strike.ranged&&position.flanked)return value(true);
-  return value(false)*(1-chance(enemy.stealthChance))+value(true)*chance(enemy.stealthChance);
+  const raw=enemy.prone||enemy.offGuard||!strike.ranged&&position.flanked?value(true):
+    value(false)*(1-chance(enemy.stealthChance))+value(true)*chance(enemy.stealthChance);
+  return rangedAttackPolicy(state,strike,enemy,position,raw).value;
 }
 
 // A bounded estimate of next-turn pressure, using known geometry/capabilities.

@@ -1,6 +1,6 @@
-# Foundry Creature AI — version 0.46.0
+# Foundry Creature AI — version 0.47.0
 
-**Version 0.46.0:** adds configurable [decision variety](decision-variety.md). Close-scoring actions in the best eligible priority layer can enter a weighted pseudorandom roll; the graph and chat explanation show the exact probabilities. **Patch 0.45.2** added cursor-anchored relative wheel zoom to the graph. **Patch 0.45.1** made its renderer compatible with Foundry 14's read-only Array helpers. Version 0.44.0 added editable three-dimensional [Water zones](water-zones.md) and verified the suite on Foundry 14.370 / PF2e 8.7.1.
+**Version 0.47.0:** adds [ranged and fallback tactics](ranged-tactics.md). Penalized ranged attacks are compared with closing and melee, preferred/backup/desperate plans are configurable, and the graph shows each stage and the Ranged engagement card. Version 0.46.0 added configurable [decision variety](decision-variety.md). Version 0.44.0 added editable three-dimensional [Water zones](water-zones.md) and verified the suite on Foundry 14.370 / PF2e 8.7.1.
 
 **Version 0.37.0:** Confused NPCs use a random-target attack override: allies and neutrals become potential targets, with ordinary Strikes, taught offensive cantrips and simple attack preparation/movement. Normal tactics, stealth, special abilities, complex aerial plans and slot spells are excluded. See [Confused AI](confused-ai.md). Reload every client with **Ctrl+F5**.
 
