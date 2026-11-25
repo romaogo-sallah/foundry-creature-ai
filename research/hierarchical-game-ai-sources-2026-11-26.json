@@ -1,0 +1,79 @@
+{
+  "topic": "Hierarchical combat decision architecture and truthful planning visualization",
+  "date": "2026-11-26",
+  "policy": "Primary publications and first-party practitioner chapters used for the project research notes.",
+  "sources": [
+    {
+      "title": "Behavior Selection Algorithms: An Overview",
+      "authors": ["Michael Dawe", "Steve Gargolinski", "Luke Dicken", "Troy Humphreys", "Dave Mark"],
+      "url": "https://www.gameaipro.com/GameAIPro/GameAIPro_Chapter04_Behavior_Selection_Algorithms.pdf",
+      "usedFor": ["architecture comparison", "behavior selection taxonomy"]
+    },
+    {
+      "title": "Structural Architecture—Common Tricks of the Trade",
+      "authors": ["Kevin Dill"],
+      "url": "https://www.gameaipro.com/GameAIPro/GameAIPro_Chapter05_Structural_Architecture_Common_Tricks_of_the_Trade.pdf",
+      "usedFor": ["hierarchical reasoning", "blackboards", "modularity", "option stacks"]
+    },
+    {
+      "title": "Building Utility Decisions into Your Existing Behavior Tree",
+      "authors": ["Bill Merrill"],
+      "url": "https://www.gameaipro.com/GameAIPro/GameAIPro_Chapter10_Building_Utility_Decisions_into_Your_Existing_Behavior_Tree.pdf",
+      "usedFor": ["utility inside a hierarchy", "analog selection", "evaluation versus execution"]
+    },
+    {
+      "title": "Exploring HTN Planners through Example",
+      "authors": ["Troy Humphreys"],
+      "url": "https://www.gameaipro.com/GameAIPro/GameAIPro_Chapter12_Exploring_HTN_Planners_through_Example.pdf",
+      "usedFor": ["compound-to-primitive decomposition", "future effect reasoning", "partial plans"]
+    },
+    {
+      "title": "Hierarchical Plan Representations for Encoding Strategic Game AI",
+      "authors": ["Hai Hoang", "Stephen Lee-Urban", "Héctor Muñoz-Avila"],
+      "url": "https://cdn.aaai.org/ojs/18717/18717-52-22353-1-10-20210928.pdf",
+      "usedFor": ["HTN methods", "preconditions", "alternative strategy decomposition"]
+    },
+    {
+      "title": "A Hybrid Approach to Planning and Execution in Dynamic Environments Through Hierarchical Task Networks and Behavior Trees",
+      "authors": ["Xenija Neufeld", "Sanaz Mostaghim", "Sandy Brand"],
+      "url": "https://ojs.aaai.org/index.php/AIIDE/article/download/13044/12892/16561",
+      "usedFor": ["strategic planner plus reactive executor", "local repair", "multi-agent execution"]
+    },
+    {
+      "title": "Advanced Real-Time Hierarchical Task Network: Long-Term Behavior in Real-Time Games",
+      "authors": ["Kousuke Namiki", "Tomohiro Mori", "Youichiro Miyake", "Shinpei Sakata", "Gustavo Martins"],
+      "url": "https://cdn.aaai.org/ojs/18910/18910-52-22676-1-2-20211004.pdf",
+      "usedFor": ["multi-scenario plans", "abstract simulation", "replanning failure modes"]
+    },
+    {
+      "title": "SquadSmart: Hierarchical Planning and Coordinated Plan Execution for Squads of Characters",
+      "authors": ["Peter Gorniak", "Ian Davis"],
+      "url": "https://cdn.aaai.org/ojs/18775/18775-52-22468-1-10-20210929.pdf",
+      "usedFor": ["shared squad knowledge", "synchronization", "time-sliced planning"]
+    },
+    {
+      "title": "Hierarchical AI for Multiplayer Bots in Killzone 3",
+      "authors": ["Remco Straatman", "Tim Verweij", "Alex Champandard", "Robert Marcus", "Hylke Kleve"],
+      "url": "https://www.gameaipro.com/GameAIPro/GameAIPro_Chapter29_Hierarchical_AI_for_Multiplayer_Bots_in_Killzone_3.pdf",
+      "usedFor": ["perception-world model-planner separation", "delegated autonomy", "team hierarchy"]
+    },
+    {
+      "title": "Tactical Position Selection: An Architecture and Query Language",
+      "authors": ["Matthew Jack"],
+      "url": "https://www.gameaipro.com/GameAIPro/GameAIPro_Chapter26_Tactical_Position_Selection.pdf",
+      "usedFor": ["context-specific spatial queries", "generate-filter-score pipeline", "query failure feedback"]
+    },
+    {
+      "title": "Modular Tactical Influence Maps",
+      "authors": ["Dave Mark"],
+      "url": "https://www.gameaipro.com/GameAIPro2/GameAIPro2_Chapter30_Modular_Tactical_Influence_Maps.pdf",
+      "usedFor": ["modular spatial channels", "threat and safety fields", "spell and formation positioning"]
+    },
+    {
+      "title": "Behavior Decision System: Dragon Age Inquisition's Utility Scoring Architecture",
+      "authors": ["Sebastian Hanlon", "Cody Watts"],
+      "url": "https://www.gameaipro.com/GameAIPro3/GameAIPro3_Chapter31_Behavior_Decision_System_Dragon_Age_Inquisition%E2%80%99s_Utility_Scoring_Architecture.pdf",
+      "usedFor": ["legal option enumeration", "utility ranking", "resource opportunity cost"]
+    }
+  ]
+}
