@@ -114,11 +114,15 @@ export function renderDecisionGraphShell(graph,{recorded=false}={}){
 }
 
 const download=(name,url)=>{const anchor=document.createElement('a');anchor.download=name;anchor.href=url;anchor.click();};
+export function relativeWheelZoom({zoom,deltaY,deltaMode=0,pageSize=800,minZoom=0.15,maxZoom=3}){
+  const pixels=deltaY*(deltaMode===1?16:deltaMode===2?pageSize:1);
+  return Math.max(minZoom,Math.min(maxZoom,zoom*Math.exp(-pixels*0.0015)));
+}
 export async function mountDecisionGraph(root,graph,{fileName='creature-decision'}={}){
   const container=root.querySelector('[data-graph-canvas]');if(!container)throw new Error('Decision graph canvas is missing');
   const {default:cytoscape}=await import('../vendor/cytoscape.esm.min.mjs');
   if(!container.isConnected)return {destroy(){}};
-  const cy=cytoscape({container,elements:[...graph.nodes,...graph.edges],wheelSensitivity:0.18,minZoom:0.15,maxZoom:3,
+  const cy=cytoscape({container,elements:[...graph.nodes,...graph.edges],userZoomingEnabled:false,minZoom:0.15,maxZoom:3,
     style:[
       {selector:'node',style:{'shape':'round-rectangle','background-color':'#344054','border-color':'#667085','border-width':2,
         'label':'data(label)','color':'#f2f4f7','font-size':11,'text-wrap':'wrap','text-max-width':180,'text-valign':'center','text-halign':'center',
@@ -154,6 +158,11 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
   root.querySelector('[data-graph-search]')?.addEventListener('input',event=>{const query=event.target.value.trim().toLowerCase();cy.nodes().removeClass('search-match');
     if(query)cy.nodes().filter(node=>node.data('label').toLowerCase().includes(query)).addClass('search-match');
   });
+  const wheelZoom=event=>{event.preventDefault();event.stopPropagation();const bounds=container.getBoundingClientRect();
+    cy.zoom({level:relativeWheelZoom({zoom:cy.zoom(),deltaY:event.deltaY,deltaMode:event.deltaMode,pageSize:container.clientHeight,
+      minZoom:cy.minZoom(),maxZoom:cy.maxZoom()}),renderedPosition:{x:event.clientX-bounds.left,y:event.clientY-bounds.top}});
+  };
+  container.addEventListener('wheel',wheelZoom,{passive:false});
   const observer=typeof ResizeObserver==='function'?new ResizeObserver(()=>{cy.resize();}):null;observer?.observe(container);fit();
-  return {cy,destroy(){observer?.disconnect();cy.destroy();}};
+  return {cy,destroy(){container.removeEventListener('wheel',wheelZoom);observer?.disconnect();cy.destroy();}};
 }

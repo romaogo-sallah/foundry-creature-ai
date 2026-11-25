@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildDecisionGraph,renderDecisionGraphShell} from '../src/foundry/decision-graph.mjs';
+import {buildDecisionGraph,renderDecisionGraphShell,relativeWheelZoom} from '../src/foundry/decision-graph.mjs';
 import {BehaviorSystem} from '../src/framework/behavior-system.mjs';
 
 test('behavior selection records applicable and inactive plan evaluations',()=>{
@@ -76,4 +76,15 @@ test('vendored Cytoscape tolerates Foundry read-only Array prototype helpers',as
     if(descriptor)Object.defineProperty(Array.prototype,'equals',descriptor);
     else delete Array.prototype.equals;
   }
+});
+
+test('wheel zoom scales relative to the current level and respects bounds',()=>{
+  const closer=relativeWheelZoom({zoom:1,deltaY:-100});
+  const closerFromTwo=relativeWheelZoom({zoom:2,deltaY:-100});
+  assert.ok(closer>1);
+  assert.equal(closerFromTwo/2,closer);
+  assert.ok(relativeWheelZoom({zoom:1,deltaY:100})<1);
+  assert.equal(relativeWheelZoom({zoom:2.9,deltaY:-10000}),3);
+  assert.equal(relativeWheelZoom({zoom:0.2,deltaY:10000}),0.15);
+  assert.equal(relativeWheelZoom({zoom:1,deltaY:1,deltaMode:2,pageSize:100}),relativeWheelZoom({zoom:1,deltaY:100}));
 });

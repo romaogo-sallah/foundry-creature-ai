@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Patch 0.45.2:** makes decision-graph wheel zoom relative to the current scale and anchors it beneath the mouse cursor. Pixel, trackpad, line, and page wheel deltas share one bounded exponential scale. Reload with **Ctrl+F5**.
+
 **Patch 0.45.1:** fixes the decision graph on Foundry 14, whose read-only `Array.prototype.equals` collided with Cytoscape's collection prototype. The vendored renderer now shadows that helper locally without changing Foundry globals. Select a taught NPC and use **Alt+W → Decision graph** after reloading with **Ctrl+F5**.
 
 **Version 0.45.0:** adds the interactive [Decision graph debugger](docs/decision-debugger.md), showing tactic selection, behavior components, ranked and rejected actions, score terms, ties, and the selected path.

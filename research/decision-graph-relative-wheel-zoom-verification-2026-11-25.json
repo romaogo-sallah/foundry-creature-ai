@@ -1,0 +1,36 @@
+{
+  "version": "0.45.2",
+  "verifiedAt": "2026-11-25T23:20:00+02:00",
+  "runtimeTarget": {
+    "foundry": "14.370",
+    "system": "pf2e",
+    "systemVersion": "8.7.1"
+  },
+  "behavior": {
+    "scale": "The wheel delta applies an exponential multiplier to the current zoom level.",
+    "anchor": "The rendered graph point beneath the mouse cursor remains fixed while zooming.",
+    "deltaModes": ["pixel and trackpad", "line", "page"],
+    "bounds": {"minimum": 0.15, "maximum": 3},
+    "nativeWheelHandler": "disabled to prevent double zoom; drag panning and programmatic Fit remain enabled"
+  },
+  "verification": {
+    "testFiles": 103,
+    "tests": 1263,
+    "passed": 1263,
+    "failed": 0,
+    "parallelWorkers": 11,
+    "regressionCoverage": [
+      "zoom-in and zoom-out direction",
+      "multiplicative scaling from the current level",
+      "minimum and maximum clamping",
+      "equivalent normalized page and pixel deltas"
+    ],
+    "installedVersion": "foundry-creature-ai 0.45.2"
+  },
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.45.2.zip",
+    "bytes": 873258,
+    "sha256": "A67AB3293F391F22A91289F7963B48E0575404376D58FA65D402C00F582B2FDE"
+  },
+  "activation": "Reload the Foundry client with Ctrl+F5; no server restart is required."
+}
