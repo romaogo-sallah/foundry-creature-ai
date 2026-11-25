@@ -1,0 +1,54 @@
+{
+  "version": "0.45.0",
+  "verifiedAt": "2026-11-25T23:00:00+02:00",
+  "runtimeTarget": {
+    "foundry": "14.370",
+    "system": "pf2e",
+    "systemVersion": "8.7.1"
+  },
+  "renderer": {
+    "name": "Cytoscape.js",
+    "version": "3.35.0",
+    "license": "MIT",
+    "source": "https://js.cytoscape.org/",
+    "vendoredModule": "src/vendor/cytoscape.esm.min.mjs",
+    "sha256": "AA33B0103BBDB721AEB1506000CB6E056692400BABA7264C552D000B09DA01F2",
+    "loading": "Dynamically imported only when a decision graph is opened"
+  },
+  "traceCoverage": [
+    "combat situation and current objective",
+    "all tactic evaluations, including inactive plans and rejection reasons",
+    "selected tactic and attached behavior components",
+    "ranked, tied, chosen and rejected action candidates",
+    "individual score terms and their owning behavior components"
+  ],
+  "behaviorGuarantees": [
+    "The graph consumes the existing decision trace and does not run a separate scoring model.",
+    "Opening the live preview graph does not save controls, spend actions, roll dice or mutate the combat ledger.",
+    "Chat flags retain the compact explanation; the complete last-decision trace remains in memory to avoid enlarging world data.",
+    "Exported JSON is serializable and PNG export contains only the currently visible graph."
+  ],
+  "verification": {
+    "testFiles": 103,
+    "tests": 1261,
+    "passed": 1261,
+    "failed": 0,
+    "parallelWorkers": 11,
+    "builtPackages": 5,
+    "sourceModules": 216,
+    "headlessRendererLayout": "passed",
+    "installedPackageVersions": [
+      "pf2e-tactical-core 0.45.0",
+      "pf2e-tactical-environment 0.45.0",
+      "pf2e-tactical-conditions 0.45.0",
+      "pf2e-tactical-movement 0.45.0",
+      "foundry-creature-ai 0.45.0"
+    ]
+  },
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.45.0.zip",
+    "bytes": 872687,
+    "sha256": "8009AC76B48BD99B04D26F59BCD7DFFFED1EF00BD8F753F703A374B0B9F5BC2C"
+  },
+  "liveState": "All five package folders are installed at 0.45.0. Because this is a code-only update to already discovered modules, reload the browser with Ctrl+F5; the Foundry server does not need to stop."
+}

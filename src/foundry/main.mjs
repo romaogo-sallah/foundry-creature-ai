@@ -15,6 +15,7 @@ import { behaviorAPI, behaviorConfiguration, behaviorCatalog, configureBehaviors
 import { AIPresentation, registerPresentationSettings, applyAIRollPrivacy, applyAIDiceSuppression } from './ai-presentation.mjs';
 import { registerPerceptionSettings } from './npc-perception.mjs';
 import {renderTacticalMap} from './tactical-map-view.mjs';
+import {buildDecisionGraph,renderDecisionGraphShell,mountDecisionGraph} from './decision-graph.mjs';
 import { creatureControlsLayout, ensureCreatureControlsStyles } from './controls-layout.mjs';
 import { resetActorsToPrototype } from './actor-reset.mjs';
 import { expireSpellZones } from './spell-zones.mjs';
@@ -67,20 +68,25 @@ async function showError(error) {
   ui.notifications.error(`Creature AI: ${error.message}`);
 }
 
-export async function preview(token = selected(), config) {
+async function calculateDecision(token,config,{fullExplanation=false}={}){
   if (!profile) throw new Error('Creature AI is still loading its profiles; try again in a moment');
-  const adapter = createCreatureAdapter(token, profile, { config, reactions });
+  const adapter=createCreatureAdapter(token,profile,{config,reactions});
   await adapter.assertReady();
-  const ledger = await adapter.readLedger(adapter.turnKey());
-  if (ledger.uncertain) throw new Error('Correct the interrupted action ledger first');
+  const ledger=await adapter.readLedger(adapter.turnKey());
+  if(ledger.uncertain)throw new Error('Correct the interrupted action ledger first');
   const state=await adapter.snapshot(ledger),decision=await adapter.planDecision(state);
+  return {adapter,ledger,decision,record:decisionExplanation(decision,{maxMovement:fullExplanation?Infinity:9})};
+}
+
+export async function preview(token = selected(), config) {
+  const {adapter,ledger,decision,record}=await calculateDecision(token,config);
   const estimate = decision.chosen?.estimate;
   await foundry.applications.api.DialogV2.wait({
     window: { title: `Creature AI — ${token.name}` },
     content: `<p>Next action: <strong>${escapeHTML(decision.chosen?.kind ?? 'endTurn')}</strong>. ${ledger.actionsRemaining} actions remain.${ledger.bonusMovementActions ? ` Plus ${ledger.bonusMovementActions} Step/Stride-only action.` : ''}</p>
       ${decision.chosen?.kind === 'endTurn' ? `<p>${escapeHTML(decision.diagnostics.noActionReason)}</p>` :
         decision.diagnostics.movementBlocked ? `<p>Movement unavailable: ${escapeHTML(decision.diagnostics.movementBlocked)}.</p>` : ''}
-      ${renderDecisionExplanation(decisionExplanation(decision))}
+      ${renderDecisionExplanation(record)}
       <p>Policy: Dawnsbury 4.44 ranking with ${escapeHTML(creatureProfile(token.actor).label)} capabilities. ${escapeHTML(decision.reason)}. ${decision.tiedIds.length > 1 ? `${decision.tiedIds.length} equal choices; previews can pick different ties.` : ''}</p>
       <p>Estimated AC ${decision.diagnostics.referenceAC}, encounter level ${decision.diagnostics.encounterLevel}. Layers rank before values. Movement values describe the best supported action after moving. Target selection: ${escapeHTML(adapter.targetMode === 'alliance' ? 'all opposing-alliance combatants' : 'saved manual enemies')}. Visibility and other eligibility checks still apply.</p>
       ${estimate?.odds ? `<p>Estimated maneuver success ${Math.round((estimate.odds.success + estimate.odds.criticalSuccess) * 100)}%; critical failure ${Math.round(estimate.odds.criticalFailure * 100)}%. ${decision.chosen.kind === 'knockdown' ? 'Uses an estimated Reflex DC.' : 'Uses the configured Escape DC.'}</p>` : ''}
@@ -88,6 +94,26 @@ export async function preview(token = selected(), config) {
     buttons: [{ action: 'close', label: 'Close', default: true }], rejectClose: false,
   });
   return decision;
+}
+
+async function showDecisionGraph(token,record,{recorded=false}={}){
+  await ensureCreatureControlsStyles();
+  const graph=buildDecisionGraph(record,behaviorCatalog(),{nameOf:id=>canvas.tokens.get(id)?.name??id});
+  let mounted;
+  await foundry.applications.api.DialogV2.wait({
+    window:{title:`Creature AI — decision graph: ${token.name}`,resizable:true,minimizable:true},
+    classes:['creature-ai-decision-graph'],position:{width:Math.max(360,Math.min(globalThis.innerWidth??1200,1400)-40),height:Math.max(360,Math.min(globalThis.innerHeight??850,950)-40)},
+    content:renderDecisionGraphShell(graph,{recorded}),
+    render:async(_event,dialog)=>{mounted?.destroy();mounted=await mountDecisionGraph(dialog.element,graph,{fileName:`${token.name}-decision`});},
+    close:()=>mounted?.destroy(),buttons:[{action:'close',label:'Close',default:true}],rejectClose:false,
+  });
+  return {record,graph};
+}
+
+export async function decisionGraph(token=selected(),config){
+  if(!game.user.isGM)throw new Error('Decision graphs are visible to the GM only');
+  const {record}=await calculateDecision(token,config,{fullExplanation:true});
+  return showDecisionGraph(token,record);
 }
 
 export async function openBehaviorControls(token=selected()) {
@@ -117,9 +143,11 @@ export async function explainLast(token = selected()) {
   })?.flags[MODULE_ID].decisionLog;
   const record = saved ?? runners.get(token.id)?.adapter.lastDecision;
   if (!record) { ui.notifications.info('No recorded creature decision yet. Run One action or use Preview.'); return; }
-  await foundry.applications.api.DialogV2.wait({ window: { title: `Creature AI — last decision: ${token.name}` },
+  const fullRecord=runners.get(token.id)?.adapter.lastDecisionGraph;
+  const answer=await foundry.applications.api.DialogV2.wait({ window: { title: `Creature AI — last decision: ${token.name}` },
     content: `<p>Recorded choice from the last run; current conditions may have changed.</p>${renderDecisionExplanation(record)}`,
-    buttons: [{ action: 'close', label: 'Close', default: true }], rejectClose: false });
+    buttons: [{action:'graph',label:'Open graph'},{ action: 'close', label: 'Close', default: true }], rejectClose: false });
+  if(answer==='graph')await showDecisionGraph(token,fullRecord?.chosenId===record.chosenId?fullRecord:record,{recorded:true});
   return record;
 }
 
@@ -208,6 +236,7 @@ export async function openControls(token = selected()) {
     buttons: [
       { action: 'save', label: 'Save creature', callback: readSettings('save') },
       { action: 'preview', label: 'Preview', callback: readSettings('preview') },
+      { action: 'graph', label: 'Decision graph', callback: readSettings('graph') },
       { action: 'decision', label: 'Last decision', callback: () => ({ action: 'decision' }) },
       { action: 'behaviors', label: 'Tactics / behaviors', callback: () => ({ action: 'behaviors' }) },
       ...(token.actor.itemTypes.spell?.length?[{action:'spells',label:'Spell AI',callback:()=>({action:'spells'})}]:[]),
@@ -221,7 +250,7 @@ export async function openControls(token = selected()) {
   });
   if (!answer) return;
   let nextConfig;
-  if (['save', 'preview', 'step', 'run'].includes(answer.action)) {
+  if (['save', 'preview', 'graph', 'step', 'run'].includes(answer.action)) {
     const currentTargets = [...game.user.targets].filter(t => t !== token && canAssignTarget(token.actor, t.actor));
     const targetIds = currentTargets.length ? currentTargets.map(t => t.id) : config.targetIds ?? [];
     const targetMode = targetingMode(token.actor, { targetMode: answer.targetMode });
@@ -234,9 +263,9 @@ export async function openControls(token = selected()) {
       entertaining: answer.entertaining, showcaseBonus: answer.showcaseBonus, frontlineTargetIds: null,
       packMorale: answer.packMorale, packGroup: answer.packGroup || 'default', pauseForReactions: answer.pauseForReactions, autoReactions: answer.autoReactions,
       ...(taught.id === 'ogre' ? { refuseCount: answer.refuseCount } : {}),
-      ...(taught.id==='manticore-quill'&&answer.action==='preview'?{quillPreviewRemaining:answer.quillsRemaining}:{}),
+      ...(taught.id==='manticore-quill'&&['preview','graph'].includes(answer.action)?{quillPreviewRemaining:answer.quillsRemaining}:{}),
       ...(taught.id === 'kobold-scout' ? { crossbowLoaded: answer.crossbowLoaded, packMorale: false } : {}) };
-    if (answer.action !== 'preview') {
+    if (!['preview','graph'].includes(answer.action)) {
       if (runners.get(token.id)?.running) throw new Error('Wait for the current creature action before changing its settings');
       await adapter.configure();
       await token.document.setFlag(MODULE_ID, 'config', nextConfig);
@@ -252,6 +281,7 @@ export async function openControls(token = selected()) {
       break;
     }
     case 'preview': return preview(token, nextConfig);
+    case 'graph': return decisionGraph(token,nextConfig);
     case 'decision': return explainLast(token);
     case 'behaviors': return openBehaviorControls(token);
     case 'spells': return openSpellProfiles(token);
@@ -381,7 +411,7 @@ Hooks.once('ready', async () => {
   await rulesRuntime.start();
   game.modules.get(MODULE_ID).api = {...rulesRuntime.rules,version:RUNTIME_VERSION,planning:{status:()=>({...planningWorker.status(),decisions:decisionWorker.status()})},
     casting:{inspect:(actor=canvas.tokens.controlled[0]?.actor)=>{const catalog=casterCatalog(actor);return {spells:catalog.descriptors,unsupported:catalog.unsupported};}},
-    open:openControls,preview,explainLast,runTurn,stop,resetActors,enableFullAuto,correctLedger,tacticalMap,supportedProfiles,registerCreatureProfile};
+    open:openControls,preview,decisionGraph,explainLast,runTurn,stop,resetActors,enableFullAuto,correctLedger,tacticalMap,supportedProfiles,registerCreatureProfile};
   game.modules.get(MODULE_ID).api.behaviors = {...behaviorAPI,open:openBehaviorControls,
     inspect:(token=selected())=>({configuration:behaviorConfiguration(createCreatureAdapter(token,profile,{reactions})),
       lastPlan:token.document.getFlag(MODULE_ID,'behaviorState')??null})};

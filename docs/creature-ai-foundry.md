@@ -1,6 +1,6 @@
-# Foundry Creature AI — version 0.44.0
+# Foundry Creature AI — version 0.45.0
 
-**Version 0.44.0:** verifies all five packages on Foundry 14.370 / PF2e 8.7.1. The manual Movement package adds editable three-dimensional [Water zones](water-zones.md), including negative elevation and native Swim-Speed budgets. Prepared movement now tolerates PF2e actors with no land Speed. Restart Foundry once for the new Region behavior type, then reload clients with **Ctrl+F5**.
+**Version 0.45.0:** adds an interactive [Decision graph debugger](decision-debugger.md) to **Alt+W**. It displays tactic selection, active behavior components, ranked and rejected actions, score terms, ties, and the chosen path. Version 0.44.0 added editable three-dimensional [Water zones](water-zones.md) and verified the suite on Foundry 14.370 / PF2e 8.7.1.
 
 **Version 0.37.0:** Confused NPCs use a random-target attack override: allies and neutrals become potential targets, with ordinary Strikes, taught offensive cantrips and simple attack preparation/movement. Normal tactics, stealth, special abilities, complex aerial plans and slot spells are excluded. See [Confused AI](confused-ai.md). Reload every client with **Ctrl+F5**.
 

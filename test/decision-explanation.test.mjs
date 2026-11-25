@@ -25,6 +25,7 @@ test('the chosen movement survives log trimming even when a creature override ch
   assert.equal(record.totalOptions, 30);
   assert.equal(record.options.length, 10);
   assert.equal(record.options.find(option => option.selected).id, 'move-29');
+  assert.equal(decisionExplanation(decision,{maxMovement:Infinity}).options.length,30);
 });
 
 test('rendered decisions include rejection reasons and escape untrusted token names and labels', () => {

@@ -7,14 +7,15 @@ test('Foundry controls preview with the reaction engine and reopen a saved choic
   const once = new Map(), dialogs = [], module = {};
   globalThis.libWrapper = { register: () => {} };
   globalThis.Hooks = { once: (name, fn) => once.set(name, fn), on: () => {} };
-  globalThis.game = { settings:{get:(_namespace,key)=>key==='decisionPlanningBackend'?'native':undefined}, system: { id: 'pf2e' }, release: { generation: 14 }, modules: { get: () => module }, messages: { contents: [] },combat:{id:'combat',combatants:[]} };
+  globalThis.game = { user:{isGM:true},settings:{get:(_namespace,key)=>key==='decisionPlanningBackend'?'native':undefined}, system: { id: 'pf2e' }, release: { generation: 14 }, modules: { get: () => module }, messages: { contents: [] },combat:{id:'combat',combatants:[]} };
   globalThis.canvas = { scene: { id: 'scene' }, tokens: { get: id => ({ name: id }),placeables:[] } };
   globalThis.foundry = { applications: { api: { DialogV2: { wait: async data => dialogs.push(data) } } } };
   const profiles = JSON.parse(await readFile(new URL('../profiles/creatures.json', import.meta.url)));
   t.mock.method(globalThis, 'fetch', async () => ({ ok: true, json: async () => profiles }));
-  const { preview, explainLast } = await import('../src/foundry/main.mjs');
+  const { preview, decisionGraph, explainLast } = await import('../src/foundry/main.mjs');
   await once.get('ready')();
   assert.equal(module.api.explainLast, explainLast);
+  assert.equal(module.api.decisionGraph,decisionGraph);
 
   const choice = { id: 'bite', kind: 'strike', targetId: 'fighter', assessment: { value: 5 } };
   const decision = { chosen: choice, ranked: [{ candidate: choice, layer: 6, utility: 5, terms: [] }],
@@ -32,6 +33,10 @@ test('Foundry controls preview with the reaction engine and reopen a saved choic
   t.mock.method(PF2eWolfAdapter.prototype, 'decide', () => decision);
   assert.equal(await preview(token), decision);
   assert.match(dialogs.at(-1).content, /Chosen/);
+  const graph=await decisionGraph(token);
+  assert.equal(graph.record.chosenId,'bite');
+  assert.ok(graph.graph.nodes.some(node=>node.data.id==='option-bite'));
+  assert.ok(dialogs.at(-1).classes.includes('creature-ai-decision-graph'));
 
   const record = { chosenId: 'saved-bite', reason: 'saved random tie', tiedIds: ['saved-bite', 'other-bite'],
     options: [{ id: 'saved-bite', kind: 'strike', targetId: 'magus', selected: true, layer: 6, value: 7, terms: [] }],

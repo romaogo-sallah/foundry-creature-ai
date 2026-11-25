@@ -45,23 +45,28 @@ export class BehaviorSystem {
   }
   select(state) {
     const { configuration, context, previous } = state.behavior;
-    const scores = configuration.plans.flatMap(id => {
+    const evaluations = configuration.plans.map(id => {
       const plan = this.plans.get(id);
-      if(plan.requires?.some(component=>!configuration.components.includes(component)))return [];
+      const missing=plan.requires?.filter(component=>!configuration.components.includes(component))??[];
+      if(missing.length)return {id,label:plan.label,applicable:false,value:null,
+        reason:`Missing required behavior${missing.length===1?'':'s'}: ${missing.join(', ')}`};
       const result = plan.score(context, state);
-      if (!result || !Number.isFinite(result.value)) return [];
+      if (!result || !Number.isFinite(result.value)) return {id,label:plan.label,applicable:false,value:null,
+        reason:'Current tactical conditions do not activate this plan'};
       const continuity = previous?.planId === id && !context.emergency ? 0.75 : 0;
       const preference = configuration.preferredPlan === id && !context.emergency ? 2 : 0;
-      return [{ id, label: plan.label, value: result.value + continuity + preference,
-        reason: result.reason, continuity, preference }];
-    }).sort((a,b) => b.value-a.value || a.id.localeCompare(b.id));
+      return {id,label:plan.label,applicable:true,value:result.value+continuity+preference,baseValue:result.value,
+        reason:result.reason,continuity,preference};
+    });
+    const scores = evaluations.filter(evaluation=>evaluation.applicable)
+      .sort((a,b) => b.value-a.value || a.id.localeCompare(b.id));
     // Every default includes aggressive. An actor's optional plans can all be
     // temporarily unavailable; retain the shared abilities rather than stall.
     const selected = scores[0] ?? { id: 'aggressive', label: 'Engage', value: 0, reason: 'No optional tactic is currently applicable' };
     const policies = this.plans.get(selected.id)?.components ?? [];
     const active = configuration.components.filter(id => this.components.get(id).kind !== 'policy' || policies.includes(id));
     const goal=this.plans.get(selected.id)?.objective?.(context,state,previous)??{kind:selected.id,label:selected.label};
-    return { planId: selected.id, label: selected.label, reason: selected.reason, goal, activeComponents: active, scores,
+    return { planId: selected.id, label: selected.label, reason: selected.reason, goal, activeComponents: active, scores,evaluations,
       context: { ...context }, configuration };
   }
   candidates(state, offered, selection = this.select(state)) {

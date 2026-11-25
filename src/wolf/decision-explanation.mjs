@@ -1,10 +1,10 @@
 // Compact, serializable record of the actual decision. Never reroll ties to
 // explain an action that has already been selected or executed.
-export function decisionExplanation(decision) {
+export function decisionExplanation(decision,{maxMovement=9}={}) {
   let movementRows = 0;
   const options = (decision.ranked ?? []).filter(entry => {
     if (!entry.candidate.assessment?.movement) return true;
-    return entry.candidate.id === decision.chosen?.id || movementRows++ < 9;
+    return entry.candidate.id === decision.chosen?.id || movementRows++ < maxMovement;
   }).map(({ candidate, layer, utility, terms }) => ({
     id: candidate.id, kind: candidate.kind, targetId: candidate.targetId ?? null,
     ...(candidate.spellName?{spellName:candidate.spellName,spellSlug:candidate.spellSlug,

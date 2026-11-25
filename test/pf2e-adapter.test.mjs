@@ -391,6 +391,8 @@ test('GM reports preserve the actual ranked decision and explain unavailable Kno
   const message = f.calls.find(call => call[0] === 'chat')[1];
   const record = message.flags[MODULE_ID].decisionLog;
   assert.equal(record.chosenId, decision.chosen.id);
+  assert.equal(f.adapter.lastDecisionGraph.chosenId,decision.chosen.id);
+  assert.ok(f.adapter.lastDecisionGraph.options.length>=record.options.length);
   assert.equal(record.options.find(option => option.selected).id, decision.chosen.id);
   assert.match(message.content, /Why this decision/);
   assert.match(message.content, /target is already prone/);
@@ -2244,7 +2246,7 @@ test('shared core installs the reaction query and AI exposes the same reaction c
   f.hooks.get('init')();
   assert.equal(typeof CONFIG.queries[`${MODULE_ID}.reactionPrompt`], 'function');
   assert.equal(typeof game.modules.get(MODULE_ID).api.reactions.openControls, 'function');
-  assert.equal(game.modules.get(MODULE_ID).api.version,'0.44.0');
+  assert.equal(game.modules.get(MODULE_ID).api.version,'0.45.0');
   assert.equal(typeof game.modules.get(MODULE_ID).api.resetActors,'function');
 });
 

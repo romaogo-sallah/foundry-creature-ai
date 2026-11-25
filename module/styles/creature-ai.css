@@ -86,3 +86,108 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+.application.creature-ai-decision-graph {
+  min-width: min(720px, calc(100vw - 24px));
+  min-height: min(520px, calc(100dvh - 24px));
+}
+
+.application.creature-ai-decision-graph .window-content,
+.application.creature-ai-decision-graph .dialog-form,
+.application.creature-ai-decision-graph .dialog-content,
+.application.creature-ai-decision-graph .decision-debugger {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.application.creature-ai-decision-graph .dialog-content {
+  overflow: hidden;
+  padding: 8px;
+}
+
+.decision-debugger {
+  display: grid;
+  grid-template-rows: auto auto minmax(300px, 1fr) auto;
+  gap: 8px;
+}
+
+.decision-debugger__intro,
+.decision-debugger__toolbar,
+.decision-debugger__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+}
+
+.decision-debugger__intro span,
+.decision-debugger__legend span {
+  color: var(--color-text-subtle, #b7bec9);
+}
+
+.decision-debugger__toolbar {
+  padding: 6px;
+  border: 1px solid var(--color-border-light-2, #666);
+  border-radius: 4px;
+}
+
+.decision-debugger__toolbar button {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.decision-debugger__toolbar label {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.decision-debugger__toolbar input[type="search"] {
+  flex: 1 1 180px;
+  min-width: 120px;
+}
+
+.decision-debugger__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 25%);
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border-light-2, #666);
+  border-radius: 4px;
+  background: #111827;
+}
+
+.decision-debugger__canvas {
+  min-width: 0;
+  min-height: 300px;
+  height: 100%;
+  background: radial-gradient(circle at center, #1f2937 0, #111827 72%);
+}
+
+.decision-debugger__details {
+  min-width: 0;
+  overflow: auto;
+  padding: 10px;
+  color: #edf2f7;
+  background: #18212f;
+  border-left: 1px solid #4b5563;
+}
+
+.decision-debugger__details pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  user-select: text;
+}
+
+.decision-debugger__legend .chosen { color: #7ee2a8; }
+.decision-debugger__legend .tied { color: #66bfff; }
+.decision-debugger__legend .inactive { color: #969eaa; }
+.decision-debugger__legend .rejected { color: #e47b86; }
+
+@media (max-width: 800px) {
+  .decision-debugger__body { grid-template-columns: 1fr; grid-template-rows: minmax(300px, 1fr) minmax(100px, 28%); }
+  .decision-debugger__details { border-left: 0; border-top: 1px solid #4b5563; }
+}

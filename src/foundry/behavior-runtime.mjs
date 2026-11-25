@@ -261,7 +261,8 @@ export async function configureBehaviors(document,configuration={}) {
   await document.setFlag(ns,'behaviors',patch);
   return validated;
 }
-export function behaviorCatalog(){return {components:[...tacticalBehaviors.components.values()].map(({id,label,kind,core})=>({id,label,kind,core:Boolean(core)})),
-  plans:[...tacticalBehaviors.plans.values()].map(({id,label,components})=>({id,label,components}))};}
+export function behaviorCatalog(){return {components:[...tacticalBehaviors.components.values()].map(({id,label,kind,core,actionKinds})=>
+  ({id,label,kind,core:Boolean(core),actionKinds:[...actionKinds??[]]})),
+  plans:[...tacticalBehaviors.plans.values()].map(({id,label,components,requires})=>({id,label,components:[...components],requires:[...requires??[]]}))};}
 export const behaviorAPI={configure:configureBehaviors,catalog:behaviorCatalog,
   registerComponent:component=>tacticalBehaviors.registerComponent(component),registerPlan:plan=>tacticalBehaviors.registerPlan(plan)};

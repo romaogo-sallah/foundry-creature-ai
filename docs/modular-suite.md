@@ -1,4 +1,4 @@
-# PF2e Tactical Rules suite — 0.44.0
+# PF2e Tactical Rules suite — 0.45.0
 
 The release contains five Foundry modules. Manual rules remain available with Creature AI disabled. All packages use one shared reaction barrier and one contextual Check.roll wrapper, and every source module has exactly one installed owner.
 
