@@ -48,9 +48,10 @@ export class CombatLab {
       const increment=ranged?Math.max(0,Math.ceil(distance/strike.rangeIncrement)-1):0,rangePenalty=ranged?Math.min(strike.maxIncrements-1,increment)*2:0;
       const inReach=ranged?distance<=strike.rangeIncrement*strike.maxIncrements:distance<=strike.reach;
       strikes[strike.id]={usable:inReach&&sight.lineOfSight&&sight.lineOfEffect,inReach,rangePenalty,coverBonus:sight.coverBonus,
-        concealmentDC:null,lineOfSight:sight.lineOfSight,lineOfEffect:sight.lineOfEffect};
+        concealmentDC:sight.concealmentDC,lineOfSight:sight.lineOfSight,lineOfEffect:sight.lineOfEffect};
     }
-    return {distance,lineOfSight:sight.lineOfSight,lineOfEffect:sight.lineOfEffect,coverBonus:sight.coverBonus,strikes};
+    return {distance,lineOfSight:sight.lineOfSight,lineOfEffect:sight.lineOfEffect,coverBonus:sight.coverBonus,
+      concealmentDC:sight.concealmentDC,strikes};
   }
 
   #routeDistance(actor,from){
@@ -76,7 +77,8 @@ export class CombatLab {
   #state(actor,turn){
     const enemies=this.enemies(actor).map(enemy=>{const position=this.#positionFacts(actor,enemy),enemyMelee=enemy.strikes.filter(strike=>!strike.rangeIncrement);
       return {id:enemy.id,name:enemy.name??enemy.id,distance:position.distance,lineOfSight:position.lineOfSight,lineOfEffect:position.lineOfEffect,
-        coverBonus:position.coverBonus,strikes:position.strikes,inReach:enemyMelee.some(strike=>position.distance<=strike.reach),awareness:{state:'observed',detection:'observed'},
+        coverBonus:position.coverBonus,concealmentDC:position.concealmentDC,strikes:position.strikes,
+        inReach:enemyMelee.some(strike=>position.distance<=strike.reach),awareness:{state:'observed',detection:'observed'},
         alliesInReach:this.allies(actor).filter(ally=>this.grid.distanceFeet(ally.position,enemy.position)<=ally.reach).length,
         tactics:{role:enemy.strikes.some(strike=>strike.rangeIncrement)?'ranged':'melee',reach:enemy.reach,speed:enemy.speed,
           rangeIncrement:Math.max(0,...enemy.strikes.map(strike=>strike.rangeIncrement??0))},prone:Boolean(enemy.conditions.prone),offGuard:false};});
@@ -99,7 +101,7 @@ export class CombatLab {
         canCloseRange:moves.some(move=>enemies.some(enemy=>(move.targets[enemy.id]?.distance??Infinity)<enemy.distance)),meleeAttackValue,rangedAttackValue,
         caster:false,skulk:Boolean(actor.skulk),pack:Boolean(actor.pack),allies:this.allies(actor).length,closingMelee:enemies.some(enemy=>enemy.tactics.role==='melee'),
         swarmOpportunity:this.allies(actor).length>0,supportRecipients:0,emergency:health<0.2,hideUseful:this.grid.terrain(actor.position).cover,
-        hiddenBelief:false,planAge:0,waitPatienceReached:false}},diagnostics:{},conditionRules:null,rejectedActionIds:[],seek:{available:false},
+        hiddenBelief:false,planAge:0,waitPatienceReached:false}},diagnostics:{},rejectedActionIds:[],seek:{available:false},
       escapes:[],escapeBlocked:false,retreatComplete:false,morale:{broken:false},conditionRules:{},sharedBehaviors:{hideCandidates:[],sneakCandidates:[],protectedMoves:[]}};
     return state;
   }
@@ -189,7 +191,7 @@ export function renderCombatReport(report){
   const lines=[`# Combat lab: ${report.scenario.name}`,'',report.scenario.description,'',
     `- Scenario: \`${report.scenario.id}\``, `- Seed: ${report.scenario.seed}`,`- Outcome: **${report.outcome.status}**${report.outcome.winner?` — ${report.outcome.winner}`:''}`,
     `- Decisions: ${report.metrics.decisions}; actions spent: ${report.metrics.actions}; damage: ${report.metrics.damage}; movement: ${report.metrics.movement} ft`,'',
-    '## Legend','','`#` wall · `+` cover · `~` difficult terrain · `^` hazard · letters are living actors','','## Initial grid','','```text',report.initialGrid,'```',''];
+    '## Legend','','`#` wall · `+` cover · `?` obscuring · `~` difficult terrain · `^` hazard · letters are living actors','','## Initial grid','','```text',report.initialGrid,'```',''];
   for(const round of report.rounds){lines.push(`## Round ${round.round}`,'','```text',round.startGrid,'```','');
     for(const turn of round.turns){lines.push(`### ${turn.actorId}`,'',`Start: (${turn.start.x},${turn.start.y}), ${turn.startHp} HP. End: (${turn.end.x},${turn.end.y}), ${turn.endHp} HP, ${turn.actionsLeft} actions left.`,'',
       '| # | Actions | Plan | Decision | Score/layer | Resolution |','|---:|---:|---|---|---:|---|');

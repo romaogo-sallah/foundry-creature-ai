@@ -1,0 +1,69 @@
+{
+  "schema": "foundry-creature-ai/combat-scenario@1",
+  "id": "ogres-vs-kobolds-open-field",
+  "name": "Two Ogres vs Two Kobolds",
+  "description": "Two ogres and two kobold scouts begin 24 squares apart. Six two-square cover sources and two two-square obscuring clouds break up the firing lanes.",
+  "seed": 2402,
+  "maxRounds": 12,
+  "map": [
+    "#############################",
+    "#...........................#",
+    "#......+......??.....+......#",
+    "#.O....+.............+....k.#",
+    "#...........++..............#",
+    "#...........................#",
+    "#................++.........#",
+    "#.P....+.............+....l.#",
+    "#......+......??.....+......#",
+    "#...........................#",
+    "#############################"
+  ],
+  "terrainZones": {
+    "cover": [
+      {"id": "cover-west-north", "cells": [[7, 2], [7, 3]]},
+      {"id": "cover-west-south", "cells": [[7, 7], [7, 8]]},
+      {"id": "cover-center-north", "cells": [[12, 4], [13, 4]]},
+      {"id": "cover-center-south", "cells": [[17, 6], [18, 6]]},
+      {"id": "cover-east-north", "cells": [[21, 2], [21, 3]]},
+      {"id": "cover-east-south", "cells": [[21, 7], [21, 8]]}
+    ],
+    "obscuring": [
+      {"id": "mist-north", "cells": [[14, 2], [15, 2]], "concealmentDC": 5},
+      {"id": "mist-south", "cells": [[14, 8], [15, 8]], "concealmentDC": 5}
+    ]
+  },
+  "actors": [
+    {
+      "id": "ogre-one", "name": "Ogre One", "marker": "O", "glyph": "O", "team": "ogres", "initiative": 12,
+      "position": {"x": 2, "y": 3}, "hp": 59, "ac": 17, "speed": 25, "reach": 10, "referenceAC": 19,
+      "strikes": [
+        {"id": "greatclub", "name": "Greatclub", "bonus": 12, "damage": 12, "reach": 10},
+        {"id": "javelin", "name": "Javelin", "bonus": 12, "damage": 10, "rangeIncrement": 30}
+      ]
+    },
+    {
+      "id": "ogre-two", "name": "Ogre Two", "marker": "P", "glyph": "O", "team": "ogres", "initiative": 10,
+      "position": {"x": 2, "y": 7}, "hp": 59, "ac": 17, "speed": 25, "reach": 10, "referenceAC": 19,
+      "strikes": [
+        {"id": "greatclub", "name": "Greatclub", "bonus": 12, "damage": 12, "reach": 10},
+        {"id": "javelin", "name": "Javelin", "bonus": 12, "damage": 10, "rangeIncrement": 30}
+      ]
+    },
+    {
+      "id": "kobold-one", "name": "Kobold Scout One", "marker": "k", "glyph": "K", "team": "kobolds", "initiative": 18,
+      "position": {"x": 26, "y": 3}, "hp": 30, "ac": 19, "speed": 25, "reach": 5, "referenceAC": 19, "skulk": true, "pack": true,
+      "strikes": [
+        {"id": "crossbow", "name": "Crossbow", "bonus": 11, "damage": 7, "rangeIncrement": 120},
+        {"id": "shortsword", "name": "Shortsword", "bonus": 11, "damage": 7, "precisionDamage": 4}
+      ]
+    },
+    {
+      "id": "kobold-two", "name": "Kobold Scout Two", "marker": "l", "glyph": "K", "team": "kobolds", "initiative": 16,
+      "position": {"x": 26, "y": 7}, "hp": 30, "ac": 19, "speed": 25, "reach": 5, "referenceAC": 19, "skulk": true, "pack": true,
+      "strikes": [
+        {"id": "crossbow", "name": "Crossbow", "bonus": 11, "damage": 7, "rangeIncrement": 120},
+        {"id": "shortsword", "name": "Shortsword", "bonus": 11, "damage": 7, "precisionDamage": 4}
+      ]
+    }
+  ]
+}

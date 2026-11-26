@@ -11,20 +11,21 @@ function point(value){
 
 /** A deterministic square-grid battlefield independent from Foundry and PIXI. */
 export class VirtualGrid {
-  constructor({width,height,blocked=[],cover=[],difficult=[],hazards={}}){
+  constructor({width,height,blocked=[],cover=[],obscuring=[],difficult=[],hazards={}}){
     if(!Number.isInteger(width)||width<2||!Number.isInteger(height)||height<2)throw new Error('Virtual grid needs width/height >= 2');
     this.width=width;this.height=height;
     this.blocked=new Set(blocked.map(value=>cellKey(point(value))));
     this.cover=new Set(cover.map(value=>cellKey(point(value))));
+    this.obscuring=new Set(obscuring.map(value=>cellKey(point(value))));
     this.difficult=new Set(difficult.map(value=>cellKey(point(value))));
     this.hazards=new Map(Object.entries(hazards).map(([key,value])=>[key,Number(value)]));
-    for(const key of [...this.blocked,...this.cover,...this.difficult,...this.hazards.keys()]){
+    for(const key of [...this.blocked,...this.cover,...this.obscuring,...this.difficult,...this.hazards.keys()]){
       const [x,y]=key.split(',').map(Number);if(!this.contains({x,y}))throw new Error(`Terrain cell ${key} is outside the virtual grid`);
     }
   }
   contains(cell){return cell.x>=0&&cell.y>=0&&cell.x<this.width&&cell.y<this.height;}
   isBlocked(cell){return !this.contains(cell)||this.blocked.has(cellKey(cell));}
-  terrain(cell){const key=cellKey(cell);return {blocked:this.blocked.has(key),cover:this.cover.has(key),
+  terrain(cell){const key=cellKey(cell);return {blocked:this.blocked.has(key),cover:this.cover.has(key),obscuring:this.obscuring.has(key),
     difficult:this.difficult.has(key),hazard:this.hazards.get(key)??0};}
 
   /** Center-to-center supercover cells. Endpoints are included. */
@@ -45,7 +46,8 @@ export class VirtualGrid {
   sight(from,to){
     const cells=this.ray(from,to),between=cells.slice(1,-1),blocked=between.some(cell=>this.isBlocked(cell));
     const cover=!blocked&&cells.slice(1).some(cell=>this.cover.has(cellKey(cell)));
-    return {lineOfSight:!blocked,lineOfEffect:!blocked,coverBonus:cover?2:0,cells};
+    const concealed=!blocked&&cells.slice(1).some(cell=>this.obscuring.has(cellKey(cell)));
+    return {lineOfSight:!blocked,lineOfEffect:!blocked,coverBonus:cover?2:0,concealmentDC:concealed?5:null,cells};
   }
 
   distanceFeet(from,to){return tileDistance(point(from),point(to))*5;}
@@ -103,17 +105,17 @@ export class VirtualGrid {
   render(actors=[]){
     const tokens=new Map(actors.filter(actor=>actor.hp>0).map(actor=>[cellKey(actor.position),actor.glyph??actor.id[0].toUpperCase()]));
     const rows=[];for(let y=0;y<this.height;y++){let row='';for(let x=0;x<this.width;x++){const key=`${x},${y}`;
-      row+=tokens.get(key)??(this.blocked.has(key)?'#':this.hazards.has(key)?'^':this.difficult.has(key)?'~':this.cover.has(key)?'+':'.');}rows.push(row);}
+      row+=tokens.get(key)??(this.blocked.has(key)?'#':this.hazards.has(key)?'^':this.difficult.has(key)?'~':this.cover.has(key)?'+':this.obscuring.has(key)?'?':'.');}rows.push(row);}
     return rows.join('\n');
   }
 }
 
 export function gridFromAscii(rows,{hazardDamage=6}={}){
   if(!Array.isArray(rows)||!rows.length||rows.some(row=>typeof row!=='string'||row.length!==rows[0].length))throw new Error('ASCII grid rows need equal width');
-  const terrain={width:rows[0].length,height:rows.length,blocked:[],cover:[],difficult:[],hazards:{}};
+  const terrain={width:rows[0].length,height:rows.length,blocked:[],cover:[],obscuring:[],difficult:[],hazards:{}};
   const markers=new Map();
   rows.forEach((row,y)=>[...row].forEach((symbol,x)=>{const cell={x,y},key=cellKey(cell);
-    if(symbol==='#')terrain.blocked.push(cell);else if(symbol==='+')terrain.cover.push(cell);else if(symbol==='~')terrain.difficult.push(cell);
+    if(symbol==='#')terrain.blocked.push(cell);else if(symbol==='+')terrain.cover.push(cell);else if(symbol==='?')terrain.obscuring.push(cell);else if(symbol==='~')terrain.difficult.push(cell);
     else if(symbol==='^')terrain.hazards[key]=hazardDamage;else if(symbol!=='.'&&symbol!==' ')markers.set(symbol,cell);
   }));
   return {grid:new VirtualGrid(terrain),markers};

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Creature AI Combat Lab</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div><p class="eyebrow">Foundry Creature AI</p><h1>Combat Lab</h1></div>
+      <div class="scenario-control"><label for="scenario">Scenario</label><select id="scenario"></select><button id="run">Run simulation</button></div>
+    </header>
+    <section class="workspace">
+      <article class="battlefield-card">
+        <div class="card-heading"><div><h2 id="scenario-name">Loading…</h2><p id="scenario-description"></p></div><div id="outcome" class="outcome">Waiting</div></div>
+        <div id="battlefield" class="battlefield" aria-label="Virtual combat grid"></div>
+        <div class="legend"><span><i class="wall"></i>Wall</span><span><i class="cover"></i>Cover</span><span><i class="mist"></i>Obscuring</span><span><i class="ogre"></i>Ogres</span><span><i class="kobold"></i>Kobolds</span></div>
+        <div class="playback">
+          <button id="first" title="Start">|◀</button><button id="previous" title="Previous">◀</button><button id="play">Play</button><button id="next" title="Next">▶</button><button id="last" title="End">▶|</button>
+          <input id="timeline" type="range" min="0" max="0" value="0"><label>Speed <select id="speed"><option value="1200">Slow</option><option value="650" selected>Normal</option><option value="250">Fast</option></select></label>
+        </div>
+      </article>
+      <aside class="inspector">
+        <section><p class="eyebrow" id="frame-label">Starting position</p><h2 id="decision-title">No decision yet</h2><p id="decision-reason"></p><div id="resolution" class="resolution"></div></section>
+        <section><h3>Combatants</h3><div id="actors" class="actors"></div></section>
+        <section><h3>Top candidates</h3><table><thead><tr><th>Action</th><th>Target</th><th>Score</th><th>Layer</th></tr></thead><tbody id="candidates"></tbody></table></section>
+        <section><h3>Score factors</h3><ul id="terms" class="terms"></ul></section>
+        <section><h3>Automated findings</h3><ul id="findings" class="findings"></ul></section>
+      </aside>
+    </section>
+  </main>
+  <div id="loading" class="loading" hidden><div class="spinner"></div><strong>Simulating combat in a worker…</strong></div>
+  <script type="module" src="./app.mjs"></script>
+</body>
+</html>

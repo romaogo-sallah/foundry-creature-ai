@@ -1,0 +1,10 @@
+{
+  "schema": "foundry-creature-ai/combat-scenario-index@1",
+  "scenarios": [
+    {
+      "id": "ogres-vs-kobolds-open-field",
+      "name": "Two Ogres vs Two Kobolds",
+      "file": "/simulations/ogres-vs-kobolds.json"
+    }
+  ]
+}

@@ -20,6 +20,14 @@ Run only the combat-lab tests:
 npm run test:combat
 ```
 
+Open the standalone browser viewer:
+
+```powershell
+npm run view:combat
+```
+
+Then open `http://127.0.0.1:4173/`. The page does not load Foundry. It runs the planner in a dedicated Web Worker and replays the finished simulation one decision at a time.
+
 Reports are written to `.scratch/combat-lab/`. The normal test command also runs these scenarios and prints each report path as TAP diagnostics.
 
 ## Scenario format
@@ -28,12 +36,15 @@ Scenarios live in `src/simulation/scenarios.mjs`. Their map uses one character p
 
 - `#` is a solid wall or blocked square.
 - `+` is cover.
+- `?` is an obscuring square. A targeting ray through it applies a DC 5 concealment flat check.
 - `~` is difficult terrain.
 - `^` is hazardous terrain.
 - `.` is an open square.
 - Any other character is an actor marker referenced by `marker`.
 
 Actors declare team, HP, AC, Speed, reach, and one or more melee or ranged Strikes. The virtual adapter derives legal movement destinations, PF2e alternating-diagonal costs, line of sight, cover, range increments, MAP, threat exposure, and hazard cost. Allies can be crossed but cannot share a destination; enemies and walls block movement; defeated actors no longer occupy a square.
+
+The saved `simulations/ogres-vs-kobolds.json` fixture starts two ogres and two kobold scouts 24 squares apart. It contains six cover features and two obscuring features, each no larger than two squares. Run its text report with `npm run simulate -- simulations/ogres-vs-kobolds.json --print`.
 
 Each action report records the selected tactical plan, plan reason, objective, chosen primitive, score layer, score terms, five leading alternatives, representative rejections, resolution, and the production planning DAG. Automatic findings identify no-progress rounds, early end turns, avoidable penalized shots, invalid execution, hazard entry, and two-cell movement cycles.
 

@@ -1,6 +1,8 @@
-# Foundry Creature AI — version 0.49.0
+# Foundry Creature AI — version 0.50.0
 
-**Version 0.49.0:** adds the repository's [headless combat simulation lab](combat-simulation-lab.md). Virtual-grid scenarios execute the same hierarchical planner used by Foundry and produce turn-by-turn Markdown traces with grids, alternatives, scoring factors, rejected options and automated structural findings. This developer harness does not add a new Foundry control.
+**Version 0.50.0:** adds a standalone browser viewer to the repository's [headless combat simulation lab](combat-simulation-lab.md). It replays a saved two-ogre versus two-kobold encounter and exposes the production planner's decisions, alternatives, score terms and automated findings without loading Foundry. This developer harness does not add a new Foundry control.
+
+**Version 0.49.0:** adds the repository's headless combat simulation engine. Virtual-grid scenarios execute the same hierarchical planner used by Foundry and produce turn-by-turn Markdown traces with grids, alternatives, scoring factors, rejected options and automated structural findings.
 
 **Version 0.48.0:** uses the [bounded hierarchical planner](hierarchical-decision-graph-design.md) for every taught creature and the generic NPC fallback. It retains several viable intents, grounds their actual behavior components, compares concrete methods, and records the complete worker-safe trace for the [decision graph](decision-debugger.md). Version 0.47.0 added [ranged and fallback tactics](ranged-tactics.md); version 0.46.0 added configurable [decision variety](decision-variety.md).
 

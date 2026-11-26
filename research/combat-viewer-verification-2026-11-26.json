@@ -1,0 +1,51 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.50.0",
+  "date": "2026-11-26",
+  "feature": "saved Ogre-versus-Kobold scenario and standalone browser combat viewer",
+  "commands": [
+    {
+      "command": "npm run test:combat",
+      "result": "pass",
+      "files": 1,
+      "tests": 9
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "files": 106,
+      "tests": 1284,
+      "workers": 11
+    },
+    {
+      "command": "npm run simulate -- simulations/ogres-vs-kobolds.json --print",
+      "result": "pass",
+      "decisions": 30,
+      "structuralErrors": 0,
+      "findings": 2
+    }
+  ],
+  "scenario": {
+    "id": "ogres-vs-kobolds-open-field",
+    "actors": 4,
+    "separationSquares": 24,
+    "coverZones": 6,
+    "obscuringZones": 2,
+    "maximumZoneCells": 2,
+    "replayFinalStateMatchesReport": true
+  },
+  "browserSmoke": {
+    "browser": "Chromium",
+    "pageTitle": "Creature AI Combat Lab",
+    "scenarioLoaded": "Two Ogres vs Two Kobolds",
+    "timeline": "Frame 0 / 30",
+    "renderedGridCells": 319,
+    "renderedFindings": 2,
+    "workerFinished": true
+  },
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.50.0.zip",
+    "bytes": 910143,
+    "sha256": "A25FA7528E36699DEC423B81AC2F81FF84B979DCE2A8F93572A8B772EC5F180F"
+  }
+}

@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {CombatLab,assertCombat,renderCombatReport} from '../src/simulation/combat-lab.mjs';
 import {combatLabScenarios} from '../src/simulation/scenarios.mjs';
 import {gridFromAscii} from '../src/simulation/virtual-grid.mjs';
+import {combatFrames} from '../src/simulation/replay.mjs';
 
 const reportDirectory=new URL('../.scratch/combat-lab/',import.meta.url);
 const reportPath=scenario=>new URL(`${scenario.id}.md`,reportDirectory);
+const ogresVsKobolds=JSON.parse(await readFile(new URL('../simulations/ogres-vs-kobolds.json',import.meta.url),'utf8'));
 
 async function save(report,scenario){
   await mkdir(reportDirectory,{recursive:true});const path=reportPath(scenario);await writeFile(path,renderCombatReport(report),'utf8');return fileURLToPath(path);
@@ -20,6 +22,36 @@ test('virtual grid exposes walls, cover, alternating diagonals and safe routing 
   const paths=grid.reachable({x:0,y:0},{speed:15});
   assert.equal(paths.find(entry=>entry.cell.x===2&&entry.cell.y===2).cost,15,'two diagonals alternate 5 ft then 10 ft');
   assert.ok(Number.isFinite(grid.routeDistance({x:0,y:1},[{x:6,y:1}])),'navigation routes around a blocked cell');
+});
+
+test('obscuring squares apply concealment when a targeting ray crosses or ends inside them',()=>{
+  const {grid}=gridFromAscii(['.......','..??...','.......']);
+  assert.equal(grid.sight({x:0,y:1},{x:6,y:1}).concealmentDC,5);
+  assert.equal(grid.sight({x:0,y:0},{x:1,y:0}).concealmentDC,null);
+  assert.equal(grid.sight({x:0,y:1},{x:2,y:1}).concealmentDC,5);
+});
+
+test('saved Ogre versus Kobold starting conditions retain distance and bounded terrain zones',()=>{
+  assert.equal(ogresVsKobolds.actors.length,4);
+  assert.equal(ogresVsKobolds.actors.find(actor=>actor.id==='kobold-one').position.x-
+    ogresVsKobolds.actors.find(actor=>actor.id==='ogre-one').position.x,24);
+  assert.equal(ogresVsKobolds.terrainZones.cover.length,6);assert.equal(ogresVsKobolds.terrainZones.obscuring.length,2);
+  for(const zone of ogresVsKobolds.terrainZones.cover){assert.ok(zone.cells.length<=2,`${zone.id} is at most two squares`);
+    for(const [x,y]of zone.cells)assert.equal(ogresVsKobolds.map[y][x],'+');}
+  for(const zone of ogresVsKobolds.terrainZones.obscuring){assert.ok(zone.cells.length<=2,`${zone.id} is at most two squares`);
+    for(const [x,y]of zone.cells)assert.equal(ogresVsKobolds.map[y][x],'?');}
+  assert.ok(ogresVsKobolds.map.every(row=>row.length===29));
+});
+
+test('saved Ogre versus Kobold encounter runs through the production planner without structural errors',()=>{
+  const report=new CombatLab(ogresVsKobolds).run();
+  assert.ok(report.metrics.decisions>0);assert.equal(report.finalActors.length,4);
+  assert.ok(report.rounds.flatMap(round=>round.turns).every(turn=>turn.decisions.every(decision=>decision.trace?.schema==='foundry-creature-ai/planning-trace@1')));
+  assert.equal(report.findings.some(finding=>finding.severity==='error'),false);
+  const frames=combatFrames(ogresVsKobolds,report),last=frames.at(-1);
+  assert.equal(frames.length,report.metrics.decisions+1);
+  assert.deepEqual(last.actors.map(actor=>({id:actor.id,hp:actor.hp,position:actor.position,alive:actor.alive})),
+    report.finalActors.map(actor=>({id:actor.id,hp:actor.hp,position:actor.position,alive:actor.alive})));
 });
 
 for(const scenario of combatLabScenarios)test(`combat lab: ${scenario.name}`,async t=>{
