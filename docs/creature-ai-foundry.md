@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.50.1
+# Foundry Creature AI — version 0.51.0
+
+**Version 0.51.0:** replaces the decision graph's repeated fact and candidate dump with causal `planning-trace@2`. Intent scores narrow into objectives, timing, unique merged actions, competitive choice, and the executed outcome. Atomic actions no longer get fake one-child method nodes; uninstrumented diagnostics remain inspectable on the situation node. See the [saved-tree audit](decision-graph-audit-2026-11-26.md).
 
 **Patch 0.50.1:** adds a standalone decision-tree page to the repository's [headless combat simulation lab](combat-simulation-lab.md). It renders the real planning trace for any recorded decision with branch filters, node inspection, search, pan, zoom and PNG/JSON export. This developer harness does not add a new Foundry control.
 

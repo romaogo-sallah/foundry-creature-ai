@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {BehaviorSystem} from '../src/framework/behavior-system.mjs';
-import {analyzeDecisionHierarchy,classifyCandidate,doctrineProfile,weightHierarchicalCandidate} from '../src/framework/hierarchical-planner.mjs';
+import {analyzeDecisionHierarchy,classifyCandidate,doctrineProfile,planningTrace,weightHierarchicalCandidate} from '../src/framework/hierarchical-planner.mjs';
 import {decisionExplanation} from '../src/wolf/decision-explanation.mjs';
 import {buildDecisionGraph} from '../src/foundry/decision-graph.mjs';
 
@@ -39,6 +39,18 @@ test('range penalties are major while a documented range-closing action gains va
   assert.ok(shot.scoringTerms.some(term=>term.label.includes('-6 range penalty')));
 });
 
+test('a weighted winner promotes its shared timing branch even when a higher-ranked alternative created it first',()=>{
+  const selection={planId:'ranged',label:'Ranged',goal:{label:'Take the lane'},planning:{archetype:{intent:'damage'}}};
+  const candidate=id=>action(id,'stride',5,{features:{planning:{planId:'ranged',timing:'setup-next-turn',method:'move',plan:[]}}});
+  const first=candidate('first'),chosen=candidate('chosen'),analysis={mandatoryDirective:null,doctrine:{},facts:[],engagements:[],
+    hypotheses:[{id:'intent-ranged',planId:'ranged',label:'Ranged',intent:'damage',delivery:['movement'],posture:'position',score:5,status:'selected'}]};
+  const trace=planningTrace(state(),analysis,[{selection,candidates:[first,chosen]}],{chosen,reason:'weighted',rejected:[],tiedIds:[],randomizedIds:['first','chosen'],
+    selection:{mode:'weighted',candidates:[{id:'first',probability:0.6},{id:'chosen',probability:0.4}]},ranked:[
+      {candidate:first,utility:5,layer:6,terms:[]},{candidate:chosen,utility:4.9,layer:6,terms:[]},
+    ]},selection);
+  assert.equal(trace.nodes.find(node=>node.id==='timing-ranged-setup-next-turn').status,'selected');
+});
+
 test('bounded intent portfolio lets a lower abstract hypothesis win through a better concrete method and records a real DAG',()=>{
   const system=new BehaviorSystem()
     .registerComponent({id:'core',label:'Core',kind:'ability',core:true,actionKinds:['strike']})
@@ -50,12 +62,19 @@ test('bounded intent portfolio lets a lower abstract hypothesis win through a be
   const decision=system.decide(s,[action('shot','strike',10,{targetId:'fighter',features:{ranged:true,rangePenalty:6,rangeClosingAvailable:true}})]);
   assert.equal(decision.chosen.id,'close');assert.equal(decision.diagnostics.tactic.planId,'setup');
   const trace=decision.diagnostics.tactic.planningTrace;
-  assert.equal(trace.schema,'foundry-creature-ai/planning-trace@1');assert.equal(trace.selectedPlanId,'setup');
-  assert.ok(trace.nodes.filter(node=>node.kind==='or'&&node.layer===3).length>=2);
-  assert.deepEqual(trace.nodes.filter(node=>node.kind==='or'&&node.layer===3&&node.status==='selected').map(node=>node.detail.planId),['setup']);
+  assert.equal(trace.schema,'foundry-creature-ai/planning-trace@2');assert.equal(trace.selectedPlanId,'setup');
+  assert.ok(trace.nodes.filter(node=>node.kind==='or'&&node.layer===2).length>=2);
+  assert.deepEqual(trace.nodes.filter(node=>node.kind==='or'&&node.layer===2&&node.status==='selected').map(node=>node.detail.planId),['setup']);
   assert.ok(trace.nodes.some(node=>node.kind==='and'&&node.status==='selected'));
   assert.ok(trace.timelines.find(line=>line.selected).steps.length===2);
-  assert.ok(trace.nodes.some(node=>node.kind==='engagement'&&node.detail.targetId==='fighter'));
+  assert.equal(trace.nodes.find(node=>node.id==='planning-root').detail.engagements[0].targetId,'fighter');
+  assert.equal(trace.nodes.some(node=>node.kind==='fact'||node.kind==='engagement'),false,'non-causal state stays in root details');
+  assert.ok(trace.nodes.filter(node=>node.kind==='and').every(node=>node.detail.timeline.length>1),'AND nodes only represent real decompositions');
+  const incoming=new Map(),reachable=new Set(['planning-root']);
+  for(const edge of trace.edges)incoming.set(edge.target,(incoming.get(edge.target)??0)+1);
+  for(let changed=true;changed;){changed=false;for(const edge of trace.edges)if(reachable.has(edge.source)&&!reachable.has(edge.target)){reachable.add(edge.target);changed=true;}}
+  assert.ok(trace.nodes.every(node=>node.id==='planning-root'||incoming.has(node.id)),'there are no structurally orphaned nodes');
+  assert.equal(reachable.size,trace.nodes.length,'every node is reachable from the decision root');
   const graph=buildDecisionGraph(decisionExplanation(decision,{includePlanningTrace:true}));
   assert.ok(graph.nodes.some(node=>node.data.id==='planning-root'));
   assert.ok(graph.nodes.some(node=>node.classes.includes('hypothesis')));

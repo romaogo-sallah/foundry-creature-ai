@@ -282,7 +282,7 @@ The graph needs a durable, versioned trace rather than inferred nodes.
 
 ```js
 {
-  schema: 'foundry-creature-ai/planning-trace@1',
+  schema: 'foundry-creature-ai/planning-trace@2',
   decisionId,
   actorId,
   combatId,
@@ -330,17 +330,17 @@ The debugger should have three linked views.
 Horizontal semantic bands:
 
 ```text
-Directives
-Doctrine and facts
+Situation details
+Legality and mandatory directives
 Strategic intents
-Engagement hypotheses
+Engagement objectives
 Temporal commitments
-Tactical queries and methods
-Grounded plans
-Immediate primitive
+Atomic actions or compound methods
+Compound method primitives
+Competitive choice and outcome
 ```
 
-AND nodes use a distinct shape and numbered child edges. OR nodes show how many alternatives survived. Shared facts appear once with outgoing support edges. Selecting a node highlights its ancestors, descendants, evidence, and associated timeline.
+AND nodes use a distinct shape and exist only for activities with more than one primitive. OR nodes show how many alternatives survived. State which is not instrumented as a causal score input stays in the situation node's details instead of becoming a decorative leaf. Candidate IDs are merged before display, and every displayed finalist converges on one competitive-choice node. Selecting a node exposes its recorded evidence and timeline.
 
 ### Temporal lane
 
@@ -395,7 +395,7 @@ The range penalty is no longer an isolated negative term on Throw. The planner c
 ### Phase 1: honest trace layers
 
 - Add stable IDs for facts, plans, components, candidates, and score terms.
-- Record existing selection as `planning-trace@1` without changing behavior.
+- Record existing selection as `planning-trace@1` without changing behavior. This historical trace was replaced by causal `planning-trace@2` after the saved-tree audit found duplicated candidates and one-child method nodes.
 - Teach the debugger to render typed nodes and edge relations.
 - Keep the legacy graph available for comparison.
 

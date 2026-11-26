@@ -20,10 +20,11 @@ const optionLabel=(option,rank,nameOf)=>{
 };
 
 function buildTraceDecisionGraph(record,trace){
-  const nodes=trace.nodes.map(node=>{const status=node.kind==='or'&&node.layer===3?
-    (node.detail?.planId===trace.selectedPlanId?'selected':node.status==='selected'?'survived':node.status):node.status;
+  const nodes=trace.nodes.map(node=>{const legacyIntent=trace.schema.endsWith('@1')&&node.kind==='or'&&node.layer===3;
+    const status=legacyIntent?(node.detail?.planId===trace.selectedPlanId?'selected':node.status==='selected'?'survived':node.status):node.status;
+    const randomized=node.detail?.selectionProbability!=null&&!node.detail?.exactTie;
     return {data:{id:safe(node.id),label:node.label,category:node.kind,layer:node.layer,
-      detail:JSON.stringify(node.detail??{},null,2)},classes:[node.kind,status,status==='pruned'?'inactive':''].filter(Boolean).join(' ')};});
+      detail:JSON.stringify(node.detail??{},null,2)},classes:[node.kind,status,status==='pruned'?'inactive':'',randomized?'randomized':'',node.detail?.exactTie?'tied':''].filter(Boolean).join(' ')};});
   const edges=trace.edges.map((edge,index)=>({data:{id:safe(edge.id??`trace-edge-${index}`),source:safe(edge.source),target:safe(edge.target),
     label:edge.relation},classes:[edge.relation,edge.relation==='forbids'?'rejected':''].join(' ')}));
   return {nodes,edges,summary:{chosenId:record.chosenId,reason:record.reason,planId:trace.selectedPlanId??record.tactic?.planId??null,
@@ -33,7 +34,7 @@ function buildTraceDecisionGraph(record,trace){
 
 /** Build a serializable graph of the recorded tactic and action ranking. */
 export function buildDecisionGraph(record,catalog={components:[],plans:[]},{nameOf=id=>id}={}){
-  if(record.tactic?.planningTrace?.schema==='foundry-creature-ai/planning-trace@1')return buildTraceDecisionGraph(record,record.tactic.planningTrace);
+  if(/^foundry-creature-ai\/planning-trace@[12]$/.test(record.tactic?.planningTrace?.schema??''))return buildTraceDecisionGraph(record,record.tactic.planningTrace);
   const nodes=[],edges=[],nodeIds=new Set();let edgeIndex=0;
   const addNode=(id,label,category,classes=[],detail={})=>{
     id=safe(id);if(nodeIds.has(id))return id;nodeIds.add(id);
@@ -119,15 +120,15 @@ export function renderDecisionGraphShell(graph,{recorded=false}={}){
   return `<div class="decision-debugger" data-decision-debugger>
     <header class="decision-debugger__intro"><strong>${recorded?'Recorded decision':'Live decision preview'}</strong>
       <span>${htmlEscape(summary.reason||'No ranking reason')}</span>
-      <span>${summary.traceSchema?`${summary.budget?.survivingHypotheses??0} intent hypotheses; ${summary.budget?.groundedCandidates??0} grounded methods`:
+      <span>${summary.traceSchema?`${summary.budget?.survivingHypotheses??0} intent hypotheses; ${summary.budget?.uniqueGroundedCandidates??summary.budget?.groundedCandidates??0} unique grounded actions; ${summary.budget?.displayedFinalists??'legacy'} displayed finalists`:
         `${summary.optionCount} displayed options${summary.totalOptions>summary.optionCount?` of ${summary.totalOptions}`:''}; ${summary.rejectedCount} rejected`}</span></header>
     <div class="decision-debugger__toolbar">
       <button type="button" data-graph-control="fit"><i class="fa-solid fa-expand"></i> Fit</button>
       <button type="button" data-graph-control="png"><i class="fa-solid fa-image"></i> PNG</button>
       <button type="button" data-graph-control="json"><i class="fa-solid fa-file-code"></i> JSON</button>
-      <label><input type="checkbox" data-graph-filter="inactive" checked> pruned/inactive branches</label>
-      <label><input type="checkbox" data-graph-filter="rejected" checked> rejected</label>
-      <label><input type="checkbox" data-graph-filter="term" checked> score terms</label>
+      <label><input type="checkbox" data-graph-filter="inactive"> pruned/inactive branches</label>
+      <label><input type="checkbox" data-graph-filter="rejected"> rejected</label>
+      <label><input type="checkbox" data-graph-filter="term"> score terms</label>
       <input type="search" data-graph-search placeholder="Find a node" aria-label="Find a decision node">
     </div>
     <div class="decision-debugger__body">
@@ -144,11 +145,24 @@ export function relativeWheelZoom({zoom,deltaY,deltaMode=0,pageSize=800,minZoom=
   const pixels=deltaY*(deltaMode===1?16:deltaMode===2?pageSize:1);
   return Math.max(minZoom,Math.min(maxZoom,zoom*Math.exp(-pixels*0.0015)));
 }
+
+export function layeredGraphPositions(nodes,{xGap=290,yGap=105}={}){
+  const layers=new Map();
+  for(const node of nodes){const layer=Number(node.data?.layer);if(!Number.isFinite(layer))continue;
+    if(!layers.has(layer))layers.set(layer,[]);layers.get(layer).push(node);}
+  const positions=new Map();
+  for(const [layer,entries]of [...layers].sort(([a],[b])=>a-b)){
+    entries.sort((a,b)=>String(a.data.category).localeCompare(String(b.data.category))||String(a.data.id).localeCompare(String(b.data.id)));
+    for(const [index,node]of entries.entries())positions.set(node.data.id,{x:layer*xGap,y:(index-(entries.length-1)/2)*yGap});
+  }
+  return positions;
+}
 export async function mountDecisionGraph(root,graph,{fileName='creature-decision'}={}){
   const container=root.querySelector('[data-graph-canvas]');if(!container)throw new Error('Decision graph canvas is missing');
   const {default:cytoscape}=await import('../vendor/cytoscape.esm.min.mjs');
   if(!container.isConnected)return {destroy(){}};
-  const cy=cytoscape({container,elements:[...graph.nodes,...graph.edges],userZoomingEnabled:false,minZoom:0.15,maxZoom:3,
+  const layered=graph.nodes.some(node=>Number.isFinite(Number(node.data?.layer))),positions=layeredGraphPositions(graph.nodes);
+  const cy=cytoscape({container,elements:[...graph.nodes.map(node=>positions.has(node.data.id)?{...node,position:positions.get(node.data.id)}:node),...graph.edges],userZoomingEnabled:false,minZoom:0.15,maxZoom:3,
     style:[
       {selector:'node',style:{'shape':'round-rectangle','background-color':'#344054','border-color':'#667085','border-width':2,
         'label':'data(label)','color':'#f2f4f7','font-size':11,'text-wrap':'wrap','text-max-width':180,'text-valign':'center','text-halign':'center',
@@ -178,7 +192,7 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
       {selector:'edge.rejected',style:{'line-style':'dashed','line-color':'#a84d58','target-arrow-color':'#a84d58'}},
       {selector:'edge.randomized',style:{'line-color':'#d6b756','target-arrow-color':'#d6b756','width':2.5}},
       {selector:'.search-match',style:{'overlay-color':'#ffd166','overlay-opacity':0.28,'overlay-padding':8}},
-    ],layout:{name:'breadthfirst',directed:true,roots:graph.nodes.some(node=>node.data.id==='planning-root')?'#planning-root':'#situation',padding:35,spacingFactor:1.25,avoidOverlap:true,animate:false}});
+    ],layout:layered?{name:'preset',fit:true,padding:35,animate:false}:{name:'breadthfirst',directed:true,roots:graph.nodes.some(node=>node.data.id==='planning-root')?'#planning-root':'#situation',padding:35,spacingFactor:1.25,avoidOverlap:true,animate:false}});
   const details=root.querySelector('[data-graph-details]');
   cy.on('tap','node',event=>{const data=event.target.data();details.replaceChildren();
     const heading=document.createElement('strong');heading.textContent=data.label.split('\n')[0];
@@ -190,10 +204,13 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
   root.querySelector('[data-graph-control="json"]')?.addEventListener('click',()=>{
     const blob=new Blob([JSON.stringify(graph,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob);download(`${fileName}.json`,url);setTimeout(()=>URL.revokeObjectURL(url),1000);
   });
-  for(const input of root.querySelectorAll('[data-graph-filter]'))input.addEventListener('change',()=>{
-    const selector=`.${input.dataset.graphFilter}`;cy.elements(selector)[input.checked?'show':'hide']();cy.layout({name:'breadthfirst',directed:true,
-      roots:cy.$id('planning-root').length?'#planning-root':'#situation',padding:35,spacingFactor:1.25,avoidOverlap:true}).run();fit();
-  });
+  const applyFilters=()=>{for(const input of root.querySelectorAll('[data-graph-filter]')){
+      const selector=`.${input.dataset.graphFilter}`;cy.elements(selector)[input.checked?'show':'hide']();}
+    if(layered){const visible=[];for(const node of cy.nodes(':visible'))visible.push({data:{id:node.id(),layer:node.data('layer'),category:node.data('category')}});
+      const positions=layeredGraphPositions(visible);cy.batch(()=>{for(const node of cy.nodes(':visible'))node.position(positions.get(node.id()));});}
+    else cy.layout({name:'breadthfirst',directed:true,roots:cy.$id('planning-root').length?'#planning-root':'#situation',
+      padding:35,spacingFactor:1.25,avoidOverlap:true}).run();fit();};
+  for(const input of root.querySelectorAll('[data-graph-filter]'))input.addEventListener('change',applyFilters);
   root.querySelector('[data-graph-search]')?.addEventListener('input',event=>{const query=event.target.value.trim().toLowerCase();cy.nodes().removeClass('search-match');
     if(query)cy.nodes().filter(node=>node.data('label').toLowerCase().includes(query)).addClass('search-match');
   });
@@ -202,6 +219,6 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
       minZoom:cy.minZoom(),maxZoom:cy.maxZoom()}),renderedPosition:{x:event.clientX-bounds.left,y:event.clientY-bounds.top}});
   };
   container.addEventListener('wheel',wheelZoom,{passive:false});
-  const observer=typeof ResizeObserver==='function'?new ResizeObserver(()=>{cy.resize();}):null;observer?.observe(container);fit();
+  const observer=typeof ResizeObserver==='function'?new ResizeObserver(()=>{cy.resize();}):null;observer?.observe(container);applyFilters();
   return {cy,destroy(){container.removeEventListener('wheel',wheelZoom);observer?.disconnect();cy.destroy();}};
 }

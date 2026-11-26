@@ -48,7 +48,7 @@ test('saved Ogre versus Kobold starting conditions retain distance and bounded t
 test('saved Ogre versus Kobold encounter runs through the production planner without structural errors',()=>{
   const report=new CombatLab(ogresVsKobolds).run();
   assert.ok(report.metrics.decisions>0);assert.equal(report.finalActors.length,4);
-  assert.ok(report.rounds.flatMap(round=>round.turns).every(turn=>turn.decisions.every(decision=>decision.trace?.schema==='foundry-creature-ai/planning-trace@1')));
+  assert.ok(report.rounds.flatMap(round=>round.turns).every(turn=>turn.decisions.every(decision=>decision.trace?.schema==='foundry-creature-ai/planning-trace@2')));
   assert.equal(report.findings.some(finding=>finding.severity==='error'),false);
   const frames=combatFrames(ogresVsKobolds,report),last=frames.at(-1);
   assert.equal(frames.length,report.metrics.decisions+1);
@@ -58,13 +58,20 @@ test('saved Ogre versus Kobold encounter runs through the production planner wit
   for(const entry of entries){const graph=buildDecisionGraph(decisionGraphRecord(entry.decision));
     assert.ok(graph.nodes.some(node=>node.data.id==='planning-root'),`${entry.id} retains its planning root`);
     assert.ok(graph.nodes.length>1,`${entry.id} exposes a nontrivial decision graph`);assert.ok(graph.edges.length>0,`${entry.id} connects its graph`);}
+  const first=entries[0].decision.trace,incoming=new Set(first.edges.map(edge=>edge.target));
+  assert.ok(first.nodes.length<40,'the first decision is a pruned causal graph rather than a candidate dump');
+  assert.ok(first.nodes.every(node=>node.id==='planning-root'||incoming.has(node.id)),'the graph has no structural orphans');
+  assert.equal(first.nodes.some(node=>node.kind==='fact'||node.kind==='engagement'),false,'uncausal diagnostics are not rendered as branches');
+  assert.ok(first.nodes.filter(node=>node.kind==='and').every(node=>node.detail.timeline.length>1),'one-step actions do not get fake method nodes');
+  const actionIds=first.nodes.filter(node=>node.kind==='primitive'&&node.detail?.timeline).map(node=>node.detail.candidateId);
+  assert.equal(new Set(actionIds).size,actionIds.length,'merged candidates appear once');
 });
 
 for(const scenario of combatLabScenarios)test(`combat lab: ${scenario.name}`,async t=>{
   const report=new CombatLab(scenario).run(),path=await save(report,scenario);assertCombat(report,scenario.expect);
   assert.doesNotThrow(()=>structuredClone(report));assert.ok(report.rounds.length);
   const decisions=report.rounds.flatMap(round=>round.turns.flatMap(turn=>turn.decisions));
-  assert.ok(decisions.some(decision=>decision.trace?.schema==='foundry-creature-ai/planning-trace@1'),'production hierarchy trace is retained');
+  assert.ok(decisions.some(decision=>decision.trace?.schema==='foundry-creature-ai/planning-trace@2'),'production hierarchy trace is retained');
   assert.match(renderCombatReport(report),/Top candidates:/);
   t.diagnostic(`${report.outcome.status}${report.outcome.winner?` (${report.outcome.winner})`:''}; ${report.metrics.decisions} decisions; report: ${path}`);
   for(const finding of report.findings)t.diagnostic(`${finding.severity.toUpperCase()} ${finding.code}: ${finding.message}`);

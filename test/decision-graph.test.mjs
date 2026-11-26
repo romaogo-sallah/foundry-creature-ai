@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildDecisionGraph,renderDecisionGraphShell,relativeWheelZoom} from '../src/foundry/decision-graph.mjs';
+import {buildDecisionGraph,layeredGraphPositions,renderDecisionGraphShell,relativeWheelZoom} from '../src/foundry/decision-graph.mjs';
 import {BehaviorSystem} from '../src/framework/behavior-system.mjs';
 
 test('behavior selection records applicable and inactive plan evaluations',()=>{
@@ -68,6 +68,28 @@ test('decision graph shell escapes diagnostics and provides filters and export c
   assert.match(html,/data-graph-filter="rejected"/);
   assert.match(html,/data-graph-search/);
   assert.match(html,/Weighted roll candidate/);
+  assert.doesNotMatch(html,/data-graph-filter="inactive" checked/);
+});
+
+test('causal trace v2 uses semantic columns and accepts shared final selection',()=>{
+  const trace={schema:'foundry-creature-ai/planning-trace@2',selectedPlanId:'ranged',budget:{displayedFinalists:2},nodes:[
+    {id:'planning-root',kind:'situation',layer:0,label:'Decision',status:'selected'},
+    {id:'intent-ranged',kind:'or',layer:2,label:'Ranged',status:'selected',detail:{planId:'ranged'}},
+    {id:'primitive-shot',kind:'primitive',layer:5,label:'Strike',status:'selected',detail:{selectionProbability:0.7}},
+    {id:'competitive-choice',kind:'or',layer:7,label:'Weighted choice',status:'selected'},
+    {id:'selected-outcome',kind:'outcome',layer:8,label:'Execute strike',status:'selected'},
+  ],edges:[
+    {id:'a',source:'planning-root',target:'intent-ranged',relation:'compares'},
+    {id:'b',source:'intent-ranged',target:'primitive-shot',relation:'alternative-action'},
+    {id:'c',source:'primitive-shot',target:'competitive-choice',relation:'weighted 70%'},
+    {id:'d',source:'competitive-choice',target:'selected-outcome',relation:'executes'},
+  ]};
+  const graph=buildDecisionGraph({chosenId:'shot',reason:'weighted',tactic:{planningTrace:trace}});
+  assert.match(graph.nodes.find(node=>node.data.id==='primitive-shot').classes,/randomized/);
+  const positions=layeredGraphPositions(graph.nodes);
+  assert.ok(positions.get('planning-root').x<positions.get('intent-ranged').x);
+  assert.ok(positions.get('intent-ranged').x<positions.get('primitive-shot').x);
+  assert.ok(positions.get('primitive-shot').x<positions.get('selected-outcome').x);
 });
 
 test('vendored Cytoscape loads the decision graph with its directed layout',async()=>{

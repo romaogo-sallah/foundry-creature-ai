@@ -41,6 +41,7 @@ await cp(new URL('docs/flight-worker.md', root), new URL('flight-worker.md', out
 await cp(new URL('docs/decision-debugger.md',root),new URL('decision-debugger.md',output));
 await cp(new URL('docs/decision-variety.md',root),new URL('decision-variety.md',output));
 await cp(new URL('docs/combat-simulation-lab.md',root),new URL('combat-simulation-lab.md',output));
+await cp(new URL('docs/decision-graph-audit-2026-11-26.md',root),new URL('decision-graph-audit-2026-11-26.md',output));
 const decisionGuide=await readFile(new URL('docs/decision-worker.md',root),'utf8');
 await writeFile(new URL('decision-worker.md',output),decisionGuide.replaceAll('(../research/','(https://github.com/romaogo-sallah/foundry-creature-ai/blob/main/research/'));
 await cp(new URL('docs/target-memory.md', root), new URL('target-memory.md', output));

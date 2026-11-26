@@ -1,0 +1,55 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.51.0",
+  "date": "2026-11-26",
+  "feature": "causal planning trace and semantic decision graph",
+  "sourceAudit": {
+    "file": "saved-trees/ogres-vs-kobolds-open-field-decision-1.json",
+    "schema": "foundry-creature-ai/planning-trace@1",
+    "nodes": 83,
+    "edges": 85,
+    "factLeaves": 17,
+    "methodNodes": 24,
+    "primitiveNodes": 24,
+    "methodNodesWithOneChild": 24,
+    "generatedCandidates": 224,
+    "uniqueCandidateIds": 56
+  },
+  "replacementTrace": {
+    "scenario": "ogres-vs-kobolds-open-field",
+    "decision": "round 1, Kobold Scout One, first action",
+    "schema": "foundry-creature-ai/planning-trace@2",
+    "nodes": 20,
+    "edges": 26,
+    "intentHypotheses": 5,
+    "generatedCandidates": 224,
+    "uniqueCandidateIds": 56,
+    "displayedFinalists": 8,
+    "fakeSingleChildMethodNodes": 0,
+    "structuralOrphans": 0
+  },
+  "commands": [
+    {
+      "command": "node --test test/hierarchical-planner.test.mjs test/decision-graph.test.mjs test/combat-lab.test.mjs",
+      "result": "pass",
+      "tests": 22
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "files": 106,
+      "tests": 1286,
+      "workers": 11
+    },
+    {
+      "command": "node --test test/module-packages.test.mjs test/decision-graph.test.mjs",
+      "result": "pass",
+      "tests": 10
+    }
+  ],
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.51.0.zip",
+    "bytes": 915419,
+    "sha256": "B34F6B6B9D6015337564BDBE9355D40E9B0A8B12C77CF43EFDB4BD92595F52D5"
+  }
+}

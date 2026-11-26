@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.51.0:** replaces the decorative planning dump with causal `planning-trace@2`. The graph now narrows from legality through intent, objective, timing and unique merged action candidates to the competitive choice and executed outcome. Atomic actions no longer get fake one-child method nodes, while uninstrumented diagnostics stay available on the situation node. See the [saved-tree audit](docs/decision-graph-audit-2026-11-26.md).
+
 **Patch 0.50.1:** adds a standalone decision-tree page to the [headless combat simulation lab](docs/combat-simulation-lab.md). Every recorded decision can render its actual planning trace, including battlefield facts, constraints, intent and engagement hypotheses, temporal commitments, methods, primitive actions, outcomes and pruned branches. The graph supports node details, search, branch filters, fit, PNG/JSON export, pan and relative wheel zoom.
 
 **Version 0.50.0:** adds a standalone browser viewer for the headless combat simulation lab. `npm run view:combat` opens an interactive grid, decision timeline, actor health, ranked alternatives, scoring terms, resolutions and automated findings while the production planner runs in a Web Worker. The first saved fixture places two ogres and two kobolds 24 squares apart among six compact cover sources and two obscuring clouds.

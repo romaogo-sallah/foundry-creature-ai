@@ -163,47 +163,97 @@ export function mergePortfolioCandidates(runs){
 function timeline(candidate){const steps=turnPlan(candidate);return (steps.length?steps:[candidate]).map((step,index)=>({index,kind:step.kind,
   actionCost:step.actionCost??(index?null:candidate.actionCost),targetId:step.targetId??null,spellSlug:step.spellSlug??null,destination:step.destination??null}));}
 
-/** A bounded, serializable trace of decisions that actually produced candidates. */
+function candidateLabel(candidate,value){
+  const target=candidate.targetId?` -> ${candidate.targetId}`:'',destination=candidate.destination?
+    `\nto ${candidate.destination.x}, ${candidate.destination.y}${candidate.destination.elevation!=null?`, ${candidate.destination.elevation} ft`:''}`:'';
+  return `${candidate.kind}${target}${destination}\nscore ${finite(value).toFixed(2)}`;
+}
+
+/**
+ * A bounded causal trace of the decisions that produced the final action.
+ *
+ * This is deliberately not a dump of every derived fact or every candidate
+ * generated under every intent. Facts which are not instrumented as inputs to
+ * a plan score stay in node details, and portfolio candidates are shown once
+ * after the same ID has been merged. An AND node is emitted only when it
+ * decomposes a real multi-step activity.
+ */
 export function planningTrace(state,analysis,runs,decision,usedSelection){
   const nodes=[],edges=[],nodeIds=new Set();let edge=0;
-  const add=(id,kind,layer,label,status='considered',detail={})=>{id=slug(id);if(nodeIds.has(id))return id;
-    if(kind==='or'&&layer===3)status=detail.planId===usedSelection.planId?'selected':status==='selected'?'survived':status;
+  const add=(id,kind,layer,label,status='considered',detail={})=>{id=slug(id);if(nodeIds.has(id)){
+      if(status==='selected')nodes.find(node=>node.id===id).status='selected';return id;}
     nodeIds.add(id);nodes.push({id,kind,layer,label,status,detail});return id;};
   const connect=(source,target,relation)=>edges.push({id:`trace-edge-${edge++}`,source:slug(source),target:slug(target),relation});
-  const root=add('planning-root','situation',0,'Combat decision','selected',{actionsRemaining:state.actionsRemaining});
-  const directive=add('directive-legality','constraint',0,analysis.mandatoryDirective?'Emergency survival directive':'PF2e legality and action budget','selected',{mandatory:analysis.mandatoryDirective});connect(root,directive,'constrains');
-  for(const [family,values]of Object.entries(analysis.doctrine))for(const [key,value]of Object.entries(values))if(typeof value==='number'&&value>0){
-    const id=add(`doctrine-${family}-${key}`,'fact',1,`${key} ${Math.round(value*100)}%`,'considered',{family,value});connect(root,id,'describes');}
-  for(const entry of analysis.facts){const id=add(entry.id,'fact',2,`${entry.label}: ${entry.value}`,'considered',entry.detail);connect(root,id,'observes');}
-  for(const engagement of analysis.engagements){
-    const affect=engagement.canAffectNow?'can affect now':`${engagement.actionsToAffect} action${engagement.actionsToAffect===1?'':'s'} to affect`;
-    const counter=engagement.targetCanAffectNow?'threatens now':`${engagement.targetActionsToAffect} action${engagement.targetActionsToAffect===1?'':'s'} to threaten`;
-    const id=add(engagement.id,'engagement',2,`${engagement.targetName}\n${affect}; ${counter}`,'considered',engagement);connect(root,id,'relates');
+  const ranked=[...(decision.ranked??[])],displayed=[...ranked.slice(0,8)];
+  const chosenEntry=ranked.find(entry=>entry.candidate.id===decision.chosen?.id);
+  if(chosenEntry&&!displayed.includes(chosenEntry))displayed.push(chosenEntry);
+  const chosenPlan=decision.chosen?.features?.planning?.planId??usedSelection.planId;
+  const displayedPlanIds=new Set(displayed.map(entry=>entry.candidate.features?.planning?.planId).filter(Boolean));
+  const pool=new Map((decision.selection?.candidates??[]).map(entry=>[entry.id,entry]));
+  const uniqueGrounded=new Set(runs.flatMap(run=>run.candidates.map(candidate=>candidate.id)));
+  const root=add('planning-root','situation',0,'Combat decision','selected',{
+    actionsRemaining:state.actionsRemaining,observations:analysis.facts,doctrine:analysis.doctrine,
+    engagements:analysis.engagements.map(({targetId,targetName,distance,visibility,lineOfSight,lineOfEffect})=>
+      ({targetId,targetName,distance,visibility,lineOfSight,lineOfEffect})),
+  });
+  const directive=add('directive-legality','constraint',1,analysis.mandatoryDirective?'Emergency survival directive':'PF2e legality and action budget','selected',{
+    mandatory:analysis.mandatoryDirective,actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,
+  });connect(root,directive,'constrains');
+  const goalNodes=new Map(),timingNodes=new Map();
+  for(const hypothesis of analysis.hypotheses){
+    const selected=hypothesis.planId===chosenPlan,hasFinalist=displayedPlanIds.has(hypothesis.planId);
+    const status=selected?'selected':hypothesis.status==='pruned'||!hasFinalist?'pruned':'survived';
+    const intent=add(hypothesis.id,'or',2,`${hypothesis.label}\n${hypothesis.intent} | ${hypothesis.posture}\nscore ${hypothesis.score.toFixed(2)}`,status,{
+      ...hypothesis,pruneReason:hypothesis.status==='pruned'?hypothesis.pruneReason:!hasFinalist?'No distinct candidate reached the displayed final set':null,
+    });
+    connect(directive,intent,status==='pruned'?'pruned':'compares');
+    if(status==='pruned')continue;
+    const run=runs.find(entry=>entry.selection.planId===hypothesis.planId),goal=run?.selection.goal??{};
+    const relation=analysis.engagements.find(entry=>entry.targetId===goal.targetId);
+    const goalNode=add(`hypothesis-${hypothesis.planId}`,'hypothesis',3,goal.label??hypothesis.label,status,{
+      ...goal,delivery:hypothesis.delivery,engagement:relation??null,
+    });
+    goalNodes.set(hypothesis.planId,goalNode);connect(intent,goalNode,'pursues');
   }
-  for(const hypothesis of analysis.hypotheses){const intent=add(hypothesis.id,'or',3,`${hypothesis.label}\n${hypothesis.intent} · ${hypothesis.posture}\n${hypothesis.score.toFixed(2)}`,hypothesis.status,hypothesis);connect(directive,intent,'refines');
-    if(hypothesis.status==='pruned')continue;const run=runs.find(entry=>entry.selection.planId===hypothesis.planId);if(!run)continue;
-    const hypothesisSelected=hypothesis.planId===usedSelection.planId;
-    const goal=run.selection.goal??{},engagement=add(`hypothesis-${hypothesis.planId}`,'hypothesis',4,`${goal.label??hypothesis.label}`,hypothesis.planId===usedSelection.planId?'selected':'survived',{...goal,delivery:hypothesis.delivery});connect(intent,engagement,'refines');
-    if(goal.targetId&&nodeIds.has(slug(`engagement-${goal.targetId}`)))connect(`engagement-${goal.targetId}`,engagement,'supports');
-    const rankedAll=[...run.candidates].filter(candidate=>Number.isFinite(candidate.assessment?.value)).sort((a,b)=>b.assessment.value-a.assessment.value),
-      chosen=hypothesisSelected?rankedAll.find(candidate=>candidate.id===decision.chosen?.id):null,ranked=[...rankedAll.slice(0,6)];
-    if(chosen&&!ranked.includes(chosen))ranked.push(chosen);const timings=new Map();
-    for(const candidate of ranked){const info=candidate.features?.planning??classifyCandidate(candidate,state,run.selection),timingKey=`timing-${hypothesis.planId}-${info.timing}`,
-        candidateSelected=hypothesisSelected&&candidate.id===decision.chosen?.id;
-      if(!timings.has(timingKey)){const timing=add(timingKey,'or',5,info.timing,candidateSelected?'selected':'survived',{timing:info.timing});timings.set(timingKey,timing);connect(engagement,timing,'refines');}
-      const method=add(`method-${hypothesis.planId}-${candidate.id}`,'and',6,info.method??candidate.kind,candidateSelected?'selected':'survived',{planId:hypothesis.planId,method:info.method});connect(timings.get(timingKey),method,'alternative-method');
-      const primitive=add(`primitive-${hypothesis.planId}-${candidate.id}`,'primitive',7,`${candidate.kind}${candidate.targetId?` → ${candidate.targetId}`:''}\n${candidate.assessment.value.toFixed(2)}`,
-        candidateSelected?'selected':'survived',{candidateId:candidate.id,targetId:candidate.targetId??null,value:candidate.assessment.value,actionCost:candidate.actionCost,terms:candidate.scoringTerms??[],timeline:timeline(candidate)});connect(method,primitive,'decomposes-all');
+  const choice=add('competitive-choice','or',7,decision.selection?.mode==='weighted'?'Weighted choice among close scores':
+    decision.selection?.mode==='uniform-tie'?'Random choice among exact ties':'Highest-ranked legal action','selected',{
+      reason:decision.reason,selection:decision.selection,tiedIds:decision.tiedIds??[],randomizedIds:decision.randomizedIds??[],
+    });
+  let selectedPrimitiveId=null;
+  for(const [rankIndex,entry] of displayed.entries()){
+    const candidate=entry.candidate,planId=candidate.features?.planning?.planId??chosenPlan;
+    if(!goalNodes.has(planId))continue;
+    const run=runs.find(item=>item.selection.planId===planId),info=candidate.features?.planning??classifyCandidate(candidate,state,run?.selection??usedSelection),
+      selected=candidate.id===decision.chosen?.id,inPool=pool.has(candidate.id),status=selected?'selected':inPool?'survived':'considered',
+      timingKey=`timing-${planId}-${info.timing}`;
+    if(!timingNodes.has(timingKey)){const timing=add(timingKey,'or',4,info.timing,selected?'selected':'survived',{planId,timing:info.timing});
+      timingNodes.set(timingKey,timing);connect(goalNodes.get(planId),timing,'commits');}
+    else if(selected)add(timingKey,'or',4,info.timing,'selected',{planId,timing:info.timing});
+    const steps=timeline(candidate),detail={candidateId:candidate.id,planId,alternativePlans:candidate.features?.planning?.alternativePlans??[],
+      targetId:candidate.targetId??null,value:entry.utility,layer:entry.layer,actionCost:candidate.actionCost,terms:entry.terms??candidate.scoringTerms??[],
+      timeline:steps,rank:rankIndex+1,selectionProbability:pool.get(candidate.id)?.probability??null,exactTie:(decision.tiedIds??[]).includes(candidate.id)};
+    let terminal;
+    if(steps.length>1){
+      const method=add(`method-${candidate.id}`,'and',5,`${candidate.kind} activity\n${steps.map(step=>step.kind).join(' -> ')}\nscore ${finite(entry.utility).toFixed(2)}`,status,detail);
+      connect(timingNodes.get(timingKey),method,'alternative-method');let prior=method;
+      for(const step of steps){const primitive=add(`primitive-${candidate.id}-${step.index}`,'primitive',6,`${step.index+1}. ${step.kind}${step.targetId?` -> ${step.targetId}`:''}`,
+          status,{candidateId:candidate.id,...step});connect(prior,primitive,step.index?'then':'decomposes');prior=primitive;if(selected&&step.index===0)selectedPrimitiveId=primitive;}
+      terminal=prior;
+    }else{
+      const primitive=add(`primitive-${candidate.id}`,'primitive',5,candidateLabel(candidate,entry.utility),status,detail);
+      connect(timingNodes.get(timingKey),primitive,'alternative-action');terminal=primitive;if(selected)selectedPrimitiveId=primitive;
     }
+    const probability=pool.get(candidate.id)?.probability,relation=selected?'selected':probability!=null?`weighted ${Math.round(probability*1000)/10}%`:`rank ${rankIndex+1}`;
+    connect(terminal,choice,relation);
   }
   const rejected=decision.rejected??[],rejectedLimit=24;
-  for(const [index,entry]of rejected.slice(0,rejectedLimit).entries()){const id=add(`rejected-${entry.id}-${index}`,'outcome',8,`${entry.id}\n${entry.reason}`,'pruned',entry);connect(directive,id,'forbids');}
-  if(rejected.length>rejectedLimit){const omitted=add('rejected-omitted','outcome',8,`${rejected.length-rejectedLimit} more rejected options`,'pruned',{count:rejected.length-rejectedLimit});connect(directive,omitted,'forbids');}
-  const chosenPlan=decision.chosen?.features?.planning?.planId??usedSelection.planId,chosenPrimitive=decision.chosen?`primitive-${chosenPlan}-${decision.chosen.id}`:null;
+  for(const [index,entry]of rejected.slice(0,rejectedLimit).entries()){const id=add(`rejected-${entry.id}-${index}`,'outcome',2,`${entry.id}\n${entry.reason}`,'pruned',entry);connect(directive,id,'forbids');}
+  if(rejected.length>rejectedLimit){const omitted=add('rejected-omitted','outcome',2,`${rejected.length-rejectedLimit} more rejected options`,'pruned',{count:rejected.length-rejectedLimit});connect(directive,omitted,'forbids');}
   const result=add('selected-outcome','outcome',8,decision.chosen?`Execute ${decision.chosen.kind}`:'No legal action','selected',{chosenId:decision.chosen?.id??null,reason:decision.reason});
-  if(chosenPrimitive&&nodeIds.has(slug(chosenPrimitive)))connect(chosenPrimitive,result,'selected');else connect(directive,result,'selected');
-  return {schema:'foundry-creature-ai/planning-trace@1',nodes,edges,selectedPlanId:chosenPlan,selectedPrimitiveId:chosenPrimitive?slug(chosenPrimitive):null,
+  connect(choice,result,'executes');
+  return {schema:'foundry-creature-ai/planning-trace@2',nodes,edges,selectedPlanId:chosenPlan,selectedPrimitiveId:selectedPrimitiveId?slug(selectedPrimitiveId):null,
     timelines:(decision.ranked??[]).slice(0,6).map(entry=>({planId:entry.candidate.features?.planning?.planId??null,candidateId:entry.candidate.id,
       selected:entry.candidate.id===decision.chosen?.id,score:entry.utility,steps:timeline(entry.candidate)})),
-    budget:{hypotheses:analysis.hypotheses.length,survivingHypotheses:runs.length,groundedCandidates:runs.reduce((sum,run)=>sum+run.candidates.length,0)}};
+    budget:{hypotheses:analysis.hypotheses.length,survivingHypotheses:runs.length,generatedCandidates:runs.reduce((sum,run)=>sum+run.candidates.length,0),
+      uniqueGroundedCandidates:uniqueGrounded.size,displayedFinalists:displayed.length}};
 }
