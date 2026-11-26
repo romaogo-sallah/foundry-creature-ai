@@ -51,6 +51,24 @@ test('a weighted winner promotes its shared timing branch even when a higher-ran
   assert.equal(trace.nodes.find(node=>node.id==='timing-ranged-setup-next-turn').status,'selected');
 });
 
+test('surviving tactics remain visible and converge on a shared grounded action',()=>{
+  const ranged={planId:'ranged',label:'Ranged',goal:{label:'Take the lane'},planning:{archetype:{intent:'damage'}}},
+    defensive={planId:'defensive',label:'Defensive',goal:{label:'Hold cover'},planning:{archetype:{intent:'survive'}}},
+    shared=action('shared-step','step',5,{features:{planning:{planId:'ranged',alternativePlans:['defensive'],timing:'setup-next-turn',method:'move',plan:[]}}}),
+    defensiveShared=action('shared-step','step',4.8,{features:{planning:{planId:'defensive',alternativePlans:[],timing:'setup-next-turn',method:'move',plan:[]}}}),
+    analysis={mandatoryDirective:null,doctrine:{},facts:[],engagements:[],hypotheses:[
+      {id:'intent-ranged',planId:'ranged',label:'Ranged',intent:'damage',delivery:['ranged'],posture:'position',score:6,status:'selected'},
+      {id:'intent-defensive',planId:'defensive',label:'Defensive',intent:'survive',delivery:['movement'],posture:'hold',score:5,status:'survived'},
+    ]};
+  const trace=planningTrace(state(),analysis,[{selection:ranged,candidates:[shared]},{selection:defensive,candidates:[defensiveShared]}],
+    {chosen:shared,reason:'ranked',rejected:[],tiedIds:[],randomizedIds:[],selection:{mode:'highest',candidates:[]},
+      ranked:[{candidate:shared,utility:5,layer:6,terms:[]}]},ranged);
+  assert.equal(trace.nodes.find(node=>node.id==='intent-defensive').status,'survived');
+  assert.ok(trace.nodes.some(node=>node.id==='hypothesis-defensive'));
+  assert.equal(trace.nodes.filter(node=>node.id==='primitive-shared-step').length,1);
+  assert.ok(trace.edges.some(edge=>edge.source==='timing-defensive-setup-next-turn'&&edge.target==='primitive-shared-step'&&edge.relation==='shared action'));
+});
+
 test('bounded intent portfolio lets a lower abstract hypothesis win through a better concrete method and records a real DAG',()=>{
   const system=new BehaviorSystem()
     .registerComponent({id:'core',label:'Core',kind:'ability',core:true,actionKinds:['strike']})

@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Patch 0.51.2:** keeps every surviving tactic visible in the causal decision graph. When several tactics produce the same grounded action, their objective and timing branches now converge on that single action instead of hiding the losing tactics or duplicating the action.
+
 **Patch 0.51.1:** fixes the decision-tree renderer so the complete causal graph remains visible after filtering and fitting. Cytoscape now uses stable node dimensions and fits every enabled node, including nodes outside the current viewport.
 
 **Version 0.51.0:** replaces the decorative planning dump with causal `planning-trace@2`. The graph now narrows from legality through intent, objective, timing and unique merged action candidates to the competitive choice and executed outcome. Atomic actions no longer get fake one-child method nodes, while uninstrumented diagnostics stay available on the situation node. See the [saved-tree audit](docs/decision-graph-audit-2026-11-26.md).

@@ -188,7 +188,6 @@ export function planningTrace(state,analysis,runs,decision,usedSelection){
   const chosenEntry=ranked.find(entry=>entry.candidate.id===decision.chosen?.id);
   if(chosenEntry&&!displayed.includes(chosenEntry))displayed.push(chosenEntry);
   const chosenPlan=decision.chosen?.features?.planning?.planId??usedSelection.planId;
-  const displayedPlanIds=new Set(displayed.map(entry=>entry.candidate.features?.planning?.planId).filter(Boolean));
   const pool=new Map((decision.selection?.candidates??[]).map(entry=>[entry.id,entry]));
   const uniqueGrounded=new Set(runs.flatMap(run=>run.candidates.map(candidate=>candidate.id)));
   const root=add('planning-root','situation',0,'Combat decision','selected',{
@@ -201,10 +200,9 @@ export function planningTrace(state,analysis,runs,decision,usedSelection){
   });connect(root,directive,'constrains');
   const goalNodes=new Map(),timingNodes=new Map();
   for(const hypothesis of analysis.hypotheses){
-    const selected=hypothesis.planId===chosenPlan,hasFinalist=displayedPlanIds.has(hypothesis.planId);
-    const status=selected?'selected':hypothesis.status==='pruned'||!hasFinalist?'pruned':'survived';
+    const selected=hypothesis.planId===chosenPlan,status=selected?'selected':hypothesis.status==='pruned'?'pruned':'survived';
     const intent=add(hypothesis.id,'or',2,`${hypothesis.label}\n${hypothesis.intent} | ${hypothesis.posture}\nscore ${hypothesis.score.toFixed(2)}`,status,{
-      ...hypothesis,pruneReason:hypothesis.status==='pruned'?hypothesis.pruneReason:!hasFinalist?'No distinct candidate reached the displayed final set':null,
+      ...hypothesis,pruneReason:hypothesis.status==='pruned'?hypothesis.pruneReason:null,
     });
     connect(directive,intent,status==='pruned'?'pruned':'compares');
     if(status==='pruned')continue;
@@ -223,25 +221,33 @@ export function planningTrace(state,analysis,runs,decision,usedSelection){
   for(const [rankIndex,entry] of displayed.entries()){
     const candidate=entry.candidate,planId=candidate.features?.planning?.planId??chosenPlan;
     if(!goalNodes.has(planId))continue;
-    const run=runs.find(item=>item.selection.planId===planId),info=candidate.features?.planning??classifyCandidate(candidate,state,run?.selection??usedSelection),
-      selected=candidate.id===decision.chosen?.id,inPool=pool.has(candidate.id),status=selected?'selected':inPool?'survived':'considered',
-      timingKey=`timing-${planId}-${info.timing}`;
-    if(!timingNodes.has(timingKey)){const timing=add(timingKey,'or',4,info.timing,selected?'selected':'survived',{planId,timing:info.timing});
-      timingNodes.set(timingKey,timing);connect(goalNodes.get(planId),timing,'commits');}
-    else if(selected)add(timingKey,'or',4,info.timing,'selected',{planId,timing:info.timing});
+    const selected=candidate.id===decision.chosen?.id,inPool=pool.has(candidate.id),status=selected?'selected':inPool?'survived':'considered',
+      contributingPlans=[planId,...(candidate.features?.planning?.alternativePlans??[])].filter((id,index,plans)=>goalNodes.has(id)&&plans.indexOf(id)===index),
+      timingContributors=[];
+    for(const contributorPlanId of contributingPlans){
+      const run=runs.find(item=>item.selection.planId===contributorPlanId),runCandidate=run?.candidates.find(item=>item.id===candidate.id),
+        info=runCandidate?.features?.planning??(contributorPlanId===planId?candidate.features?.planning:null)??classifyCandidate(runCandidate??candidate,state,run?.selection??usedSelection),
+        contributorSelected=selected&&contributorPlanId===chosenPlan,timingKey=`timing-${contributorPlanId}-${info.timing}`;
+      if(!timingNodes.has(timingKey)){const timing=add(timingKey,'or',4,info.timing,contributorSelected?'selected':'survived',{planId:contributorPlanId,timing:info.timing});
+        timingNodes.set(timingKey,timing);connect(goalNodes.get(contributorPlanId),timing,'commits');}
+      else if(contributorSelected)add(timingKey,'or',4,info.timing,'selected',{planId:contributorPlanId,timing:info.timing});
+      timingContributors.push({id:timingNodes.get(timingKey),primary:contributorPlanId===planId});
+    }
     const steps=timeline(candidate),detail={candidateId:candidate.id,planId,alternativePlans:candidate.features?.planning?.alternativePlans??[],
       targetId:candidate.targetId??null,value:entry.utility,layer:entry.layer,actionCost:candidate.actionCost,terms:entry.terms??candidate.scoringTerms??[],
       timeline:steps,rank:rankIndex+1,selectionProbability:pool.get(candidate.id)?.probability??null,exactTie:(decision.tiedIds??[]).includes(candidate.id)};
     let terminal;
     if(steps.length>1){
       const method=add(`method-${candidate.id}`,'and',5,`${candidate.kind} activity\n${steps.map(step=>step.kind).join(' -> ')}\nscore ${finite(entry.utility).toFixed(2)}`,status,detail);
-      connect(timingNodes.get(timingKey),method,'alternative-method');let prior=method;
+      for(const contributor of timingContributors)connect(contributor.id,method,contributor.primary?'alternative-method':'shared method');
+      let prior=method;
       for(const step of steps){const primitive=add(`primitive-${candidate.id}-${step.index}`,'primitive',6,`${step.index+1}. ${step.kind}${step.targetId?` -> ${step.targetId}`:''}`,
           status,{candidateId:candidate.id,...step});connect(prior,primitive,step.index?'then':'decomposes');prior=primitive;if(selected&&step.index===0)selectedPrimitiveId=primitive;}
       terminal=prior;
     }else{
       const primitive=add(`primitive-${candidate.id}`,'primitive',5,candidateLabel(candidate,entry.utility),status,detail);
-      connect(timingNodes.get(timingKey),primitive,'alternative-action');terminal=primitive;if(selected)selectedPrimitiveId=primitive;
+      for(const contributor of timingContributors)connect(contributor.id,primitive,contributor.primary?'alternative-action':'shared action');
+      terminal=primitive;if(selected)selectedPrimitiveId=primitive;
     }
     const probability=pool.get(candidate.id)?.probability,relation=selected?'selected':probability!=null?`weighted ${Math.round(probability*1000)/10}%`:`rank ${rankIndex+1}`;
     connect(terminal,choice,relation);

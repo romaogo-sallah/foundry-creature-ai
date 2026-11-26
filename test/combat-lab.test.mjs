@@ -62,6 +62,8 @@ test('saved Ogre versus Kobold encounter runs through the production planner wit
   assert.ok(first.nodes.length<40,'the first decision is a pruned causal graph rather than a candidate dump');
   assert.ok(first.nodes.every(node=>node.id==='planning-root'||incoming.has(node.id)),'the graph has no structural orphans');
   assert.equal(first.nodes.some(node=>node.kind==='fact'||node.kind==='engagement'),false,'uncausal diagnostics are not rendered as branches');
+  assert.deepEqual(first.nodes.filter(node=>node.kind==='or'&&node.layer===2&&node.status!=='pruned').map(node=>node.detail.planId),
+    ['swarming','ranged','aggressive','defensive'],'every surviving tactic remains visible before shared actions converge');
   assert.ok(first.nodes.filter(node=>node.kind==='and').every(node=>node.detail.timeline.length>1),'one-step actions do not get fake method nodes');
   const actionIds=first.nodes.filter(node=>node.kind==='primitive'&&node.detail?.timeline).map(node=>node.detail.candidateId);
   assert.equal(new Set(actionIds).size,actionIds.length,'merged candidates appear once');

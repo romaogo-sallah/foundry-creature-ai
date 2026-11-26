@@ -1,0 +1,42 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.51.2",
+  "date": "2026-11-26",
+  "feature": "visible tactic selection with shared grounded-action convergence",
+  "reproduction": {
+    "scenario": "ogres-vs-kobolds-open-field",
+    "decision": "round 1, Kobold Scout One, first action",
+    "problem": "surviving tactics without ownership of a distinct top-eight candidate were relabeled as pruned and hidden",
+    "selectedTactic": "swarming",
+    "incorrectlyHiddenSurvivors": ["ranged", "aggressive", "defensive"]
+  },
+  "replacementTrace": {
+    "schema": "foundry-creature-ai/planning-trace@2",
+    "nodes": 29,
+    "edges": 59,
+    "visibleTactics": ["swarming", "ranged", "aggressive", "defensive"],
+    "genuinelyPrunedTactics": ["desperate"],
+    "uniqueDisplayedActions": 8,
+    "sharedActionEdges": 24,
+    "duplicateActionNodes": 0
+  },
+  "commands": [
+    {
+      "command": "node --test test/hierarchical-planner.test.mjs test/combat-lab.test.mjs test/decision-graph.test.mjs",
+      "result": "pass",
+      "tests": 24
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "files": 106,
+      "tests": 1288,
+      "workers": 11
+    }
+  ],
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.51.2.zip",
+    "bytes": 915816,
+    "sha256": "9688B614361A351028FF52A4C5986AE7FEE6EA41B6A9400FCA0BDC8AD8309F22"
+  }
+}

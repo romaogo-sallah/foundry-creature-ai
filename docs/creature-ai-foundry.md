@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.51.1
+# Foundry Creature AI — version 0.51.2
+
+**Patch 0.51.2:** keeps every surviving tactic visible in the causal decision graph. Shared candidate actions converge from each contributing tactic, preserving tactic selection without repeating identical actions.
 
 **Patch 0.51.1:** fixes the decision-tree renderer so the complete causal graph remains visible after filtering and fitting. Cytoscape now uses stable node dimensions and fits every enabled node, including nodes outside the current viewport.
 
