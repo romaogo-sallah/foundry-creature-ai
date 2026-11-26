@@ -63,17 +63,18 @@ export class CombatLab {
       concealmentDC:sight.concealmentDC,strikes};
   }
 
-  #routeDistance(actor,from){
+  #routeField(actor){
     const occupied=this.occupied(),allies=new Set(this.allies(actor).map(ally=>ally.id));
-    return Math.min(Infinity,...this.enemies(actor).map(enemy=>this.grid.routeDistance(from,adjacentGoals(this.grid,enemy),{occupied,allies,moverId:actor.id})));
+    const goals=this.enemies(actor).flatMap(enemy=>adjacentGoals(this.grid,enemy));
+    return this.grid.routeField(goals,{occupied,allies,moverId:actor.id});
   }
 
   #moves(actor,stateEnemies){
-    const occupied=this.occupied(),allies=new Set(this.allies(actor).map(ally=>ally.id)),currentRoute=this.#routeDistance(actor,actor.position);
+    const occupied=this.occupied(),allies=new Set(this.allies(actor).map(ally=>ally.id)),field=this.#routeField(actor),currentRoute=field.distance(actor.position);
     const reachable=this.grid.reachable(actor.position,{speed:actor.speed,occupied,allies,moverId:actor.id});
-    return reachable.flatMap(node=>{
+    const moves=reachable.flatMap(node=>{
       const targets=Object.fromEntries(this.enemies(actor).map(enemy=>[enemy.id,this.#positionFacts(actor,enemy,node.cell)]));
-      const nearestEnemy=this.#routeDistance(actor,node.cell),threatened=stateEnemies.some(enemy=>enemy.inReach),terrainRisk=node.risk;
+      const nearestEnemy=field.distance(node.cell),threatened=stateEnemies.some(enemy=>enemy.inReach),terrainRisk=node.risk;
       const common={x:node.cell.x,y:node.cell.y,cost:node.cost,path:node.path,targets,nearestEnemy:Number.isFinite(nearestEnemy)?nearestEnemy:currentRoute,
         provokes:threatened,reactionRisk:threatened?Math.max(0,...this.enemies(actor).filter(enemy=>enemy.inReach).flatMap(enemy=>enemy.strikes.map(strike=>strike.damage))):0,
         terrainRisk,destinationThreatened:this.enemies(actor).some(enemy=>this.grid.distanceFeet(node.cell,enemy.position)<=enemy.reach)};
@@ -81,6 +82,7 @@ export class CombatLab {
       if(node.cost<=5&&!this.grid.terrain(node.cell).difficult&&!terrainRisk)choices.push({...common,kind:'step',provokes:false,reactionRisk:0});
       return choices;
     });
+    return {moves,nearestEnemy:Number.isFinite(currentRoute)?currentRoute:Infinity};
   }
 
   #state(actor,turn){
@@ -91,7 +93,7 @@ export class CombatLab {
         alliesInReach:this.allies(actor).filter(ally=>this.grid.distanceFeet(ally.position,enemy.position)<=ally.reach).length,
         tactics:{role:enemy.strikes.some(strike=>strike.rangeIncrement)?'ranged':'melee',reach:enemy.reach,speed:enemy.speed,
           rangeIncrement:Math.max(0,...enemy.strikes.map(strike=>strike.rangeIncrement??0))},prone:Boolean(enemy.conditions.prone),offGuard:false};});
-    const moves=this.#moves(actor,enemies),strikeNow=actor.strikes.flatMap(strike=>enemies.filter(enemy=>enemy.strikes[strike.id]?.usable).map(enemy=>({strike,enemy,position:enemy.strikes[strike.id]})));
+    const movement=this.#moves(actor,enemies),moves=movement.moves,strikeNow=actor.strikes.flatMap(strike=>enemies.filter(enemy=>enemy.strikes[strike.id]?.usable).map(enemy=>({strike,enemy,position:enemy.strikes[strike.id]})));
     const rangedNow=strikeNow.filter(entry=>entry.strike.rangeIncrement),meleeNow=strikeNow.filter(entry=>!entry.strike.rangeIncrement),bestRangePenalty=Math.min(Infinity,...rangedNow.map(entry=>entry.position.rangePenalty));
     const meleeAttackValue=Math.max(0,...meleeNow.map(entry=>actorAttackValue(actor,entry.strike,entry.enemy,entry.position)));
     const rangedAttackValue=Math.max(0,...rangedNow.map(entry=>actorAttackValue(actor,entry.strike,entry.enemy,entry.position)));
@@ -103,7 +105,7 @@ export class CombatLab {
       return {strikeId:strike.id,actionCost:strike.reload,ammunition:strike.ammunition,available:true,provokes:true,nextAttackValue};
     });
     const state={actionsRemaining:turn.actionsRemaining,bonusMovementActions:0,attacksMade:turn.attacksMade,decisionVariation:actor.decisionVariation,
-      nearestEnemy:this.#routeDistance(actor,actor.position),visited:[...turn.visited],moves,strikes:actor.strikes.map(strike=>({id:strike.id,name:strike.name??strike.id,
+      nearestEnemy:movement.nearestEnemy,visited:[...turn.visited],moves,strikes:actor.strikes.map(strike=>({id:strike.id,name:strike.name??strike.id,
         bonus:strike.bonus,damage:strike.damage,mapPenalties:strike.mapPenalties,precisionDamage:strike.precisionDamage,ranged:Boolean(strike.rangeIncrement),
         rangeAversion:strike.rangeAversion??0,available:!strike.reload||strike.loaded&&strike.ammunition>0})),reloads,enemies,allies:this.allies(actor).map(ally=>({id:ally.id})),
       self:{cell:clone(actor.position),speed:actor.speed,reachSquares:actor.reach/5,referenceAC:actor.referenceAC,threatened:enemies.some(enemy=>enemy.inReach),
@@ -203,7 +205,7 @@ export class CombatLab {
         message:`${decision.actorId} accepted ${decision.effect.hazardDamage} hazard damage while moving.`});
     }
     for(const actor of this.actors){const ends=this.report.rounds.flatMap(round=>round.turns.filter(turn=>turn.actorId===actor.id).map(turn=>cellKey(turn.end)));
-      for(let index=3;index<ends.length;index++)if(ends[index]===ends[index-2]&&ends[index-1]===ends[index-3]){
+      for(let index=3;index<ends.length;index++)if(ends[index]!==ends[index-1]&&ends[index]===ends[index-2]&&ends[index-1]===ends[index-3]){
         this.report.findings.push({severity:'warning',code:'two-cell-cycle',actorId:actor.id,message:`${actor.id} alternated between ${ends[index]} and ${ends[index-1]}.`});break;}}
   }
 }

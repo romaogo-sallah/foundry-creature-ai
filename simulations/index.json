@@ -5,6 +5,11 @@
       "id": "ogres-vs-kobolds-open-field",
       "name": "Two Ogres vs Two Kobolds",
       "file": "/simulations/ogres-vs-kobolds.json"
+    },
+    {
+      "id": "six-ogres-vs-six-kobolds-grand-battlefield",
+      "name": "Six Ogres vs Six Kobolds — Grand Battlefield",
+      "file": "/simulations/six-ogres-vs-six-kobolds.json"
     }
   ]
 }

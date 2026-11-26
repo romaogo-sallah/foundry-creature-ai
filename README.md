@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.52.0:** adds a 300×300-foot browser combat scenario for six ogres against six kobold scouts, with ruin walls, cover, fog, rubble and hazardous pits. A reusable multi-goal route field makes the 60×60 simulation practical while preserving walls, occupancy and alternating PF2e diagonals. The replay scales large maps and labels attacker and target teams explicitly.
+
 **Patch 0.51.3:** makes reload weapons persistent in the browser combat simulator. Crossbows now unload and consume ammunition when fired, cannot fire while unloaded, and expose Reload as an ordinary equipment decision valued by the attack it prepares.
 
 **Patch 0.51.2:** keeps every surviving tactic visible in the causal decision graph. When several tactics produce the same grounded action, their objective and timing branches now converge on that single action instead of hiding the losing tactics or duplicating the action.

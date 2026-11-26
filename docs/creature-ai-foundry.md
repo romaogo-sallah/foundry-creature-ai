@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.51.3
+# Foundry Creature AI — version 0.52.0
+
+**Version 0.52.0:** adds a 60×60-square, twelve-creature browser combat scenario and exact reusable route fields for responsive large-map planning. The replay uses compact cells, expanded terrain legends and explicit attacker/target team labels.
 
 **Patch 0.51.3:** gives the standalone combat simulator persistent loaded and ammunition state. Reload weapons spend ammunition and become unloaded after every shot, while the shared basic planner can choose Reload according to the attack it prepares.
 

@@ -1,0 +1,77 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.52.0",
+  "date": "2026-11-26",
+  "feature": "300-by-300-foot twelve-creature browser combat scenario and reusable route fields",
+  "scenario": {
+    "id": "six-ogres-vs-six-kobolds-grand-battlefield",
+    "dimensions": {
+      "squares": [60, 60],
+      "feet": [300, 300]
+    },
+    "teams": {
+      "ogres": 6,
+      "kobolds": 6
+    },
+    "terrainZones": {
+      "interiorWalls": 6,
+      "cover": 12,
+      "obscuring": 6,
+      "difficult": 4,
+      "hazardousPits": 4
+    },
+    "seed": 6606,
+    "elapsedMilliseconds": 4927,
+    "rounds": 8,
+    "outcome": "ogres victory",
+    "decisions": 212,
+    "actions": 207,
+    "damage": 525,
+    "movementFeet": 1875,
+    "strikes": 83,
+    "friendlyFireStrikes": 0,
+    "structuralErrors": 0,
+    "tacticalWarnings": 26,
+    "survivors": ["ogre-1", "ogre-4", "ogre-5"]
+  },
+  "routing": {
+    "implementation": "multi-goal reverse distance field with binary min-queue",
+    "preserves": [
+      "solid walls and blocked corners",
+      "living occupant restrictions",
+      "passable allied squares",
+      "alternating 5/10-foot PF2e diagonal costs"
+    ],
+    "firstRoundMilliseconds": 1070,
+    "priorUnoptimizedFirstRound": "exceeded 60 seconds and was interrupted"
+  },
+  "commands": [
+    {
+      "command": "npm run test:combat",
+      "result": "pass",
+      "tests": 13
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "files": 106,
+      "tests": 1292,
+      "workers": 11,
+      "seconds": 41.1
+    },
+    {
+      "command": "npm run simulate -- simulations/six-ogres-vs-six-kobolds.json",
+      "result": "pass"
+    }
+  ],
+  "installation": {
+    "packages": 5,
+    "version": "0.52.0",
+    "foundryData": "C:/Users/Roman/AppData/Local/FoundryVTT/Data"
+  },
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.52.0.zip",
+    "bytes": 917843,
+    "sha256": "0AF44D4099A2A7E6F0F7A7182D4AF8F232727267FA229E77CB6DBD200F8622FE"
+  }
+}

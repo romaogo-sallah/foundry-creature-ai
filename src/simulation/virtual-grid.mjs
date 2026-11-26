@@ -3,6 +3,16 @@ import {tileDistance} from '../dawnsbury/chooser.mjs';
 const DIRECTIONS=[[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
 export const cellKey=cell=>`${cell.x},${cell.y}`;
 
+class MinQueue{
+  constructor(){this.items=[];}
+  get length(){return this.items.length;}
+  push(value){const items=this.items;items.push(value);let index=items.length-1;
+    while(index){const parent=(index-1)>>1;if(items[parent].cost<=value.cost)break;items[index]=items[parent];index=parent;}items[index]=value;}
+  pop(){const items=this.items,first=items[0],last=items.pop();if(items.length){let index=0;items[0]=last;
+      while(true){const left=index*2+1,right=left+1;if(left>=items.length)break;let child=right<items.length&&items[right].cost<items[left].cost?right:left;
+        if(items[child].cost>=last.cost)break;items[index]=items[child];index=child;}items[index]=last;}return first;}
+}
+
 function point(value){
   if(Array.isArray(value)&&value.length===2)return {x:value[0],y:value[1]};
   if(value&&Number.isInteger(value.x)&&Number.isInteger(value.y))return {x:value.x,y:value.y};
@@ -88,18 +98,29 @@ export class VirtualGrid {
 
   /** Shortest movement cost in squares to any goal; Infinity means disconnected. */
   routeDistance(startValue,goals,{occupied=new Map(),allies=new Set(),moverId=null,maxCost=10000}={}){
-    const start=point(startValue),wanted=new Set(goals.map(value=>cellKey(point(value))));if(wanted.has(cellKey(start)))return 0;
-    const queue=[{cell:start,cost:0,diagonals:0}],seen=new Map([[`${cellKey(start)}|0`,0]]);
-    while(queue.length){
-      queue.sort((a,b)=>a.cost-b.cost);const current=queue.shift();
-      for(const [dx,dy]of DIRECTIONS){const cell={x:current.cell.x+dx,y:current.cell.y+dy};if(!this.#edgeAllowed(current.cell,cell))continue;
-        const occupant=occupied.get(cellKey(cell));if(occupant&&occupant!==moverId&&!allies.has(occupant)&&!wanted.has(cellKey(cell)))continue;
-        const diagonal=Boolean(dx&&dy),diagonals=current.diagonals+Number(diagonal),cost=current.cost+(diagonal?(current.diagonals%2?2:1):1);
-        if(cost>maxCost)continue;if(wanted.has(cellKey(cell)))return cost;
-        const key=`${cellKey(cell)}|${diagonals%2}`,old=seen.get(key);if(old!==undefined&&old<=cost)continue;
-        seen.set(key,cost);queue.push({cell,cost,diagonals});
+    return this.routeField(goals,{occupied,allies,moverId,maxCost}).distance(startValue);
+  }
+
+  /**
+   * Build one reverse distance field for many destination queries. This is
+   * equivalent to routeDistance for the same goal set, including alternating
+   * diagonal costs, but visits each cell/parity state once instead of running
+   * another full search for every candidate movement destination.
+   */
+  routeField(goals,{occupied=new Map(),allies=new Set(),moverId=null,maxCost=10000}={}){
+    const wanted=new Set(goals.map(value=>cellKey(point(value)))),queue=new MinQueue(),distances=new Map();
+    const add=(cell,parity,cost)=>{const key=`${cellKey(cell)}|${parity}`,old=distances.get(key);if(old!==undefined&&old<=cost)return;
+      distances.set(key,cost);queue.push({cell,parity,cost});};
+    for(const key of wanted){const [x,y]=key.split(',').map(Number),cell={x,y};if(this.isBlocked(cell))continue;add(cell,0,0);add(cell,1,0);}
+    while(queue.length){const current=queue.pop(),key=`${cellKey(current.cell)}|${current.parity}`;if(current.cost!==distances.get(key))continue;
+      const occupant=occupied.get(cellKey(current.cell)),passable=!occupant||occupant===moverId||allies.has(occupant)||wanted.has(cellKey(current.cell));
+      if(!passable)continue;
+      for(const [dx,dy]of DIRECTIONS){const predecessor={x:current.cell.x-dx,y:current.cell.y-dy};if(!this.contains(predecessor)||!this.#edgeAllowed(predecessor,current.cell))continue;
+        const diagonal=Boolean(dx&&dy),parity=diagonal?1-current.parity:current.parity,step=diagonal?(parity?2:1):1,cost=current.cost+step;
+        if(cost<=maxCost)add(predecessor,parity,cost);
       }
-    }return Infinity;
+    }
+    return {distance:value=>distances.get(`${cellKey(point(value))}|0`)??Infinity};
   }
 
   render(actors=[]){

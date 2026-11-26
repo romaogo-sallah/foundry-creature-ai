@@ -4,28 +4,31 @@ const elements=Object.fromEntries(['scenario','run','scenario-name','scenario-de
 let scenario=null,report=null,frames=[],index=0,timer=null,worker=null;
 
 const actorName=id=>scenario?.actors.find(actor=>actor.id===id)?.name??id??'';
+const actorTeam=id=>scenario?.actors.find(actor=>actor.id===id)?.team??'';
+const actorLabel=id=>id?`${actorName(id)}${actorTeam(id)?` [${actorTeam(id)}]`:''}`:'';
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
 function terrainClass(symbol){return symbol==='#'?'wall':symbol==='+'?'cover':symbol==='?'?'mist':symbol==='~'?'difficult':symbol==='^'?'hazard':'floor';}
 function renderBoard(frame){
   const width=scenario.map[0].length,byCell=new Map(frame.actors.filter(actor=>actor.alive).map(actor=>[`${actor.position.x},${actor.position.y}`,actor]));
-  elements.battlefield.style.setProperty('--columns',width);elements.battlefield.replaceChildren();
+  elements.battlefield.style.setProperty('--columns',width);elements.battlefield.style.setProperty('--cell',`${Math.max(14,Math.min(34,Math.floor(980/width)))}px`);
+  elements.battlefield.classList.toggle('large',width>40);elements.battlefield.replaceChildren();
   scenario.map.forEach((row,y)=>[...row].forEach((symbol,x)=>{
     const cell=document.createElement('div'),actor=byCell.get(`${x},${y}`);cell.className=`cell ${terrainClass(symbol)}`;cell.title=`${x}, ${y}`;
     if(actor){const token=document.createElement('div');token.className=`token ${actor.team}${frame.decision?.actorId===actor.id?' active':''}${frame.decision?.chosen?.targetId===actor.id?' target':''}`;
-      token.textContent=actor.glyph??actor.name[0];token.title=`${actor.name}: ${actor.hp}/${actor.maxHp} HP`;cell.append(token);}
+      token.textContent=actor.glyph??actor.name[0];token.title=`${actor.name} [${actor.team}]: ${actor.hp}/${actor.maxHp} HP`;cell.append(token);}
     elements.battlefield.append(cell);
   }));
 }
 
-function renderActors(frame){elements.actors.innerHTML=frame.actors.map(actor=>`<div class="actor ${actor.alive?'':'defeated'}"><span class="actor-glyph ${escapeHtml(actor.team)}">${escapeHtml(actor.glyph??actor.name[0])}</span><div><strong>${escapeHtml(actor.name)}</strong><small>${actor.hp} / ${actor.maxHp} HP</small></div><meter min="0" max="${actor.maxHp}" value="${actor.hp}"></meter></div>`).join('');}
+function renderActors(frame){elements.actors.innerHTML=frame.actors.map(actor=>`<div class="actor ${actor.alive?'':'defeated'}"><span class="actor-glyph ${escapeHtml(actor.team)}">${escapeHtml(actor.glyph??actor.name[0])}</span><div><strong>${escapeHtml(actor.name)}</strong><small>${escapeHtml(actor.team)} · ${actor.hp} / ${actor.maxHp} HP</small></div><meter min="0" max="${actor.maxHp}" value="${actor.hp}"></meter></div>`).join('');}
 
 function renderDecision(frame){
   const decision=frame.decision;elements['frame-label'].textContent=frame.label;
-  if(!decision){elements['decision-title'].textContent='Starting conditions';elements['decision-reason'].textContent='The teams begin 24 squares apart.';elements.resolution.textContent='Press Play or step forward to inspect each production-planner decision.';elements.candidates.replaceChildren();elements.terms.replaceChildren();return;}
-  const chosen=decision.chosen;elements['decision-title'].textContent=chosen?`${decision.plan?.label??'Directive'}: ${chosen.kind}${chosen.targetId?` → ${actorName(chosen.targetId)}`:''}`:'No legal action';
+  if(!decision){elements['decision-title'].textContent='Starting conditions';elements['decision-reason'].textContent='The selected teams begin at their saved positions.';elements.resolution.textContent='Press Play or step forward to inspect each production-planner decision.';elements.candidates.replaceChildren();elements.terms.replaceChildren();return;}
+  const chosen=decision.chosen;elements['decision-title'].textContent=chosen?`${actorLabel(decision.actorId)} — ${decision.plan?.label??'Directive'}: ${chosen.kind}${chosen.targetId?` → ${actorLabel(chosen.targetId)}`:''}`:'No legal action';
   elements['decision-reason'].textContent=decision.plan?.reason??'';elements.resolution.textContent=decision.effect?.summary??'';
-  elements.candidates.innerHTML=decision.alternatives.map(candidate=>`<tr class="${candidate.id===chosen?.id?'selected':''}"><td>${escapeHtml(candidate.kind)}</td><td>${escapeHtml(actorName(candidate.targetId))}</td><td>${candidate.score}</td><td>${candidate.layer}</td></tr>`).join('');
+  elements.candidates.innerHTML=decision.alternatives.map(candidate=>`<tr class="${candidate.id===chosen?.id?'selected':''}"><td>${escapeHtml(candidate.kind)}</td><td>${escapeHtml(actorLabel(candidate.targetId))}</td><td>${candidate.score}</td><td>${candidate.layer}</td></tr>`).join('');
   elements.terms.innerHTML=(chosen?.terms??[]).map(term=>`<li><span>${escapeHtml(term.label)}</span><strong class="${term.contribution<0?'negative':'positive'}">${term.contribution>=0?'+':''}${term.contribution}</strong></li>`).join('')||'<li class="muted">No additional score terms.</li>';
 }
 

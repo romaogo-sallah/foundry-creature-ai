@@ -12,6 +12,7 @@ import {buildDecisionGraph} from '../src/foundry/decision-graph.mjs';
 const reportDirectory=new URL('../.scratch/combat-lab/',import.meta.url);
 const reportPath=scenario=>new URL(`${scenario.id}.md`,reportDirectory);
 const ogresVsKobolds=JSON.parse(await readFile(new URL('../simulations/ogres-vs-kobolds.json',import.meta.url),'utf8'));
+const grandBattlefield=JSON.parse(await readFile(new URL('../simulations/six-ogres-vs-six-kobolds.json',import.meta.url),'utf8'));
 let ogresVsKoboldsReport;
 const runOgresVsKobolds=()=>ogresVsKoboldsReport??=new CombatLab(ogresVsKobolds).run();
 
@@ -26,6 +27,12 @@ test('virtual grid exposes walls, cover, alternating diagonals and safe routing 
   const paths=grid.reachable({x:0,y:0},{speed:15});
   assert.equal(paths.find(entry=>entry.cell.x===2&&entry.cell.y===2).cost,15,'two diagonals alternate 5 ft then 10 ft');
   assert.ok(Number.isFinite(grid.routeDistance({x:0,y:1},[{x:6,y:1}])),'navigation routes around a blocked cell');
+});
+
+test('reverse route fields preserve cardinal and alternating-diagonal costs for repeated destination scoring',()=>{
+  const {grid}=gridFromAscii(['.....','.....','.....','.....','.....']),goals=[{x:4,y:4}],field=grid.routeField(goals);
+  assert.equal(field.distance({x:4,y:2}),2);assert.equal(field.distance({x:2,y:2}),3);
+  assert.equal(field.distance({x:0,y:0}),6);assert.equal(grid.routeDistance({x:0,y:0},goals),6);
 });
 
 test('obscuring squares apply concealment when a targeting ray crosses or ends inside them',()=>{
@@ -45,6 +52,24 @@ test('saved Ogre versus Kobold starting conditions retain distance and bounded t
   for(const zone of ogresVsKobolds.terrainZones.obscuring){assert.ok(zone.cells.length<=2,`${zone.id} is at most two squares`);
     for(const [x,y]of zone.cells)assert.equal(ogresVsKobolds.map[y][x],'?');}
   assert.ok(ogresVsKobolds.map.every(row=>row.length===29));
+});
+
+test('grand battlefield is a 300-foot square with two six-creature teams and varied terrain',()=>{
+  assert.equal(grandBattlefield.map.length,60);assert.ok(grandBattlefield.map.every(row=>row.length===60));
+  assert.equal(grandBattlefield.actors.length,12);
+  assert.deepEqual(Object.fromEntries(['ogres','kobolds'].map(team=>[team,grandBattlefield.actors.filter(actor=>actor.team===team).length])),{ogres:6,kobolds:6});
+  assert.equal(grandBattlefield.terrainZones.walls.length,6);assert.equal(grandBattlefield.terrainZones.cover.length,12);
+  assert.equal(grandBattlefield.terrainZones.obscuring.length,6);assert.equal(grandBattlefield.terrainZones.difficult.length,4);
+  assert.equal(grandBattlefield.terrainZones.pits.length,4);
+  for(const actor of grandBattlefield.actors)assert.equal(grandBattlefield.map[actor.position.y][actor.position.x],actor.marker);
+});
+
+test('grand battlefield first round remains responsive and every Strike targets the opposing team',()=>{
+  const report=new CombatLab(grandBattlefield,{maxRounds:1}).run(),teams=Object.fromEntries(grandBattlefield.actors.map(actor=>[actor.id,actor.team]));
+  assert.equal(report.rounds[0].turns.length,12);assert.equal(report.findings.some(finding=>finding.severity==='error'),false);
+  const strikes=report.rounds[0].turns.flatMap(turn=>turn.decisions.filter(decision=>decision.chosen?.kind==='strike')
+    .map(decision=>({actorId:turn.actorId,targetId:decision.chosen.targetId})));
+  assert.ok(strikes.length>0);for(const strike of strikes)assert.notEqual(teams[strike.actorId],teams[strike.targetId],`${strike.actorId} cannot Strike ally ${strike.targetId}`);
 });
 
 test('saved Ogre versus Kobold encounter runs through the production planner without structural errors',()=>{
