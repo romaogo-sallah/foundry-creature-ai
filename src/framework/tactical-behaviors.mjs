@@ -61,9 +61,40 @@ tacticalBehaviors.registerComponent({id:'effective-range',label:'Fight inside an
   adjust:candidate=>candidate.features?.rangeApproach?1.25:
     candidate.assessment?.movement&&candidate.features?.rangedFollowUp?0.65:
     candidate.features?.ranged&&candidate.features?.rangePenalty>0?-Math.min(2,0.5+candidate.features.rangePenalty*0.2):0});
+tacticalBehaviors.registerComponent({id:'kite-retreat',label:'Retreat while preserving a firing lane',kind:'policy',
+  candidates:(state,selection)=>{
+    if(state.self.immobile||state.self.unable||state.self.restrained||state.actionsRemaining<1)return [];
+    const threats=state.enemies.filter(enemy=>enemy.tactics?.role!=='ranged');
+    if(!threats.length)return [];
+    const before=Math.min(...threats.map(enemy=>enemy.distance)),targetId=selection.goal?.targetId;
+    return (state.moves??[]).flatMap(move=>{
+      if(!['stride','step'].includes(move.kind)||!move.cost||state.visited?.includes(`${move.x},${move.y}`))return [];
+      const projected=threats.map(enemy=>({...enemy,...move.targets?.[enemy.id]}));
+      const after=Math.min(...projected.map(enemy=>enemy.distance??0)),gain=after-before;
+      if(gain<4.9)return [];
+      const lane=projected.find(enemy=>enemy.lineOfSight!==false&&enemy.lineOfEffect!==false&&state.strikes?.some(strike=>
+        strike.ranged&&enemy.strikes?.[strike.id]?.geometryUsable!==false&&enemy.strikes?.[strike.id]?.inReach!==false));
+      if(!lane)return [];
+      const destinationThreatened=Boolean(move.destinationThreatened),risk=(move.kind==='step'?0:move.reactionRisk??0)+(move.terrainRisk??0);
+      const incoming=lane.incoming??lane,cover=Math.max(0,incoming.coverBonus??lane.coverBonus??0),concealed=Boolean(incoming.concealed||lane.concealmentDC);
+      const safe=projected.every(enemy=>after>(enemy.tactics?.reach??5)+(enemy.tactics?.speed??25));
+      const value=2.5+Math.min(3,gain/10)+(safe?1.25:0)+Math.min(1.2,cover*0.3)+(concealed?0.6:0)-risk-(destinationThreatened?1.5:0);
+      if(value<=0)return [];
+      return [{id:`kite:${move.kind}:${move.x},${move.y}`,kind:move.kind,legal:true,actionCost:1,path:move.path,
+        destination:{x:move.x,y:move.y},movementCost:move.cost,targetId:targetId??lane.id,provokes:move.kind!=='step'&&Boolean(move.provokes),
+        destinationThreatened,intent:'retreat while preserving a ranged attack lane',
+        features:{groupGoal:'kite',rangedFollowUp:true,defensiveSetup:cover>0||concealed,engagementTargetId:targetId??lane.id},
+        assessment:{value,movement:true,fullTurnPlan:true,goodAttacksLeft:true,nearestEnemy:move.nearestEnemy,
+          currentNearestEnemy:state.nearestEnemy,distanceMoved:move.cost/5},scoringTerms:[
+          {label:'Create distance from closing melee threats',contribution:2.5+Math.min(3,gain/10)},
+          ...(safe?[{label:'Move beyond one-turn melee pursuit',contribution:1.25}]:[]),
+          ...(cover||concealed?[{label:'Retain cover or concealment',contribution:Math.min(1.2,cover*0.3)+(concealed?0.6:0)}]:[]),
+          ...(risk||destinationThreatened?[{label:'Reaction, terrain, and destination risk',contribution:-risk-(destinationThreatened?1.5:0)}]:[])]}];
+    }).sort((a,b)=>b.assessment.value-a.assessment.value||b.movementCost-a.movementCost).slice(0,12);
+  }});
 tacticalBehaviors.registerComponent({id:'protection',label:'Use protection',kind:'policy',
-  candidates:(state,selection)=>['defensive','hiding','lay-low','avoiding'].includes(selection.planId)?
-    (state.sharedBehaviors?.protectedMoves??[]).filter(candidate=>selection.planId!=='defensive'||!candidate.features.visibility.losesAll):[],
+  candidates:(state,selection)=>['defensive','hiding','lay-low','avoiding','kiting'].includes(selection.planId)?
+    (state.sharedBehaviors?.protectedMoves??[]).filter(candidate=>selection.planId!=='defensive'||!candidate.features?.visibility?.losesAll):[],
   adjust:candidate=>candidate.kind==='hide'?0.5:movement(candidate)&&
     (candidate.features?.defensiveSetup||candidate.features?.stealthPreserved)?0.5:0});
 tacticalBehaviors.registerComponent({id:'distance',label:'Keep distance and firing lanes',kind:'policy',
@@ -134,10 +165,15 @@ plan('defensive','Defensive',['protection'],c=>({value:c.caster&&!(c.melee&&!c.i
   reason:c.caster?'Preserve a protected casting position':'Reduce exposure while remaining able to fight'}));
 plan('avoiding','Avoiding',['withdraw','protection'],c=>c.emergency?{value:100,reason:c.broken?'The group has broken':'Own HP is critically low'}:
   c.health<0.4&&c.forceRatio<0.6?{value:7,reason:'Wounded and locally outnumbered'}:null);
-plan('kiting','Kiting',['distance','protection'],c=>c.ranged&&c.closingMelee&&c.allies>0?
-  {value:6,reason:'Ranged attacks and visible ally support permit a fighting retreat'}:null);
-plan('hiding','Hiding',['protection'],c=>(c.hideUseful||c.hiddenBelief)&&c.visibleEnemies>0&&!c.immediateAttack&&!(c.planAge>=2||c.waitPatienceReached)?
-  {value:c.caster||c.skulk||c.health<0.5?6:3.5,reason:c.hiddenBelief?'Retain the estimated hiding advantage while waiting':'Protection permits hiding before engagement'}:null);
+plan('kiting','Kiting',['kite-retreat','distance','protection','pressure'],c=>(c.rangedPrimary??c.ranged)&&c.closingMelee&&c.kiteRetreatAvailable!==false?
+  {value:9.25,reason:'A melee threat can close soon; retreat while preserving a firing lane'}:null);
+plan('hiding','Hiding',['protection','pressure'],c=>{
+  if(c.openingAmbush&&c.hiddenBelief&&c.immediateAttack)return {value:11,reason:'Exploit the opening Hide with an off-guard ranged attack before repositioning'};
+  if(c.openingAmbush&&!c.closingMelee)return {value:9.5,reason:'Set an opening ambush before melee pressure arrives'};
+  if((c.hideUseful||c.hiddenBelief)&&c.visibleEnemies>0&&!c.immediateAttack&&!(c.planAge>=2||c.waitPatienceReached))
+    return {value:c.caster||c.skulk||c.health<0.5?6:3.5,reason:c.hiddenBelief?'Retain the estimated hiding advantage while waiting':'Protection permits hiding before engagement'};
+  return null;
+});
 tacticalBehaviors.registerPlan({id:'lay-low',label:'Lay low',requires:['stealth'],components:['protection'],
   intent:'survive',delivery:['stealth'],posture:'hold',
   score:context=>context.unanswerableAirThreat?
@@ -163,7 +199,7 @@ export const defaultBehaviorConfiguration = profileId => ({
     ...(profileId==='manticore-quill'?['volleys']:[]),
     ...(['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spellcasting']:[]),...(['ogre-boss','generic'].includes(profileId)?['leadership']:[]),
     ...['wolf','kobold-scout'].includes(profileId)?['pack']:[],
-    'pressure','advance','charge-run','effective-range','protection','distance','surround','assist','withdraw',
+    'pressure','advance','charge-run','kite-retreat','effective-range','protection','distance','surround','assist','withdraw',
     ...['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain','spell-support']:[]],
   plans:['aggressive','ranged','defensive','avoiding','hiding','lay-low','charge','kiting','swarming','supporting','desperate',
     ...['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain','spell-support']:[]],

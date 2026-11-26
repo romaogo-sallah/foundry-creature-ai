@@ -85,6 +85,10 @@ export function battlefieldSituation(state){
       {active:finite(context.enemyLossFraction,0)>=0.34,fraction:finite(context.enemyLossFraction,0)}),
     fact('enemy-pressure',tooClose?'Enemies are too close for our preferred range':'Enemies are outside immediate range pressure',tooClose,
       {active:tooClose,nearestFeet:nearest}),
+    fact('opening-ambush',context.openingAmbush?'An opening ambush can still be prepared or exploited':'The opening ambush is complete or unavailable',Boolean(context.openingAmbush),
+      {active:Boolean(context.openingAmbush),hiddenBelief:Boolean(context.hiddenBelief)}),
+    fact('kite-lane',context.kiteRetreatAvailable?'A retreat can preserve a ranged firing lane':'No supported kiting lane is currently available',Boolean(context.kiteRetreatAvailable),
+      {active:Boolean(context.kiteRetreatAvailable)}),
     fact('own-formation',context.ownSpread?'We are too spread out':'Our formation is mutually supporting',Boolean(context.ownSpread),
       {active:Boolean(context.ownSpread),averageNearestAllyFeet:context.ownAverageNearestDistance??null}),
     fact('enemy-aoe-cluster',context.enemyAoeClustered?'Enemies are conveniently grouped for an area effect':'Enemies are not densely grouped for an area effect',Boolean(context.enemyAoeClustered),
@@ -292,7 +296,7 @@ export function planningTrace(state,analysis,runs,decision,usedSelection){
     const probability=pool.get(candidate.id)?.probability,relation=selected?'selected':probability!=null?`weighted ${Math.round(probability*1000)/10}%`:`rank ${rankIndex+1}`;
     connect(terminal,choice,relation);
   }
-  const rejected=decision.rejected??[],rejectedLimit=24;
+  const rejected=decision.rejected??[],rejectedLimit=12;
   for(const [index,entry]of rejected.slice(0,rejectedLimit).entries()){const id=add(`rejected-${entry.id}-${index}`,'outcome',3,`${entry.id}\n${entry.reason}`,'pruned',entry);connect(directive,id,'forbids');}
   if(rejected.length>rejectedLimit){const omitted=add('rejected-omitted','outcome',3,`${rejected.length-rejectedLimit} more rejected options`,'pruned',{count:rejected.length-rejectedLimit});connect(directive,omitted,'forbids');}
   const result=add('selected-outcome','outcome',9,decision.chosen?`Execute ${decision.chosen.kind}`:'No legal action','selected',{chosenId:decision.chosen?.id??null,reason:decision.reason});

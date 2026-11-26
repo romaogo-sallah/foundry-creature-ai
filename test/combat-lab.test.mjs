@@ -64,12 +64,15 @@ test('grand battlefield is a 300-foot square with two six-creature teams and var
   for(const actor of grandBattlefield.actors)assert.equal(grandBattlefield.map[actor.position.y][actor.position.x],actor.marker);
 });
 
-test('grand battlefield first round remains responsive and every Strike targets the opposing team',()=>{
+test('grand battlefield first round opens with ambush setup, remains responsive, and never targets allies',()=>{
   const report=new CombatLab(grandBattlefield,{maxRounds:1}).run(),teams=Object.fromEntries(grandBattlefield.actors.map(actor=>[actor.id,actor.team]));
   assert.equal(report.rounds[0].turns.length,12);assert.equal(report.findings.some(finding=>finding.severity==='error'),false);
   const strikes=report.rounds[0].turns.flatMap(turn=>turn.decisions.filter(decision=>decision.chosen?.kind==='strike')
     .map(decision=>({actorId:turn.actorId,targetId:decision.chosen.targetId})));
-  assert.ok(strikes.length>0);for(const strike of strikes)assert.notEqual(teams[strike.actorId],teams[strike.targetId],`${strike.actorId} cannot Strike ally ${strike.targetId}`);
+  for(const strike of strikes)assert.notEqual(teams[strike.actorId],teams[strike.targetId],`${strike.actorId} cannot Strike ally ${strike.targetId}`);
+  const koboldTurns=report.rounds[0].turns.filter(turn=>turn.actorId.startsWith('kobold-'));
+  assert.ok(koboldTurns.every(turn=>turn.decisions[0].plan?.id==='hiding'),'every skulk starts by setting up an ambush');
+  assert.ok(koboldTurns.some(turn=>turn.decisions.some(decision=>decision.chosen?.kind==='hide')),'reachable cover produces a real Hide action');
 });
 
 test('saved Ogre versus Kobold encounter runs through the production planner without structural errors',()=>{
@@ -90,7 +93,7 @@ test('saved Ogre versus Kobold encounter runs through the production planner wit
   assert.ok(first.nodes.every(node=>node.id==='planning-root'||incoming.has(node.id)),'the graph has no structural orphans');
   assert.equal(first.nodes.some(node=>node.kind==='fact'||node.kind==='engagement'),false,'uncausal diagnostics are not rendered as branches');
   assert.deepEqual(first.nodes.filter(node=>node.kind==='or'&&node.layer===3&&node.status!=='pruned').map(node=>node.detail.planId),
-    ['ranged','aggressive','defensive'],'every surviving tactic remains visible before shared actions converge');
+    ['hiding'],'the opening-ambush situation prunes unrelated tactics before grounding actions');
   assert.ok(first.nodes.filter(node=>node.kind==='and').every(node=>node.detail.timeline.length>1),'one-step actions do not get fake method nodes');
   const actionIds=first.nodes.filter(node=>node.kind==='primitive'&&node.detail?.timeline).map(node=>node.detail.candidateId);
   assert.equal(new Set(actionIds).size,actionIds.length,'merged candidates appear once');
@@ -124,6 +127,19 @@ test('melee-primary ogres charge at full speed while ranged-primary kobolds keep
   }
   for(const turn of turns.filter(entry=>entry.actorId.startsWith('kobold-')))
     assert.ok(turn.decisions.every(decision=>decision.plan?.id!=='charge'),'a crossbow skulk does not mistake its backup sword for its primary role');
+});
+
+test('kobolds attack from Hide before switching to executable kiting retreats',()=>{
+  const report=new CombatLab(grandBattlefield,{maxRounds:6}).run(),turns=report.rounds.flatMap(round=>round.turns);
+  const kiters=[];
+  for(const actorId of grandBattlefield.actors.filter(actor=>actor.team==='kobolds').map(actor=>actor.id)){
+    const decisions=turns.filter(turn=>turn.actorId===actorId).flatMap(turn=>turn.decisions);
+    const hiddenAttack=decisions.findIndex(decision=>decision.effect.hiddenAttack),kite=decisions.findIndex(decision=>decision.plan?.id==='kiting'&&
+      ['stride','step'].includes(decision.chosen?.kind)&&decision.chosen?.id.startsWith('kite:'));
+    assert.ok(hiddenAttack>=0,`${actorId} makes its opening attack from Hide`);
+    if(kite>=0){assert.ok(kite>hiddenAttack,`${actorId} does not kite before taking its ambush shot`);kiters.push(actorId);}
+  }
+  assert.ok(kiters.length>=4,`the surviving firing line switches to executable kiting retreats: ${kiters.join(', ')}`);
 });
 
 for(const scenario of combatLabScenarios)test(`combat lab: ${scenario.name}`,async t=>{

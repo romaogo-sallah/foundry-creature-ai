@@ -13,11 +13,11 @@ function state(context={}){return {actionsRemaining:3,nearestEnemy:8,self:{cell:
 test('battlefield assessment exposes role, range, terrain, attrition, formation, and AOE facts',()=>{
   const facts=battlefieldSituation(state({meleePrimary:true,rangedPrimary:false,enemyRangedRatio:0.75,nearestEnemyDistance:80,nearbyProtection:true,
     ownCount:3,enemyCount:6,ownLossFraction:0.5,enemyLossFraction:0.1,ownSpread:true,ownAverageNearestDistance:45,
-    enemyAoeClustered:true,enemyAoeClusterSize:4,ownAoeClustered:true,ownAoeClusterSize:3}));
+    enemyAoeClustered:true,enemyAoeClusterSize:4,ownAoeClustered:true,ownAoeClusterSize:3,openingAmbush:true,kiteRetreatAvailable:true}));
   const byId=new Map(facts.map(entry=>[entry.id,entry]));
   assert.equal(byId.get('fact-own-combat-role').value,'melee');
   for(const id of ['fact-enemy-range-composition','fact-enemy-distance','fact-nearby-protection','fact-own-outnumbered','fact-own-losses',
-    'fact-own-formation','fact-enemy-aoe-cluster','fact-own-aoe-cluster'])assert.equal(byId.get(id).detail.active,true,id);
+    'fact-opening-ambush','fact-kite-lane','fact-own-formation','fact-enemy-aoe-cluster','fact-own-aoe-cluster'])assert.equal(byId.get(id).detail.active,true,id);
   assert.equal(byId.get('fact-enemy-outnumbered').detail.active,false);
   assert.equal(byId.get('fact-enemy-losses').detail.active,false);
 });

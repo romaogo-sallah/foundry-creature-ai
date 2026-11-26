@@ -35,6 +35,7 @@ export function behaviorConfiguration(adapter) {
   if(raw.plans&&!raw.plans.includes('desperate'))raw.plans=[...raw.plans,'desperate'];
   if(raw.components&&!raw.components.includes('effective-range'))raw.components=[...raw.components,'effective-range'];
   if(raw.components&&!raw.components.includes('charge-run'))raw.components=[...raw.components,'charge-run'];
+  if(raw.components&&!raw.components.includes('kite-retreat'))raw.components=[...raw.components,'kite-retreat'];
   if(adapter.hasSpellcasting){for(const id of ['spellcasting','spell-control','spell-damage','spell-drain','spell-support'])if(!defaults.components.includes(id))defaults.components.push(id);
     for(const id of ['spell-control','spell-damage','spell-drain','spell-support'])if(!defaults.plans.includes(id))defaults.plans.push(id);}
   if(flySpeed(adapter.actor)){defaults.components.push('flight');defaults.plans.push('aerial-hunt','aerial-engage','aerial-disengage');}
@@ -65,8 +66,8 @@ export function battleContext(adapter,state,{deferDecision=false}={}) {
     rangedOptions.length>0&&!canCloseRange||spellAttack;
   const hostileSpells=(state.spells??[]).filter(spell=>spell.available&&
     !['buff','heal','ward','counteract'].includes(spell.kind)&&!spell.teleport);
-  const ranged=Boolean(hostileSpells.some(spell=>spell.range>30)||state.bowReady&&state.loaded&&state.bolts>0||
-    state.strikes?.some(strike=>strike.ranged&&state.enemies.some(enemy=>enemy.strikes?.[strike.id]?.usable)));
+  const ranged=Boolean(hostileSpells.some(spell=>spell.range>30)||state.bowReady&&(state.bolts??1)>0||
+    state.strikes?.some(strike=>strike.ranged&&((state.bolts??1)>0||strike.available!==false)));
   // A vampire with only a short-range gaze is a melee hybrid, not a protected
   // artillery caster. Long-range spellcasters such as liches retain distance.
   const melee=Boolean(state.strikes?.some(strike=>!strike.ranged))&&
@@ -83,8 +84,14 @@ export function battleContext(adapter,state,{deferDecision=false}={}) {
   const ownFormation=formation(alliedTokens),enemyFormation=formation(enemyTokens);
   const enemyRangedRatio=state.enemies.length?state.enemies.filter(enemy=>enemy.tactics?.role==='ranged').length/state.enemies.length:0;
   const nearestEnemyDistance=Math.min(Infinity,...state.enemies.map(enemy=>enemy.distance));
-  const nearbyProtection=Boolean(state.sharedBehaviors?.protectedMoves?.length||state.sharedBehaviors?.sneakCandidates?.length||
+  const nearbyProtection=Boolean(state.sharedBehaviors?.protectedMoves?.length||state.sharedBehaviors?.sneakCandidates?.length||state.moves?.some(move=>move.behaviorProtectedGain)||
     state.enemies.some(enemy=>(enemy.incoming?.coverBonus??enemy.coverBonus??0)>0||enemy.incoming?.concealed));
+  const closingMelee=visible.some(enemy=>enemy.tactics?.role!=='ranged'&&enemy.distance<=(enemy.tactics?.reach??5)+(enemy.tactics?.speed??25)+5);
+  const kiteRetreatAvailable=state.moves?.some(move=>state.enemies.some(enemy=>enemy.tactics?.role!=='ranged'&&
+    (move.targets?.[enemy.id]?.distance??0)>=enemy.distance+5&&move.targets?.[enemy.id]?.lineOfSight!==false&&move.targets?.[enemy.id]?.lineOfEffect!==false));
+  const behaviorActions=adapter.token.document.getFlag(ns,'behaviorActions')??{},ambushComplete=behaviorActions.combatId===game.combat.id&&
+    behaviorActions.sceneId===canvas.scene.id&&behaviorActions.ambushComplete;
+  const openingAmbush=Boolean(state.sneakDamage>0&&!ambushComplete&&(nearbyProtection||state.sharedBehaviors?.hiddenBelief));
   return {health,allies:allies.length,knownEnemies:known,visibleEnemies:visible.length,forceRatio:(allies.length+1)/Math.max(1,known),
     immediateAttack:Boolean(immediate),ranged,melee,caster:Boolean(state.spells?.length),
     meleePrimary,rangedPrimary,enemyRangedRatio,nearestEnemyDistance,nearbyProtection,ownCount,enemyCount,
@@ -95,7 +102,7 @@ export function battleContext(adapter,state,{deferDecision=false}={}) {
     enemiesTooClose:rangedPrimary&&nearestEnemyDistance<=Math.max(15,...state.enemies.map(enemy=>enemy.tactics?.reach??5)),
     rangedAttackAvailable:rangedOptions.length>0,bestRangePenalty,canCloseRange,
     rangedAttackValue:bestRanged.assessment.value,meleeAttackValue:Math.max(0,...meleeOptions.map(candidate=>candidate.assessment.value)),
-    closingMelee:visible.some(enemy=>enemy.tactics?.role!=='ranged'&&enemy.distance<=40),
+    closingMelee,kiteRetreatAvailable,openingAmbush,
     pack:configuration.components.includes('pack'),
     swarmOpportunity:state.enemies.some(enemy=>enemy.alliesInReach>0||enemy.flanked)||Object.values(state.group?.targets??{}).some(target=>target.swarm),
     supportRecipients,hideUseful:configuration.components.includes('stealth')&&Boolean(state.sharedBehaviors?.hideCandidates?.length),
@@ -264,7 +271,10 @@ export function attachBehaviorSystem(adapter) {
   adapter.recordOutcome=async(choice,ledger,result={})=>{
     await record(choice,ledger,result);
     if(result.skipped)return;
-    if(choice.kind==='hide')await adapter.token.document.setFlag(ns,'behaviorActions',{turn:ledger.turn});
+    const actions=adapter.token.document.getFlag(ns,'behaviorActions')??{};
+    if(choice.kind==='hide')await adapter.token.document.setFlag(ns,'behaviorActions',{...actions,combatId:game.combat.id,sceneId:canvas.scene.id,turn:ledger.turn});
+    if(choice.kind==='strike'&&adapter.lastTactic?.planId==='hiding'&&adapter.profileId==='kobold-scout')
+      await adapter.token.document.setFlag(ns,'behaviorActions',{...actions,combatId:game.combat.id,sceneId:canvas.scene.id,ambushComplete:true});
     const selection=adapter.lastTactic;
     const previous=adapter.token.document.getFlag(ns,'behaviorState');
     if(selection)await adapter.token.document.setFlag(ns,'behaviorState',{combatId:game.combat.id,sceneId:canvas.scene.id,

@@ -1,0 +1,67 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.54.0",
+  "date": "2026-11-26",
+  "feature": "opening ambush and executable ranged kiting phases",
+  "scenario": {
+    "id": "six-ogres-vs-six-kobolds-grand-battlefield",
+    "seed": 6606,
+    "rounds": 7,
+    "outcome": "ogres victory",
+    "decisions": 207,
+    "actions": 204,
+    "damage": 338,
+    "movementFeet": 2990,
+    "structuralErrors": 0,
+    "tacticalWarnings": 3,
+    "koboldsSelectingHidingFirst": 6,
+    "koboldsMakingHiddenOpeningAttack": 6,
+    "koboldsExecutingKitingRetreat": 5,
+    "koboldsDefeatedBeforeKitingOpportunity": 1
+  },
+  "policies": {
+    "openingAmbush": [
+      "seek reachable cover or concealment with a future ranged lane",
+      "perform Hide before melee pressure arrives",
+      "consume Hidden on the opening off-guard ranged attack",
+      "apply declared precision damage to that attack"
+    ],
+    "kiting": [
+      "activate when a melee threat can approach within roughly one turn",
+      "increase separation from closing melee threats",
+      "retain line of sight and line of effect",
+      "retain a geometrically usable ranged lane",
+      "prefer protection and movement beyond one-turn pursuit",
+      "price reaction, terrain, and destination threat risk"
+    ],
+    "stealthIntegrity": "Ordinary Stride breaks Hidden in the virtual resolver; the lab cannot preserve a false ambush through open movement."
+  },
+  "commands": [
+    {
+      "command": "node --test test/behavior-runtime.test.mjs test/hierarchical-planner.test.mjs test/tactical-behaviors.test.mjs test/combat-lab.test.mjs",
+      "result": "pass",
+      "tests": 57
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "tests": 1297,
+      "workers": 11,
+      "seconds": 35.3
+    },
+    {
+      "command": "npm run simulate -- simulations/six-ogres-vs-six-kobolds.json",
+      "result": "pass"
+    }
+  ],
+  "installation": {
+    "packages": 5,
+    "version": "0.54.0",
+    "foundryData": "C:/Users/Roman/AppData/Local/FoundryVTT/Data"
+  },
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.54.0.zip",
+    "bytes": 924300,
+    "sha256": "195507282713ED3E64B6C1E3713E1168E490FC3218558CD71D21E34E1E3EF81D"
+  }
+}

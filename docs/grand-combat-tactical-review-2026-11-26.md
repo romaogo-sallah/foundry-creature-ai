@@ -76,10 +76,12 @@ With the same scenario and seed, all six ogres now spent all three first-round a
 
 That stronger result confirms that Charge works, but it also makes the next weakness more obvious. The kobolds still advance to improve range and do not maintain a defensive firing line. Improving ranged overwatch, cover occupation, group kiting, and hand-aware weapon transitions is more valuable now than making Charge even more aggressive.
 
+Version 0.54.0 addresses the first part of that weakness. In the same saved battle, every kobold now selects Hiding as its opening plan, reaches a legal protected position, and makes its first attack from Hidden. Five of the six later execute generated kiting moves; the sixth is defeated before it gets a retreat turn. Those moves increase separation while retaining a usable firing lane. This validates the requested phase change without pretending that the kobolds' crossbow, reload, and short battlefield can overcome the ogres' HP advantage.
+
 ## Recommended next simulations
 
-1. Give six ranged-primary scouts a protected starting line and test whether they hold it while melee approaches.
-2. Add an explicit retreat corridor and require group kiting to preserve distance without cornering the formation.
-3. Run the production `kobold-scout` candidate generator in the lab so Hide, Sneak, off-guard precision and protected movement are exercised.
+1. Add group-level retreat reservations so several kiters do not choose the same corridor or trap one another against a map edge.
+2. Add a hold/overwatch policy for a firing line that already has protection and advantageous range.
+3. Extend the lab's stealth resolver from opening Hide attacks to full Sneak checks and observer-specific results.
 4. Add hand state and Draw/Stow/Reload legality before evaluating mixed sword-crossbow turns.
-5. Add a 15-foot burst caster to both sides and verify that the new formation signals change target and spacing decisions.
+5. Add a 15-foot burst caster to both sides and verify that the formation signals change target and spacing decisions.

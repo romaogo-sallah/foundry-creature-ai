@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.53.0
+# Foundry Creature AI — version 0.54.0
+
+**Version 0.54.0:** gives ranged skulks a real two-phase doctrine. They seek a protected firing position, Hide, take the opening shot while Hidden, and then switch to generated kiting retreats when melee can close. Kiting destinations must increase separation while retaining line of sight, line of effect, and a usable ranged lane. Ordinary Stride now breaks the combat lab's Hidden state, so the simulation cannot claim a false ambush.
 
 **Version 0.53.0:** turns Charge into a committed full-speed approach for melee-primary actors and adds an explicit battlefield-assessment layer to every decision trace. It distinguishes primary weapon role from backup weapons and reports range composition, distance, protection, numbers, losses, close pressure, formation spread and AOE clustering before tactics are selected. The [grand battle review](grand-combat-tactical-review-2026-11-26.md) records the evidence and remaining ranged-skirmisher gaps.
 

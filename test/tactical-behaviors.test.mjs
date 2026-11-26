@@ -16,10 +16,21 @@ const action=(id,kind,value,cost=1)=>({id,kind,legal:true,actionCost:cost,assess
 test('plans respond to the global situation rather than the creature name',()=>{
   for(const [context,expected]of [
     [{},'aggressive'],[{immediateAttack:false},'charge'],[{caster:true,melee:false},'defensive'],
-    [{ranged:true,closingMelee:true,allies:2},'kiting'],[{pack:true,allies:2,swarmOpportunity:true},'swarming'],
+    [{ranged:true,rangedPrimary:true,closingMelee:true,kiteRetreatAvailable:true,allies:2},'kiting'],[{pack:true,allies:2,swarmOpportunity:true},'swarming'],
     [{supportRecipients:2},'supporting'],[{hideUseful:true,immediateAttack:false,caster:true},'hiding'],
+    [{ranged:true,rangedPrimary:true,skulk:true,openingAmbush:true,immediateAttack:true},'hiding'],
     [{health:0.2,emergency:true},'avoiding'],
   ])assert.equal(system.select(state(context)).planId,expected);
+});
+
+test('kiting generates a real retreat that keeps a ranged lane instead of merely naming the tactic',()=>{
+  const s=state({ranged:true,rangedPrimary:true,melee:false,closingMelee:true,kiteRetreatAvailable:true,allies:2});
+  s.strikes=[{id:'bow',ranged:true}];s.enemies=[{id:'fighter',name:'Fighter',distance:20,tactics:{role:'melee',reach:10,speed:25}}];
+  s.moves=[{x:6,y:1,kind:'stride',cost:25,path:[{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:5,y:1},{x:6,y:1}],nearestEnemy:9,
+    targets:{fighter:{id:'fighter',distance:45,lineOfSight:true,lineOfEffect:true,strikes:{bow:{geometryUsable:true,inReach:true}}}}}];
+  const result=system.decide(s,[action('shot','strike',4),action('end','endTurn',0,0)]);
+  assert.equal(result.diagnostics.tactic.planId,'kiting');assert.equal(result.chosen.kind,'stride');assert.equal(result.chosen.features.groupGoal,'kite');
+  assert.ok(result.chosen.assessment.value>4);
 });
 
 test('a penalized ranged option selects explicit range-closing tactics and records fallback stages',()=>{

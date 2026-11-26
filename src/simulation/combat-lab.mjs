@@ -44,6 +44,7 @@ export class CombatLab {
   constructor(scenario,{seed=scenario.seed??1,maxRounds=scenario.maxRounds??8}={}){
     if(!scenario?.id||!scenario.map||!Array.isArray(scenario.actors))throw new Error('Combat scenario needs id, map and actors');
     const parsed=gridFromAscii(scenario.map,{hazardDamage:scenario.hazardDamage});this.grid=parsed.grid;this.scenario=clone(scenario);this.random=seededRandom(seed);
+    this.protectionGoals=[...this.grid.cover,...this.grid.obscuring].map(key=>{const [x,y]=key.split(',').map(Number);return {x,y};});
     this.maxRounds=maxRounds;this.actors=scenario.actors.map((source,index)=>{const marker=source.marker&&parsed.markers.get(source.marker);
       return validateActor({...source,position:clone(source.position??marker)},index);});
     for(const actor of this.actors){if(this.grid.isBlocked(actor.position))throw new Error(`${actor.id} starts in blocked cell ${cellKey(actor.position)}`);
@@ -76,13 +77,22 @@ export class CombatLab {
     return this.grid.routeField(goals,{occupied,allies,moverId:actor.id});
   }
 
+  #protectionField(actor){
+    const occupied=this.occupied(),allies=new Set(this.allies(actor).map(ally=>ally.id));
+    const goals=this.protectionGoals.filter(goal=>this.enemies(actor).some(enemy=>{const facts=this.#positionFacts(actor,enemy,goal);
+      return actor.strikes.some(strike=>strike.rangeIncrement&&facts.strikes[strike.id]?.geometryUsable);}));
+    return this.grid.routeField(goals,{occupied,allies,moverId:actor.id});
+  }
+
   #moves(actor,stateEnemies){
-    const occupied=this.occupied(),allies=new Set(this.allies(actor).map(ally=>ally.id)),field=this.#routeField(actor),currentRoute=field.distance(actor.position);
+    const occupied=this.occupied(),allies=new Set(this.allies(actor).map(ally=>ally.id)),field=this.#routeField(actor),protection=this.#protectionField(actor),
+      currentRoute=field.distance(actor.position),currentProtection=protection.distance(actor.position);
     const reachable=this.grid.reachable(actor.position,{speed:actor.speed,occupied,allies,moverId:actor.id});
     const moves=reachable.flatMap(node=>{
       const targets=Object.fromEntries(this.enemies(actor).map(enemy=>[enemy.id,this.#positionFacts(actor,enemy,node.cell)]));
       const nearestEnemy=field.distance(node.cell),threatened=stateEnemies.some(enemy=>enemy.inReach),terrainRisk=node.risk;
       const common={x:node.cell.x,y:node.cell.y,cost:node.cost,path:node.path,targets,nearestEnemy:Number.isFinite(nearestEnemy)?nearestEnemy:currentRoute,
+        protectionDistance:protection.distance(node.cell),currentProtectionDistance:currentProtection,
         provokes:threatened,reactionRisk:threatened?Math.max(0,...this.enemies(actor).filter(enemy=>enemy.inReach).flatMap(enemy=>enemy.strikes.map(strike=>strike.damage))):0,
         terrainRisk,destinationThreatened:this.enemies(actor).some(enemy=>this.grid.distanceFeet(node.cell,enemy.position)<=enemy.reach)};
       const choices=[{...common,kind:'stride'}];
@@ -112,8 +122,26 @@ export class CombatLab {
     const friendlyActors=this.living(actor.team),enemyActors=this.enemies(actor),ownFormation=formation(this.grid,friendlyActors),enemyFormation=formation(this.grid,enemyActors);
     const initialFriends=this.scenario.actors.filter(entry=>entry.team===actor.team).length,initialEnemies=this.scenario.actors.filter(entry=>entry.team!==actor.team).length;
     const nearestEnemyDistance=Math.min(Infinity,...enemies.map(enemy=>enemy.distance));
-    const nearbyProtection=this.grid.terrain(actor.position).cover||this.grid.terrain(actor.position).obscuring||moves.some(move=>{
-      const terrain=this.grid.terrain(move);return terrain.cover||terrain.obscuring;});
+    const terrainHere=this.grid.terrain(actor.position),protectionDistance=Math.min(Infinity,...moves.map(move=>move.currentProtectionDistance));
+    const nearbyProtection=terrainHere.cover||terrainHere.obscuring||protectionDistance<=actor.speed/5*4;
+    const closingMelee=enemies.some(enemy=>enemy.tactics.role!=='ranged'&&enemy.lineOfSight!==false&&
+      enemy.distance<=(enemy.tactics.reach??5)+(enemy.tactics.speed??25)+5);
+    const kiteRetreatAvailable=moves.some(move=>enemies.some(enemy=>enemy.tactics.role!=='ranged'&&
+      (move.targets[enemy.id]?.distance??0)>=enemy.distance+5&&move.targets[enemy.id]?.lineOfSight!==false&&move.targets[enemy.id]?.lineOfEffect!==false));
+    const openingAmbush=Boolean(actor.skulk&&!actor.memory.ambushComplete&&nearbyProtection);
+    const hideCandidates=actor.skulk&&!actor.memory.ambushComplete&&!actor.conditions.hidden&&(terrainHere.cover||terrainHere.obscuring)?
+      [{id:'lab:hide',kind:'hide',legal:true,actionCost:1,features:{sharedBehavior:true},assessment:{value:5.5},
+        scoringTerms:[{label:'Hide behind available cover or concealment',contribution:5.5}]}]:[];
+    const protectedMoves=openingAmbush&&!actor.conditions.hidden?moves.filter(move=>move.protectionDistance<move.currentProtectionDistance&&
+      !turn.visited.has(`${move.x},${move.y}`)).map(move=>{const destination=this.grid.terrain(move),progress=move.currentProtectionDistance-move.protectionDistance,
+        reaches=destination.cover||destination.obscuring,value=2.5+Math.min(3,progress*0.6)+(reaches?2:0)-(move.terrainRisk??0);
+      return {id:`lab:ambush:${move.kind}:${move.x},${move.y}`,kind:move.kind,legal:true,actionCost:1,path:move.path,
+        destination:{x:move.x,y:move.y},movementCost:move.cost,provokes:move.provokes,destinationThreatened:move.destinationThreatened,
+        intent:'take a protected opening-ambush position',features:{defensiveSetup:true,approachProtection:true},
+        assessment:{value,movement:true,fullTurnPlan:true,nearestEnemy:move.nearestEnemy,currentNearestEnemy:movement.nearestEnemy,distanceMoved:move.cost/5},
+        scoringTerms:[{label:'Approach cover or concealment for an opening ambush',contribution:2.5+Math.min(3,progress*0.6)},
+          ...(reaches?[{label:'Reach a legal Hide position',contribution:2}]:[]),...(move.terrainRisk?[{label:'Terrain risk',contribution:-move.terrainRisk}]:[])]};
+    }).filter(candidate=>candidate.assessment.value>0).sort((a,b)=>b.assessment.value-a.assessment.value||b.movementCost-a.movementCost).slice(0,12):[];
     const reloads=actor.strikes.filter(strike=>strike.reload&&!strike.loaded&&strike.ammunition>0).map(strike=>{
       const nextAttackValue=Math.max(0,...enemies.filter(enemy=>enemy.strikes[strike.id]?.geometryUsable)
         .map(enemy=>actorAttackValue(actor,strike,enemy,enemy.strikes[strike.id])));
@@ -130,16 +158,17 @@ export class CombatLab {
         visibleEnemies:enemies.filter(enemy=>enemy.lineOfSight).length,melee:actor.strikes.some(strike=>!strike.rangeIncrement),ranged:actor.strikes.some(strike=>strike.rangeIncrement),
         rangedAttackAvailable:rangedNow.length>0,immediateAttack,bestRangePenalty:Number.isFinite(bestRangePenalty)?bestRangePenalty:0,
         canCloseRange,meleeAttackValue,rangedAttackValue,
-        caster:false,skulk:Boolean(actor.skulk),pack:Boolean(actor.pack),allies:this.allies(actor).length,closingMelee:enemies.some(enemy=>enemy.tactics.role==='melee'&&enemy.distance<=40),
+        caster:false,skulk:Boolean(actor.skulk),pack:Boolean(actor.pack),allies:this.allies(actor).length,closingMelee,kiteRetreatAvailable,openingAmbush,
         meleePrimary:role==='melee',rangedPrimary:role==='ranged',enemyRangedRatio:enemies.length?enemies.filter(enemy=>enemy.tactics.role==='ranged').length/enemies.length:0,
         nearestEnemyDistance,nearbyProtection,ownCount:friendlyActors.length,enemyCount:enemyActors.length,
         ownLossFraction:initialFriends?1-friendlyActors.length/initialFriends:0,enemyLossFraction:initialEnemies?1-enemyActors.length/initialEnemies:0,
         ownSpread:ownFormation.spread,ownAverageNearestDistance:ownFormation.averageNearest,ownAoeClustered:ownFormation.clustered,ownAoeClusterSize:ownFormation.clusterSize,
         enemyAoeClustered:enemyFormation.clustered,enemyAoeClusterSize:enemyFormation.clusterSize,
         enemiesTooClose:role==='ranged'&&nearestEnemyDistance<=Math.max(15,...enemies.map(enemy=>enemy.tactics.reach??5)),
-        swarmOpportunity:enemies.some(enemy=>enemy.alliesInReach>0||enemy.flanked),supportRecipients:0,emergency:health<0.2,hideUseful:this.grid.terrain(actor.position).cover,
-        hiddenBelief:false,planAge:0,waitPatienceReached:false}},diagnostics:{},rejectedActionIds:[],seek:{available:false},
-      escapes:[],escapeBlocked:false,retreatComplete:false,morale:{broken:false},conditionRules:{},sharedBehaviors:{hideCandidates:[],sneakCandidates:[],protectedMoves:[]}};
+        swarmOpportunity:enemies.some(enemy=>enemy.alliesInReach>0||enemy.flanked),supportRecipients:0,emergency:health<0.2,hideUseful:hideCandidates.length>0,
+        hiddenBelief:Boolean(actor.conditions.hidden),planAge:0,waitPatienceReached:false}},diagnostics:{},rejectedActionIds:[],seek:{available:false},
+      escapes:[],escapeBlocked:false,retreatComplete:false,morale:{broken:false},conditionRules:{},
+      sharedBehaviors:{hideCandidates,sneakCandidates:[],protectedMoves,hiddenBelief:Boolean(actor.conditions.hidden)}};
     return state;
   }
 
@@ -148,12 +177,15 @@ export class CombatLab {
     if(!target||!strike)return {summary:'target or strike disappeared',invalid:true};
     const position=this.#positionFacts(actor,target),flat=position.strikes[strike.id];if(!flat?.usable)return {summary:'strike became illegal',invalid:true};
     if(strike.reload){strike.loaded=false;strike.ammunition--;}
-    const concealment=flat.concealmentDC,flatRoll=concealment?1+Math.floor(this.random()*20):null;if(concealment&&flatRoll<concealment){turn.attacksMade++;return {summary:`${strike.name??strike.id}: concealment ${flatRoll} vs DC ${concealment}; no effect`,damage:0};}
-    const roll=1+Math.floor(this.random()*20),map=strike.mapPenalties[Math.min(2,turn.attacksMade)],total=roll+strike.bonus+map-flat.rangePenalty;
-    const result=degree(roll,total,target.ac+flat.coverBonus),damage=result===2?strike.damage*2:result===1?strike.damage:0;target.hp=round(Math.max(0,target.hp-damage));target.alive=target.hp>0;turn.attacksMade++;
+    const hidden=Boolean(actor.conditions.hidden);actor.conditions.hidden=false;if(hidden)actor.memory.ambushComplete=true;
+    const concealment=flat.concealmentDC,flatRoll=concealment?1+Math.floor(this.random()*20):null;if(concealment&&flatRoll<concealment){turn.attacksMade++;return {summary:`${strike.name??strike.id}: concealment ${flatRoll} vs DC ${concealment}; no effect${hidden?'; Hide expended':''}`,damage:0,hiddenAttack:hidden};}
+    const roll=1+Math.floor(this.random()*20),map=strike.mapPenalties[Math.min(2,turn.attacksMade)],total=roll+strike.bonus+map-flat.rangePenalty,
+      dc=target.ac+flat.coverBonus-(hidden?2:0);
+    const result=degree(roll,total,dc),baseDamage=strike.damage+(hidden?strike.precisionDamage??0:0),damage=result===2?baseDamage*2:result===1?baseDamage:0;
+    target.hp=round(Math.max(0,target.hp-damage));target.alive=target.hp>0;turn.attacksMade++;
     this.report.metrics.damage=round(this.report.metrics.damage+damage);
-    return {summary:`${strike.name??strike.id} → ${target.id}: d20 ${roll} + ${strike.bonus+map-flat.rangePenalty} = ${total} vs ${target.ac+flat.coverBonus}; ${degreeName(result)}; ${damage} damage`,
-      targetId:target.id,roll,total,dc:target.ac+flat.coverBonus,degree:degreeName(result),damage,rangePenalty:flat.rangePenalty,coverBonus:flat.coverBonus};
+    return {summary:`${strike.name??strike.id} → ${target.id}: d20 ${roll} + ${strike.bonus+map-flat.rangePenalty} = ${total} vs ${dc}${hidden ? " (Hidden/off-guard)" : ""}; ${degreeName(result)}; ${damage} damage`,
+      targetId:target.id,roll,total,dc,degree:degreeName(result),damage,rangePenalty:flat.rangePenalty,coverBonus:flat.coverBonus,hiddenAttack:hidden};
   }
 
   #execute(actor,choice,turn){
@@ -161,12 +193,18 @@ export class CombatLab {
     if(['stride','step','crawl','escapeStride'].includes(choice.kind)){
       const destination=choice.destination;if(!destination||this.grid.isBlocked(destination)||this.occupied().has(cellKey(destination)))return {summary:'movement destination became illegal',invalid:true};
       const from=clone(actor.position),hazardDamage=(choice.path??[]).reduce((sum,cell)=>sum+(this.grid.terrain(cell).hazard??0),0);
+      if(actor.conditions.hidden&&choice.kind!=='step')actor.conditions.hidden=false;
       actor.position=clone(destination);turn.visited.add(cellKey(destination));this.report.metrics.movement+=choice.movementCost??0;
       if(hazardDamage){actor.hp=round(Math.max(0,actor.hp-hazardDamage));actor.alive=actor.hp>0;this.report.metrics.damage=round(this.report.metrics.damage+hazardDamage);}
-      return {summary:`${choice.kind} ${choice.movementCost??0} ft: (${from.x},${from.y}) -> (${destination.x},${destination.y})${hazardDamage?`; ${hazardDamage} hazard damage`:''}`,
+      return {summary:`${choice.kind} ${choice.movementCost??0} ft: (${from.x},${from.y}) → (${destination.x},${destination.y})${hazardDamage?`; ${hazardDamage} hazard damage`:''}`,
         from,destination:clone(destination),hazardDamage};
     }
     if(choice.kind==='strike')return this.#resolveStrike(actor,choice,turn);
+    if(choice.kind==='hide'){
+      const terrain=this.grid.terrain(actor.position);
+      if(!actor.skulk||actor.conditions.hidden||!terrain.cover&&!terrain.obscuring)return {summary:'Hide became illegal',invalid:true};
+      actor.conditions.hidden=true;return {summary:'hides behind cover or concealment',hidden:true};
+    }
     if(choice.kind==='reload'){
       const strike=actor.strikes.find(entry=>entry.id===choice.strikeId);
       if(!strike?.reload||strike.loaded||strike.ammunition<1)return {summary:'reload became illegal',invalid:true};
@@ -216,7 +254,8 @@ export class CombatLab {
   #diagnose(){
     const decisions=this.report.rounds.flatMap(round=>round.turns.flatMap(turn=>turn.decisions.map(decision=>({...decision,round:round.round}))));
     for(const decision of decisions){
-      if(decision.chosen?.kind==='endTurn'&&decision.actionsBefore>0&&this.enemies(this.actors.find(actor=>actor.id===decision.actorId)).length)
+      if(decision.chosen?.kind==='endTurn'&&decision.actionsBefore>0&&decision.plan?.id!=='hiding'&&
+        this.enemies(this.actors.find(actor=>actor.id===decision.actorId)).length)
         this.report.findings.push({severity:'warning',code:'early-end',round:decision.round,actorId:decision.actorId,message:`${decision.actorId} ended with ${decision.actionsBefore} actions.`});
       if(decision.chosen?.kind==='strike'&&decision.effect.rangePenalty>0&&decision.chosen.terms.some(term=>String(term.label).includes('Close or use melee')))
         this.report.findings.push({severity:'warning',code:'avoidable-range-penalty',round:decision.round,actorId:decision.actorId,
