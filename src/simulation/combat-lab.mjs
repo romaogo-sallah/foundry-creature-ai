@@ -18,7 +18,15 @@ function validateActor(source,index){
     glyph:source.glyph??source.id?.[0]?.toUpperCase(),strikes:(source.strikes??[{id:'melee',name:'Strike'}]).map(strike=>({...strikeDefaults,...strike})),
     plans:source.plans??null,components:source.components??null,decisionVariation:source.decisionVariation??0,conditions:{...source.conditions},memory:{previous:null},alive:true};
   if(!actor.id||!actor.team||!actor.position||!Number.isInteger(actor.position.x)||!Number.isInteger(actor.position.y))throw new Error('Combat-lab actors need id, team and integer position');
-  if(!actor.strikes.length)throw new Error(`${actor.id} needs at least one strike`);return actor;
+  if(!actor.strikes.length)throw new Error(`${actor.id} needs at least one strike`);
+  for(const strike of actor.strikes){
+    const reload=Number(strike.reload??0);if(!Number.isInteger(reload)||reload<0)throw new Error(`${actor.id} strike ${strike.id} needs a non-negative integer reload cost`);
+    strike.reload=reload;
+    if(!reload)continue;
+    const ammunition=Number(strike.ammunition??0);if(!Number.isInteger(ammunition)||ammunition<0)throw new Error(`${actor.id} strike ${strike.id} needs non-negative integer ammunition`);
+    strike.ammunition=ammunition;strike.loaded=ammunition>0&&strike.loaded!==false;
+  }
+  return actor;
 }
 
 function adjacentGoals(grid,target){const goals=[];for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)if((dx||dy)&&!grid.isBlocked({x:target.position.x+dx,y:target.position.y+dy}))goals.push({x:target.position.x+dx,y:target.position.y+dy});return goals;}
@@ -47,7 +55,8 @@ export class CombatLab {
     for(const strike of actor.strikes){const ranged=Number.isFinite(strike.rangeIncrement)&&strike.rangeIncrement>0;
       const increment=ranged?Math.max(0,Math.ceil(distance/strike.rangeIncrement)-1):0,rangePenalty=ranged?Math.min(strike.maxIncrements-1,increment)*2:0;
       const inReach=ranged?distance<=strike.rangeIncrement*strike.maxIncrements:distance<=strike.reach;
-      strikes[strike.id]={usable:inReach&&sight.lineOfSight&&sight.lineOfEffect,inReach,rangePenalty,coverBonus:sight.coverBonus,
+      const geometryUsable=inReach&&sight.lineOfSight&&sight.lineOfEffect,resourceReady=!strike.reload||strike.loaded&&strike.ammunition>0;
+      strikes[strike.id]={usable:geometryUsable&&resourceReady,geometryUsable,resourceReady,inReach,rangePenalty,coverBonus:sight.coverBonus,
         concealmentDC:sight.concealmentDC,lineOfSight:sight.lineOfSight,lineOfEffect:sight.lineOfEffect};
     }
     return {distance,lineOfSight:sight.lineOfSight,lineOfEffect:sight.lineOfEffect,coverBonus:sight.coverBonus,
@@ -88,10 +97,15 @@ export class CombatLab {
     const rangedAttackValue=Math.max(0,...rangedNow.map(entry=>actorAttackValue(actor,entry.strike,entry.enemy,entry.position)));
     const health=actor.hp/actor.maxHp,friendPower=this.living(actor.team).reduce((sum,ally)=>sum+ally.hp,0),enemyPower=this.enemies(actor).reduce((sum,enemy)=>sum+enemy.hp,0);
     const configuration=defaultBehaviorConfiguration('basic-npc');if(actor.plans)configuration.plans=[...actor.plans];if(actor.components)configuration.components=[...actor.components];
+    const reloads=actor.strikes.filter(strike=>strike.reload&&!strike.loaded&&strike.ammunition>0).map(strike=>{
+      const nextAttackValue=Math.max(0,...enemies.filter(enemy=>enemy.strikes[strike.id]?.geometryUsable)
+        .map(enemy=>actorAttackValue(actor,strike,enemy,enemy.strikes[strike.id])));
+      return {strikeId:strike.id,actionCost:strike.reload,ammunition:strike.ammunition,available:true,provokes:true,nextAttackValue};
+    });
     const state={actionsRemaining:turn.actionsRemaining,bonusMovementActions:0,attacksMade:turn.attacksMade,decisionVariation:actor.decisionVariation,
       nearestEnemy:this.#routeDistance(actor,actor.position),visited:[...turn.visited],moves,strikes:actor.strikes.map(strike=>({id:strike.id,name:strike.name??strike.id,
         bonus:strike.bonus,damage:strike.damage,mapPenalties:strike.mapPenalties,precisionDamage:strike.precisionDamage,ranged:Boolean(strike.rangeIncrement),
-        rangeAversion:strike.rangeAversion??0,available:true})),enemies,allies:this.allies(actor).map(ally=>({id:ally.id})),
+        rangeAversion:strike.rangeAversion??0,available:!strike.reload||strike.loaded&&strike.ammunition>0})),reloads,enemies,allies:this.allies(actor).map(ally=>({id:ally.id})),
       self:{cell:clone(actor.position),speed:actor.speed,reachSquares:actor.reach/5,referenceAC:actor.referenceAC,threatened:enemies.some(enemy=>enemy.inReach),
         restrained:false,immobile:false,unable:false,prone:Boolean(actor.conditions.prone),canStand:true,mapPenalties:[0,-5,-10],attackBonus:actor.strikes[0].bonus,
         averageDamage:actor.strikes.reduce((sum,strike)=>sum+strike.damage,0)/actor.strikes.length,reactionRisk:7},
@@ -110,6 +124,7 @@ export class CombatLab {
     const target=this.actors.find(entry=>entry.id===choice.targetId&&entry.hp>0),strike=actor.strikes.find(entry=>entry.id===choice.strikeId);
     if(!target||!strike)return {summary:'target or strike disappeared',invalid:true};
     const position=this.#positionFacts(actor,target),flat=position.strikes[strike.id];if(!flat?.usable)return {summary:'strike became illegal',invalid:true};
+    if(strike.reload){strike.loaded=false;strike.ammunition--;}
     const concealment=flat.concealmentDC,flatRoll=concealment?1+Math.floor(this.random()*20):null;if(concealment&&flatRoll<concealment){turn.attacksMade++;return {summary:`${strike.name??strike.id}: concealment ${flatRoll} vs DC ${concealment}; no effect`,damage:0};}
     const roll=1+Math.floor(this.random()*20),map=strike.mapPenalties[Math.min(2,turn.attacksMade)],total=roll+strike.bonus+map-flat.rangePenalty;
     const result=degree(roll,total,target.ac+flat.coverBonus),damage=result===2?strike.damage*2:result===1?strike.damage:0;target.hp=round(Math.max(0,target.hp-damage));target.alive=target.hp>0;turn.attacksMade++;
@@ -129,6 +144,11 @@ export class CombatLab {
         from,destination:clone(destination),hazardDamage};
     }
     if(choice.kind==='strike')return this.#resolveStrike(actor,choice,turn);
+    if(choice.kind==='reload'){
+      const strike=actor.strikes.find(entry=>entry.id===choice.strikeId);
+      if(!strike?.reload||strike.loaded||strike.ammunition<1)return {summary:'reload became illegal',invalid:true};
+      strike.loaded=true;return {summary:`reloads ${strike.name??strike.id} (${strike.ammunition} ammunition remaining)`,strikeId:strike.id,loaded:true,ammunition:strike.ammunition};
+    }
     if(choice.kind==='stand'){actor.conditions.prone=false;return {summary:'stands up'};}
     return {summary:`${choice.kind} is recorded without a virtual resolver`,unsupported:true};
   }
@@ -165,7 +185,8 @@ export class CombatLab {
     }
     const teams=[...new Set(this.living().map(actor=>actor.team))];this.report.outcome=teams.length===1?{status:'victory',winner:teams[0]}:
       teams.length===0?{status:'mutual-defeat',winner:null}:{status:'round-limit',winner:null};
-    this.report.finalActors=this.actors.map(actor=>({id:actor.id,team:actor.team,hp:actor.hp,maxHp:actor.maxHp,position:clone(actor.position),alive:actor.hp>0}));
+    this.report.finalActors=this.actors.map(actor=>({id:actor.id,team:actor.team,hp:actor.hp,maxHp:actor.maxHp,position:clone(actor.position),alive:actor.hp>0,
+      weapons:actor.strikes.filter(strike=>strike.reload).map(strike=>({id:strike.id,loaded:strike.loaded,ammunition:strike.ammunition}))}));
     this.#diagnose();return this.report;
   }
 

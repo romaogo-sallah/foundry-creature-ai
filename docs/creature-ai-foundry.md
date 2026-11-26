@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.51.2
+# Foundry Creature AI — version 0.51.3
+
+**Patch 0.51.3:** gives the standalone combat simulator persistent loaded and ammunition state. Reload weapons spend ammunition and become unloaded after every shot, while the shared basic planner can choose Reload according to the attack it prepares.
 
 **Patch 0.51.2:** keeps every surviving tactic visible in the causal decision graph. Shared candidate actions converge from each contributing tactic, preserving tactic selection without repeating identical actions.
 

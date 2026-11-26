@@ -12,6 +12,8 @@ import {buildDecisionGraph} from '../src/foundry/decision-graph.mjs';
 const reportDirectory=new URL('../.scratch/combat-lab/',import.meta.url);
 const reportPath=scenario=>new URL(`${scenario.id}.md`,reportDirectory);
 const ogresVsKobolds=JSON.parse(await readFile(new URL('../simulations/ogres-vs-kobolds.json',import.meta.url),'utf8'));
+let ogresVsKoboldsReport;
+const runOgresVsKobolds=()=>ogresVsKoboldsReport??=new CombatLab(ogresVsKobolds).run();
 
 async function save(report,scenario){
   await mkdir(reportDirectory,{recursive:true});const path=reportPath(scenario);await writeFile(path,renderCombatReport(report),'utf8');return fileURLToPath(path);
@@ -46,7 +48,7 @@ test('saved Ogre versus Kobold starting conditions retain distance and bounded t
 });
 
 test('saved Ogre versus Kobold encounter runs through the production planner without structural errors',()=>{
-  const report=new CombatLab(ogresVsKobolds).run();
+  const report=runOgresVsKobolds();
   assert.ok(report.metrics.decisions>0);assert.equal(report.finalActors.length,4);
   assert.ok(report.rounds.flatMap(round=>round.turns).every(turn=>turn.decisions.every(decision=>decision.trace?.schema==='foundry-creature-ai/planning-trace@2')));
   assert.equal(report.findings.some(finding=>finding.severity==='error'),false);
@@ -67,6 +69,25 @@ test('saved Ogre versus Kobold encounter runs through the production planner wit
   assert.ok(first.nodes.filter(node=>node.kind==='and').every(node=>node.detail.timeline.length>1),'one-step actions do not get fake method nodes');
   const actionIds=first.nodes.filter(node=>node.kind==='primitive'&&node.detail?.timeline).map(node=>node.detail.candidateId);
   assert.equal(new Set(actionIds).size,actionIds.length,'merged candidates appear once');
+});
+
+test('reload weapons unload after firing and cannot fire again before reloading',()=>{
+  const report=runOgresVsKobolds();
+  for(const actorId of ['kobold-one','kobold-two']){
+    const decisions=report.rounds.flatMap(round=>round.turns.filter(turn=>turn.actorId===actorId).flatMap(turn=>turn.decisions));
+    assert.ok(decisions.some(decision=>decision.chosen?.kind==='reload'),`${actorId} reloads its crossbow`);
+    let loaded=true,shots=0,reloads=0;
+    for(const decision of decisions){
+      if(decision.chosen?.kind==='strike'&&decision.chosen.id.includes('crossbow')){
+        assert.equal(loaded,true,`${actorId} only fires a loaded crossbow`);loaded=false;shots++;
+      }else if(decision.chosen?.kind==='reload'&&decision.chosen.id.includes('crossbow')){
+        assert.equal(loaded,false,`${actorId} does not reload an already loaded crossbow`);loaded=true;reloads++;
+      }
+    }
+    assert.ok(shots>1,`${actorId} fires enough times to exercise reload persistence`);assert.ok(reloads>=shots-1);
+    const weapon=report.finalActors.find(actor=>actor.id===actorId).weapons.find(entry=>entry.id==='crossbow');
+    assert.equal(weapon.ammunition,20-shots,'each shot consumes one bolt');assert.equal(weapon.loaded,loaded);
+  }
 });
 
 for(const scenario of combatLabScenarios)test(`combat lab: ${scenario.name}`,async t=>{

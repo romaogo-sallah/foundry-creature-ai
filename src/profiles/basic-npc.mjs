@@ -4,11 +4,26 @@ import { seekCandidates } from '../framework/perception.mjs';
 import { movementSight, sightGain } from '../framework/pursuit.mjs';
 import { preparedStrikeCandidates as strikes } from '../framework/strike-capability.mjs';
 
+function reloadCandidates(state){
+  if(state.actionsRemaining<1||state.self.unable||state.self.restrained||state.retreatComplete)return [];
+  return (state.reloads??[]).filter(reload=>reload.available!==false&&reload.ammunition>0).map(reload=>{
+    const immediate=state.actionsRemaining>(reload.actionCost??1),follow=Number(reload.nextAttackValue??0);
+    const value=Math.max(0.25,follow*(immediate?0.85:0.35));
+    return {id:`basic:reload:${reload.strikeId}`,kind:'reload',strikeId:reload.strikeId,legal:true,
+      actionCost:reload.actionCost??1,provokes:reload.provokes!==false,
+      features:{equipmentSetup:true,preparesStrike:reload.strikeId,goodAttacksLeft:immediate&&follow>0},
+      assessment:{value},scoringTerms:[
+        {label:immediate?'Prepare a ranged Strike this turn':'Prepare a ranged Strike for the next turn',contribution:value},
+      ]};
+  });
+}
+
 export const basicCapabilities=new CapabilityRegistry()
   .registerCapability('recovery',state=>[{id:'end',kind:'endTurn',actionCost:0,legal:true,assessment:{value:0}},
     ...state.actionsRemaining>0?recoveryCandidates(state,{canStrike:strikes(state).length>0}):[]])
   .registerCapability('perception',seekCandidates)
   .registerCapability('strikes',strikes)
+  .registerCapability('equipment',reloadCandidates)
   .registerCapability('movement',state=>{
     if(state.self.immobile||state.self.unable||state.actionsRemaining<1)return [];
     return state.moves.flatMap(move=>{
@@ -25,4 +40,4 @@ export const basicCapabilities=new CapabilityRegistry()
         features:{visibility:sight},scoringTerms:[{label:'Attack after movement',contribution:follow},{label:'Regain sight',contribution:regain.value},
           {label:'Path and visibility risks',contribution:-risk-sight.penalty-sight.returnPenalty}]}];
     });
-  }).registerProfile({id:'basic-npc',capabilities:['recovery','perception','strikes','movement']});
+  }).registerProfile({id:'basic-npc',capabilities:['recovery','perception','strikes','equipment','movement']});

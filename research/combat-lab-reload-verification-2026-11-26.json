@@ -1,0 +1,57 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.51.3",
+  "date": "2026-11-26",
+  "feature": "persistent reload weapons in the standalone combat simulation lab",
+  "scenario": {
+    "id": "ogres-vs-kobolds-open-field",
+    "seed": 2402,
+    "outcome": "ogres victory",
+    "decisions": 42,
+    "kobolds": {
+      "kobold-one": {
+        "crossbowShots": 3,
+        "reloadActions": 3,
+        "finalLoaded": true,
+        "finalAmmunition": 17
+      },
+      "kobold-two": {
+        "crossbowShots": 3,
+        "reloadActions": 2,
+        "finalLoaded": false,
+        "finalAmmunition": 17
+      }
+    },
+    "invariants": [
+      "Each crossbow shot begins loaded and leaves the weapon unloaded.",
+      "No later crossbow shot occurs without an intervening Reload.",
+      "Each shot consumes exactly one bolt, including a shot stopped by concealment.",
+      "Reload is selected and recorded by the production hierarchical planner."
+    ]
+  },
+  "commands": [
+    {
+      "command": "npm run test:combat",
+      "result": "pass",
+      "tests": 10
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "files": 106,
+      "tests": 1289,
+      "workers": 11,
+      "seconds": 57.1
+    }
+  ],
+  "installation": {
+    "packages": 5,
+    "version": "0.51.3",
+    "foundryData": "C:/Users/Roman/AppData/Local/FoundryVTT/Data"
+  },
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.51.3.zip",
+    "bytes": 916809,
+    "sha256": "644F888080A158ADC0948678612498F836A040691DBC8026FAC8459A1DA4A7D4"
+  }
+}

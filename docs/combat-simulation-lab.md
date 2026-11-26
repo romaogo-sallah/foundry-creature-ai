@@ -44,7 +44,9 @@ Scenarios live in `src/simulation/scenarios.mjs`. Their map uses one character p
 - `.` is an open square.
 - Any other character is an actor marker referenced by `marker`.
 
-Actors declare team, HP, AC, Speed, reach, and one or more melee or ranged Strikes. The virtual adapter derives legal movement destinations, PF2e alternating-diagonal costs, line of sight, cover, range increments, MAP, threat exposure, and hazard cost. Allies can be crossed but cannot share a destination; enemies and walls block movement; defeated actors no longer occupy a square.
+Actors declare team, HP, AC, Speed, reach, and one or more melee or ranged Strikes. A reload weapon also declares `reload` (its action cost), `ammunition`, and optional `loaded` state. The virtual adapter persists that state across actions and turns: a shot spends one piece of ammunition and unloads the weapon even when concealment prevents the attack from affecting its target, and another shot is illegal until the actor chooses Reload. The planner values Reload by the ranged attack it prepares instead of treating it as a creature-specific script.
+
+The virtual adapter derives legal movement destinations, PF2e alternating-diagonal costs, line of sight, cover, range increments, MAP, threat exposure, and hazard cost. Allies can be crossed but cannot share a destination; enemies and walls block movement; defeated actors no longer occupy a square.
 
 The saved `simulations/ogres-vs-kobolds.json` fixture starts two ogres and two kobold scouts 24 squares apart. It contains six cover features and two obscuring features, each no larger than two squares. Run its text report with `npm run simulate -- simulations/ogres-vs-kobolds.json --print`.
 
@@ -52,4 +54,4 @@ Each action report records the selected tactical plan, plan reason, objective, c
 
 ## Scope
 
-The lab is deterministic and intentionally smaller than the PF2e system. It models the parts needed to test planning continuity: square-grid navigation, visibility, cover, terrain, ordinary Strikes, action budgets, damage, defeat, and multiple teams. Foundry remains the integration owner for native rolls, item consumption, effects, reactions, spell templates, token sizes, elevation, and module interoperability. New virtual resolvers can be added as those behaviors receive multi-turn regression scenarios.
+The lab is deterministic and intentionally smaller than the PF2e system. It models the parts needed to test planning continuity: square-grid navigation, visibility, cover, terrain, ordinary Strikes, reload weapons and ammunition, action budgets, damage, defeat, and multiple teams. Foundry remains the integration owner for native rolls, item consumption beyond the declared virtual ammunition, effects, reactions, spell templates, token sizes, elevation, and module interoperability. New virtual resolvers can be added as those behaviors receive multi-turn regression scenarios.

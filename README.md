@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Patch 0.51.3:** makes reload weapons persistent in the browser combat simulator. Crossbows now unload and consume ammunition when fired, cannot fire while unloaded, and expose Reload as an ordinary equipment decision valued by the attack it prepares.
+
 **Patch 0.51.2:** keeps every surviving tactic visible in the causal decision graph. When several tactics produce the same grounded action, their objective and timing branches now converge on that single action instead of hiding the losing tactics or duplicating the action.
 
 **Patch 0.51.1:** fixes the decision-tree renderer so the complete causal graph remains visible after filtering and fitting. Cytoscape now uses stable node dimensions and fits every enabled node, including nodes outside the current viewport.

@@ -53,7 +53,7 @@
       "id": "kobold-one", "name": "Kobold Scout One", "marker": "k", "glyph": "K", "team": "kobolds", "initiative": 18,
       "position": {"x": 26, "y": 3}, "hp": 30, "ac": 19, "speed": 25, "reach": 5, "referenceAC": 19, "skulk": true, "pack": true,
       "strikes": [
-        {"id": "crossbow", "name": "Crossbow", "bonus": 11, "damage": 7, "rangeIncrement": 120},
+        {"id": "crossbow", "name": "Crossbow", "bonus": 11, "damage": 7, "rangeIncrement": 120, "reload": 1, "ammunition": 20, "loaded": true},
         {"id": "shortsword", "name": "Shortsword", "bonus": 11, "damage": 7, "precisionDamage": 4}
       ]
     },
@@ -61,7 +61,7 @@
       "id": "kobold-two", "name": "Kobold Scout Two", "marker": "l", "glyph": "K", "team": "kobolds", "initiative": 16,
       "position": {"x": 26, "y": 7}, "hp": 30, "ac": 19, "speed": 25, "reach": 5, "referenceAC": 19, "skulk": true, "pack": true,
       "strikes": [
-        {"id": "crossbow", "name": "Crossbow", "bonus": 11, "damage": 7, "rangeIncrement": 120},
+        {"id": "crossbow", "name": "Crossbow", "bonus": 11, "damage": 7, "rangeIncrement": 120, "reload": 1, "ammunition": 20, "loaded": true},
         {"id": "shortsword", "name": "Shortsword", "bonus": 11, "damage": 7, "precisionDamage": 4}
       ]
     }
