@@ -1,0 +1,103 @@
+{
+  "date": "2026-11-26",
+  "scope": "Primary research and first-party practitioner sources for tactical scenario recognition, squad coordination, spatial queries, and partial observability",
+  "runtimeChanges": false,
+  "sources": [
+    {
+      "title": "Squad Coordination in Days Gone",
+      "authors": ["Tobias Karlsson"],
+      "publisher": "Game AI Pro Online Edition 2021",
+      "url": "https://www.gameaipro.com/GameAIProOnlineEdition2021/GameAIProOnlineEdition2021_Chapter12_Squad_Coordination_in_Days_Gone.pdf",
+      "relevance": [
+        "frontline and engagement direction",
+        "lanes and formation width",
+        "confidence-driven advance and retreat",
+        "staggered movement and covering fire",
+        "flanker exclusion, ghost positions, and hysteresis",
+        "soft defend and home areas"
+      ]
+    },
+    {
+      "title": "SquadSmart: Hierarchical Planning and Coordinated Plan Execution for Squads of Characters",
+      "authors": ["Peter Gorniak", "Ian Davis"],
+      "publisher": "AAAI AIIDE 2007",
+      "url": "https://cdn.aaai.org/ojs/18775/18775-52-22468-1-10-20210929.pdf",
+      "relevance": [
+        "shared squad knowledge",
+        "HTN task assignment",
+        "parallel and sequential synchronization",
+        "shared reservations",
+        "time-sliced planning and execution failure feedback"
+      ]
+    },
+    {
+      "title": "Environment Query System Overview",
+      "authors": ["Epic Games"],
+      "publisher": "Epic Games documentation",
+      "url": "https://dev.epicgames.com/documentation/unreal-engine/environment-query-system-overview-in-unreal-engine",
+      "relevance": [
+        "contextual environmental queries",
+        "generators, contexts, filters, and scored tests",
+        "filtering before scoring",
+        "position-query visualization"
+      ]
+    },
+    {
+      "title": "Tactical Position Selection",
+      "authors": ["Matthew Jack"],
+      "publisher": "Game AI Pro",
+      "url": "https://www.gameaipro.com/GameAIPro/GameAIPro_Chapter26_Tactical_Position_Selection.pdf",
+      "relevance": [
+        "context-specific position queries",
+        "candidate generation and filtering",
+        "normalized scoring",
+        "late expensive geometry checks",
+        "query failure as high-level feedback"
+      ]
+    },
+    {
+      "title": "Modular Tactical Influence Maps",
+      "authors": ["Dave Mark"],
+      "publisher": "Game AI Pro 2",
+      "url": "https://www.gameaipro.com/GameAIPro2/GameAIPro2_Chapter30_Modular_Tactical_Influence_Maps.pdf",
+      "relevance": [
+        "shared spatial fact layers",
+        "small-group RPG combat",
+        "threat, withdrawal, tank, spacing, and area-spell queries",
+        "separation of information from decision policy"
+      ]
+    },
+    {
+      "title": "Planning and Acting in Partially Observable Stochastic Domains",
+      "authors": ["Leslie Pack Kaelbling", "Michael L. Littman", "Anthony R. Cassandra"],
+      "publisher": "Artificial Intelligence 101, Brown University technical report CS-96-08",
+      "url": "https://cs.brown.edu/research/pubs/techreports/reports/CS-96-08.html",
+      "relevance": [
+        "belief state under incomplete observations",
+        "information-gathering action value",
+        "finite-memory policies",
+        "complexity motivation for approximate bounded belief reasoning"
+      ]
+    },
+    {
+      "title": "Believable Tactics for Squad AI",
+      "authors": ["Alex Champandard", "Philip Dunstan", "Matthew Jack"],
+      "publisher": "GDC 2012",
+      "url": "https://www.gdcvault.com/play/1015665/Believable-Tactics-for-Squad",
+      "relevance": [
+        "centralized and distributed squad coordination",
+        "attack, flank, suppression, and follow behavior",
+        "tactical pathfinding and cover selection",
+        "scripted versus procedural tradeoffs"
+      ]
+    }
+  ],
+  "recommendation": {
+    "stateModel": "Confidence-rated, scoped, time-aware battlefield facts over an engagement graph and shared spatial fields",
+    "scenarioModel": "Multi-label hypotheses with entry/exit hysteresis, objectives, compatible methods, and material-event interrupts",
+    "coordination": "Team blackboard with frontline, objectives, actor bids, assignments, reservations, and engagement budgets",
+    "spatialSelection": "Scenario-specific generate-filter-score position queries over cached influence layers",
+    "execution": "Individual bounded multi-action planning with native execution feedback and re-planning"
+  }
+}
+
