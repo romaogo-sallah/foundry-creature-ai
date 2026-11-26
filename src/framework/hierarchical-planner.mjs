@@ -58,6 +58,42 @@ export function doctrineProfile(state){
 }
 
 function fact(id,label,value,detail={}){return {id:`fact-${slug(id)}`,label,value,detail};}
+export function battlefieldSituation(state){
+  const context=state.behavior?.context??{},enemies=state.enemies??[],speed=finite(state.self?.speed,25),reach=finite(state.self?.reachSquares,1)*5;
+  const nearest=finite(context.nearestEnemyDistance,Math.min(Infinity,...enemies.map(enemy=>finite(enemy.distance,Infinity))));
+  const enemyRangedRatio=finite(context.enemyRangedRatio,enemies.length?
+    enemies.filter(enemy=>enemy.tactics?.role==='ranged').length/enemies.length:0);
+  const ownCount=Math.max(1,finite(context.ownCount,finite(context.allies,0)+1)),enemyCount=Math.max(0,finite(context.enemyCount,context.knownEnemies??enemies.length));
+  const role=context.meleePrimary?'melee':context.rangedPrimary?'ranged':context.caster?'caster':'hybrid';
+  const far=Number.isFinite(nearest)&&nearest>speed+reach,tooClose=Boolean(context.enemiesTooClose??
+    (context.rangedPrimary&&nearest<=Math.max(15,reach+5)));
+  const signals=[
+    fact('own-combat-role',`We are primarily ${role}`,role,{active:true,role}),
+    fact('enemy-range-composition',enemyRangedRatio>=0.5?'Enemies are mostly ranged':'Enemies are mostly close-range',enemyRangedRatio,
+      {active:enemyRangedRatio>=0.5,rangedRatio:enemyRangedRatio}),
+    fact('enemy-distance',far?'Enemies are far':'Enemies are within one move of engagement',nearest,
+      {active:far,nearestFeet:nearest,farThresholdFeet:speed+reach}),
+    fact('nearby-protection',context.nearbyProtection?'Cover or concealment is nearby':'No useful nearby protection is known',Boolean(context.nearbyProtection),
+      {active:Boolean(context.nearbyProtection)}),
+    fact('own-outnumbered',ownCount<enemyCount?'We are outnumbered':'We are not outnumbered',ownCount<enemyCount,
+      {active:ownCount<enemyCount,ownCount,enemyCount}),
+    fact('enemy-outnumbered',enemyCount>0&&ownCount>enemyCount?'Enemies are outnumbered':'Enemies are not outnumbered',enemyCount>0&&ownCount>enemyCount,
+      {active:enemyCount>0&&ownCount>enemyCount,ownCount,enemyCount}),
+    fact('own-losses',finite(context.ownLossFraction,0)>=0.34?'We have suffered heavy losses':'Our losses are not yet heavy',finite(context.ownLossFraction,0),
+      {active:finite(context.ownLossFraction,0)>=0.34,fraction:finite(context.ownLossFraction,0)}),
+    fact('enemy-losses',finite(context.enemyLossFraction,0)>=0.34?'Enemies have suffered heavy losses':'Enemy losses are not yet heavy',finite(context.enemyLossFraction,0),
+      {active:finite(context.enemyLossFraction,0)>=0.34,fraction:finite(context.enemyLossFraction,0)}),
+    fact('enemy-pressure',tooClose?'Enemies are too close for our preferred range':'Enemies are outside immediate range pressure',tooClose,
+      {active:tooClose,nearestFeet:nearest}),
+    fact('own-formation',context.ownSpread?'We are too spread out':'Our formation is mutually supporting',Boolean(context.ownSpread),
+      {active:Boolean(context.ownSpread),averageNearestAllyFeet:context.ownAverageNearestDistance??null}),
+    fact('enemy-aoe-cluster',context.enemyAoeClustered?'Enemies are conveniently grouped for an area effect':'Enemies are not densely grouped for an area effect',Boolean(context.enemyAoeClustered),
+      {active:Boolean(context.enemyAoeClustered),clusterSize:context.enemyAoeClusterSize??0}),
+    fact('own-aoe-cluster',context.ownAoeClustered?'We are too grouped against area effects':'We are not densely grouped against area effects',Boolean(context.ownAoeClustered),
+      {active:Boolean(context.ownAoeClustered),clusterSize:context.ownAoeClusterSize??0}),
+  ];
+  return signals;
+}
 function engagementFor(state,enemy){
   const context=state.behavior?.context??{},speed=finite(state.self?.speed,25),reach=finite(state.self?.reachSquares,1)*5;
   const distance=finite(enemy.distance,Infinity),inReach=Boolean(enemy.inReach)||distance<=reach;
@@ -78,7 +114,7 @@ export function analyzeDecisionHierarchy(state,evaluations,plans,{maxHypotheses=
   const facts=[fact('health','Own health',context.health??1,{fraction:context.health??1}),
     fact('actions','Remaining actions',state.actionsRemaining??0),fact('known-enemies','Known enemies',context.knownEnemies??state.enemies?.length??0),
     fact('visible-enemies','Visible enemies',context.visibleEnemies??0),fact('force-ratio','Local force ratio',context.forceRatio??1),
-    fact('attack-now','Useful immediate attack',Boolean(context.immediateAttack))];
+    fact('attack-now','Useful immediate attack',Boolean(context.immediateAttack)),...battlefieldSituation(state)];
   const applicable=evaluations.filter(e=>e.applicable).sort((a,b)=>b.value-a.value||a.id.localeCompare(b.id)),best=applicable[0]?.value??0;
   // A declared withdrawal is a safety directive once the actor is both badly
   // wounded and locally outmatched. Letting a high-value equipment action from
@@ -114,7 +150,7 @@ export function classifyCandidate(candidate,state,selection){
 
 function hierarchyTerms(candidate,state,selection,analysis){
   if(candidate.kind==='endTurn'&&['hiding','lay-low','avoiding'].includes(selection.planId)){
-    const retained=selection.planId==='hiding'&&state.behavior?.context?.hiddenBelief?3:selection.planId==='lay-low'?0.25:1.25;
+    const retained=selection.planId==='hiding'?(state.behavior?.context?.hiddenBelief?3:0):selection.planId==='lay-low'?0.25:1.25;
     return retained?[{label:`Retain the ${selection.label.toLowerCase()} end-state instead of abandoning it`,contribution:retained}]:[];
   }
   if(!Number.isFinite(candidate.assessment?.value)||candidate.assessment.value<0||candidate.assessment.value>=5000||
@@ -190,30 +226,34 @@ export function planningTrace(state,analysis,runs,decision,usedSelection){
   const chosenPlan=decision.chosen?.features?.planning?.planId??usedSelection.planId;
   const pool=new Map((decision.selection?.candidates??[]).map(entry=>[entry.id,entry]));
   const uniqueGrounded=new Set(runs.flatMap(run=>run.candidates.map(candidate=>candidate.id)));
-  const root=add('planning-root','situation',0,'Combat decision','selected',{
-    actionsRemaining:state.actionsRemaining,observations:analysis.facts,doctrine:analysis.doctrine,
+  const root=add('planning-root','situation',0,'Combat doctrine','selected',{
+    actionsRemaining:state.actionsRemaining,doctrine:analysis.doctrine,
     engagements:analysis.engagements.map(({targetId,targetName,distance,visibility,lineOfSight,lineOfEffect})=>
       ({targetId,targetName,distance,visibility,lineOfSight,lineOfEffect})),
   });
-  const directive=add('directive-legality','constraint',1,analysis.mandatoryDirective?'Emergency survival directive':'PF2e legality and action budget','selected',{
+  const activeSignals=analysis.facts.filter(entry=>entry.detail?.active);
+  const situation=add('battlefield-assessment','situation',1,`Battlefield assessment\n${activeSignals.slice(0,3).map(entry=>entry.label).join(' | ')||'No urgent situation signal'}`,'selected',{
+    observations:analysis.facts,activeSignals:activeSignals.map(entry=>entry.id),engagements:analysis.engagements,
+  });connect(root,situation,'assesses');
+  const directive=add('directive-legality','constraint',2,analysis.mandatoryDirective?'Emergency survival directive':'PF2e legality and action budget','selected',{
     mandatory:analysis.mandatoryDirective,actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,
-  });connect(root,directive,'constrains');
+  });connect(situation,directive,'constrains');
   const goalNodes=new Map(),timingNodes=new Map();
   for(const hypothesis of analysis.hypotheses){
     const selected=hypothesis.planId===chosenPlan,status=selected?'selected':hypothesis.status==='pruned'?'pruned':'survived';
-    const intent=add(hypothesis.id,'or',2,`${hypothesis.label}\n${hypothesis.intent} | ${hypothesis.posture}\nscore ${hypothesis.score.toFixed(2)}`,status,{
+    const intent=add(hypothesis.id,'or',3,`${hypothesis.label}\n${hypothesis.intent} | ${hypothesis.posture}\nscore ${hypothesis.score.toFixed(2)}`,status,{
       ...hypothesis,pruneReason:hypothesis.status==='pruned'?hypothesis.pruneReason:null,
     });
     connect(directive,intent,status==='pruned'?'pruned':'compares');
     if(status==='pruned')continue;
     const run=runs.find(entry=>entry.selection.planId===hypothesis.planId),goal=run?.selection.goal??{};
     const relation=analysis.engagements.find(entry=>entry.targetId===goal.targetId);
-    const goalNode=add(`hypothesis-${hypothesis.planId}`,'hypothesis',3,goal.label??hypothesis.label,status,{
+    const goalNode=add(`hypothesis-${hypothesis.planId}`,'hypothesis',4,goal.label??hypothesis.label,status,{
       ...goal,delivery:hypothesis.delivery,engagement:relation??null,
     });
     goalNodes.set(hypothesis.planId,goalNode);connect(intent,goalNode,'pursues');
   }
-  const choice=add('competitive-choice','or',7,decision.selection?.mode==='weighted'?'Weighted choice among close scores':
+  const choice=add('competitive-choice','or',8,decision.selection?.mode==='weighted'?'Weighted choice among close scores':
     decision.selection?.mode==='uniform-tie'?'Random choice among exact ties':'Highest-ranked legal action','selected',{
       reason:decision.reason,selection:decision.selection,tiedIds:decision.tiedIds??[],randomizedIds:decision.randomizedIds??[],
     });
@@ -228,7 +268,7 @@ export function planningTrace(state,analysis,runs,decision,usedSelection){
       const run=runs.find(item=>item.selection.planId===contributorPlanId),runCandidate=run?.candidates.find(item=>item.id===candidate.id),
         info=runCandidate?.features?.planning??(contributorPlanId===planId?candidate.features?.planning:null)??classifyCandidate(runCandidate??candidate,state,run?.selection??usedSelection),
         contributorSelected=selected&&contributorPlanId===chosenPlan,timingKey=`timing-${contributorPlanId}-${info.timing}`;
-      if(!timingNodes.has(timingKey)){const timing=add(timingKey,'or',4,info.timing,contributorSelected?'selected':'survived',{planId:contributorPlanId,timing:info.timing});
+      if(!timingNodes.has(timingKey)){const timing=add(timingKey,'or',5,info.timing,contributorSelected?'selected':'survived',{planId:contributorPlanId,timing:info.timing});
         timingNodes.set(timingKey,timing);connect(goalNodes.get(contributorPlanId),timing,'commits');}
       else if(contributorSelected)add(timingKey,'or',4,info.timing,'selected',{planId:contributorPlanId,timing:info.timing});
       timingContributors.push({id:timingNodes.get(timingKey),primary:contributorPlanId===planId});
@@ -238,14 +278,14 @@ export function planningTrace(state,analysis,runs,decision,usedSelection){
       timeline:steps,rank:rankIndex+1,selectionProbability:pool.get(candidate.id)?.probability??null,exactTie:(decision.tiedIds??[]).includes(candidate.id)};
     let terminal;
     if(steps.length>1){
-      const method=add(`method-${candidate.id}`,'and',5,`${candidate.kind} activity\n${steps.map(step=>step.kind).join(' -> ')}\nscore ${finite(entry.utility).toFixed(2)}`,status,detail);
+      const method=add(`method-${candidate.id}`,'and',6,`${candidate.kind} activity\n${steps.map(step=>step.kind).join(' -> ')}\nscore ${finite(entry.utility).toFixed(2)}`,status,detail);
       for(const contributor of timingContributors)connect(contributor.id,method,contributor.primary?'alternative-method':'shared method');
       let prior=method;
-      for(const step of steps){const primitive=add(`primitive-${candidate.id}-${step.index}`,'primitive',6,`${step.index+1}. ${step.kind}${step.targetId?` -> ${step.targetId}`:''}`,
+      for(const step of steps){const primitive=add(`primitive-${candidate.id}-${step.index}`,'primitive',7,`${step.index+1}. ${step.kind}${step.targetId?` -> ${step.targetId}`:''}`,
           status,{candidateId:candidate.id,...step});connect(prior,primitive,step.index?'then':'decomposes');prior=primitive;if(selected&&step.index===0)selectedPrimitiveId=primitive;}
       terminal=prior;
     }else{
-      const primitive=add(`primitive-${candidate.id}`,'primitive',5,candidateLabel(candidate,entry.utility),status,detail);
+      const primitive=add(`primitive-${candidate.id}`,'primitive',6,candidateLabel(candidate,entry.utility),status,detail);
       for(const contributor of timingContributors)connect(contributor.id,primitive,contributor.primary?'alternative-action':'shared action');
       terminal=primitive;if(selected)selectedPrimitiveId=primitive;
     }
@@ -253,9 +293,9 @@ export function planningTrace(state,analysis,runs,decision,usedSelection){
     connect(terminal,choice,relation);
   }
   const rejected=decision.rejected??[],rejectedLimit=24;
-  for(const [index,entry]of rejected.slice(0,rejectedLimit).entries()){const id=add(`rejected-${entry.id}-${index}`,'outcome',2,`${entry.id}\n${entry.reason}`,'pruned',entry);connect(directive,id,'forbids');}
-  if(rejected.length>rejectedLimit){const omitted=add('rejected-omitted','outcome',2,`${rejected.length-rejectedLimit} more rejected options`,'pruned',{count:rejected.length-rejectedLimit});connect(directive,omitted,'forbids');}
-  const result=add('selected-outcome','outcome',8,decision.chosen?`Execute ${decision.chosen.kind}`:'No legal action','selected',{chosenId:decision.chosen?.id??null,reason:decision.reason});
+  for(const [index,entry]of rejected.slice(0,rejectedLimit).entries()){const id=add(`rejected-${entry.id}-${index}`,'outcome',3,`${entry.id}\n${entry.reason}`,'pruned',entry);connect(directive,id,'forbids');}
+  if(rejected.length>rejectedLimit){const omitted=add('rejected-omitted','outcome',3,`${rejected.length-rejectedLimit} more rejected options`,'pruned',{count:rejected.length-rejectedLimit});connect(directive,omitted,'forbids');}
+  const result=add('selected-outcome','outcome',9,decision.chosen?`Execute ${decision.chosen.kind}`:'No legal action','selected',{chosenId:decision.chosen?.id??null,reason:decision.reason});
   connect(choice,result,'executes');
   return {schema:'foundry-creature-ai/planning-trace@2',nodes,edges,selectedPlanId:chosenPlan,selectedPrimitiveId:selectedPrimitiveId?slug(selectedPrimitiveId):null,
     timelines:(decision.ranked??[]).slice(0,6).map(entry=>({planId:entry.candidate.features?.planning?.planId??null,candidateId:entry.candidate.id,

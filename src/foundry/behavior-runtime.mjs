@@ -17,6 +17,14 @@ import {preparedStrikeCandidates} from '../framework/strike-capability.mjs';
 const ns='foundry-creature-ai';
 const attached=new WeakSet();
 const scoped=value=>value?.combatId===game.combat?.id&&value?.sceneId===canvas.scene?.id;
+const tokenDistance=(a,b)=>{try{return a.distanceTo(b);}catch{return Math.hypot((a.center?.x??0)-(b.center?.x??0),(a.center?.y??0)-(b.center?.y??0))/(canvas.dimensions?.distancePixels??1)*5;}};
+function formation(tokens){
+  if(tokens.length<2)return {averageNearest:0,spread:false,clusterSize:tokens.length,clustered:false};
+  const nearest=tokens.map(token=>Math.min(...tokens.filter(other=>other!==token).map(other=>tokenDistance(token,other))));
+  const clusterSize=Math.max(...tokens.map(token=>tokens.filter(other=>tokenDistance(token,other)<=20).length));
+  return {averageNearest:nearest.reduce((sum,value)=>sum+value,0)/nearest.length,spread:nearest.reduce((sum,value)=>sum+value,0)/nearest.length>30,
+    clusterSize,clustered:clusterSize>=3};
+}
 
 export function behaviorConfiguration(adapter) {
   const actor=adapter.actor.getFlag?.(ns,'behaviors'),token=adapter.token.document.getFlag(ns,'behaviors');
@@ -26,6 +34,7 @@ export function behaviorConfiguration(adapter) {
   if(raw.plans&&!raw.plans.includes('ranged'))raw.plans=[...raw.plans,'ranged'];
   if(raw.plans&&!raw.plans.includes('desperate'))raw.plans=[...raw.plans,'desperate'];
   if(raw.components&&!raw.components.includes('effective-range'))raw.components=[...raw.components,'effective-range'];
+  if(raw.components&&!raw.components.includes('charge-run'))raw.components=[...raw.components,'charge-run'];
   if(adapter.hasSpellcasting){for(const id of ['spellcasting','spell-control','spell-damage','spell-drain','spell-support'])if(!defaults.components.includes(id))defaults.components.push(id);
     for(const id of ['spell-control','spell-damage','spell-drain','spell-support'])if(!defaults.plans.includes(id))defaults.plans.push(id);}
   if(flySpeed(adapter.actor)){defaults.components.push('flight');defaults.plans.push('aerial-hunt','aerial-engage','aerial-disengage');}
@@ -37,7 +46,7 @@ export function behaviorConfiguration(adapter) {
 }
 
 export function battleContext(adapter,state,{deferDecision=false}={}) {
-  const roster=new Set(Array.from(game.combat.combatants).filter(c=>!c.defeated&&
+  const combatants=Array.from(game.combat.combatants),roster=new Set(combatants.filter(c=>!c.defeated&&
     (c.sceneId??c.token?.parent?.id??canvas.scene.id)===canvas.scene.id).map(c=>c.tokenId));
   const allies=canvas.tokens.placeables.filter(token=>token!==adapter.token&&roster.has(token.id)&&token.actor&&adapter.actor.isAllyOf(token.actor)&&
     !token.document.hidden&&token.actor.hitPoints?.value>0&&!token.actor.hasCondition('unconscious','dying','dead')&&
@@ -62,11 +71,28 @@ export function battleContext(adapter,state,{deferDecision=false}={}) {
   // artillery caster. Long-range spellcasters such as liches retain distance.
   const melee=Boolean(state.strikes?.some(strike=>!strike.ranged))&&
     !hostileSpells.some(spell=>spell.range>30)&&(!state.bowReady||state.bolts<1);
+  const meleePrimary=melee,rangedPrimary=ranged&&!meleePrimary;
   const configuration=behaviorConfiguration(adapter);
   const supportRecipients=!configuration.components.includes('leadership')||state.commandedThisTurn?0:
     state.supportRecipients??(state.commandRecipients??[]).filter(ally=>ally.needsMovement!==false).length;
+  const alliedRoster=combatants.filter(combatant=>combatant.actor&&adapter.actor.isAllyOf(combatant.actor));
+  const enemyRoster=combatants.filter(combatant=>combatant.actor&&adapter.actor.isEnemyOf?.(combatant.actor));
+  const livingCombatant=combatant=>!combatant.defeated&&(combatant.actor?.hitPoints?.value??1)>0;
+  const ownCount=alliedRoster.filter(livingCombatant).length||allies.length+1,enemyCount=enemyRoster.filter(livingCombatant).length||known;
+  const alliedTokens=[adapter.token,...allies],enemyTokens=state.enemies.map(enemy=>canvas.tokens.get(enemy.id)).filter(Boolean);
+  const ownFormation=formation(alliedTokens),enemyFormation=formation(enemyTokens);
+  const enemyRangedRatio=state.enemies.length?state.enemies.filter(enemy=>enemy.tactics?.role==='ranged').length/state.enemies.length:0;
+  const nearestEnemyDistance=Math.min(Infinity,...state.enemies.map(enemy=>enemy.distance));
+  const nearbyProtection=Boolean(state.sharedBehaviors?.protectedMoves?.length||state.sharedBehaviors?.sneakCandidates?.length||
+    state.enemies.some(enemy=>(enemy.incoming?.coverBonus??enemy.coverBonus??0)>0||enemy.incoming?.concealed));
   return {health,allies:allies.length,knownEnemies:known,visibleEnemies:visible.length,forceRatio:(allies.length+1)/Math.max(1,known),
     immediateAttack:Boolean(immediate),ranged,melee,caster:Boolean(state.spells?.length),
+    meleePrimary,rangedPrimary,enemyRangedRatio,nearestEnemyDistance,nearbyProtection,ownCount,enemyCount,
+    ownLossFraction:alliedRoster.length?1-ownCount/alliedRoster.length:0,enemyLossFraction:enemyRoster.length?1-enemyCount/enemyRoster.length:0,
+    ownSpread:ownFormation.spread,ownAverageNearestDistance:ownFormation.averageNearest,
+    ownAoeClustered:ownFormation.clustered,ownAoeClusterSize:ownFormation.clusterSize,
+    enemyAoeClustered:enemyFormation.clustered,enemyAoeClusterSize:enemyFormation.clusterSize,
+    enemiesTooClose:rangedPrimary&&nearestEnemyDistance<=Math.max(15,...state.enemies.map(enemy=>enemy.tactics?.reach??5)),
     rangedAttackAvailable:rangedOptions.length>0,bestRangePenalty,canCloseRange,
     rangedAttackValue:bestRanged.assessment.value,meleeAttackValue:Math.max(0,...meleeOptions.map(candidate=>candidate.assessment.value)),
     closingMelee:visible.some(enemy=>enemy.tactics?.role!=='ranged'&&enemy.distance<=40),

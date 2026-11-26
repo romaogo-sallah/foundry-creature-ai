@@ -32,6 +32,13 @@ function validateActor(source,index){
 function adjacentGoals(grid,target){const goals=[];for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)if((dx||dy)&&!grid.isBlocked({x:target.position.x+dx,y:target.position.y+dy}))goals.push({x:target.position.x+dx,y:target.position.y+dy});return goals;}
 function actorAttackValue(actor,strike,target,position){return attackValue({bonus:strike.bonus-(position.rangePenalty??0),damage:strike.damage,
   referenceAC:actor.referenceAC,defenseAdjustment:position.coverBonus??0});}
+function formation(grid,actors){
+  if(actors.length<2)return {averageNearest:0,spread:false,clusterSize:actors.length,clustered:false};
+  const nearest=actors.map(actor=>Math.min(...actors.filter(other=>other!==actor).map(other=>grid.distanceFeet(actor.position,other.position))));
+  const averageNearest=nearest.reduce((sum,value)=>sum+value,0)/nearest.length;
+  const clusterSize=Math.max(...actors.map(actor=>actors.filter(other=>grid.distanceFeet(actor.position,other.position)<=20).length));
+  return {averageNearest,spread:averageNearest>30,clusterSize,clustered:clusterSize>=3};
+}
 
 export class CombatLab {
   constructor(scenario,{seed=scenario.seed??1,maxRounds=scenario.maxRounds??8}={}){
@@ -91,7 +98,7 @@ export class CombatLab {
         coverBonus:position.coverBonus,concealmentDC:position.concealmentDC,strikes:position.strikes,
         inReach:enemyMelee.some(strike=>position.distance<=strike.reach),awareness:{state:'observed',detection:'observed'},
         alliesInReach:this.allies(actor).filter(ally=>this.grid.distanceFeet(ally.position,enemy.position)<=ally.reach).length,
-        tactics:{role:enemy.strikes.some(strike=>strike.rangeIncrement)?'ranged':'melee',reach:enemy.reach,speed:enemy.speed,
+        tactics:{role:enemy.role??(enemy.strikes.some(strike=>strike.rangeIncrement)?'ranged':'melee'),reach:enemy.reach,speed:enemy.speed,
           rangeIncrement:Math.max(0,...enemy.strikes.map(strike=>strike.rangeIncrement??0))},prone:Boolean(enemy.conditions.prone),offGuard:false};});
     const movement=this.#moves(actor,enemies),moves=movement.moves,strikeNow=actor.strikes.flatMap(strike=>enemies.filter(enemy=>enemy.strikes[strike.id]?.usable).map(enemy=>({strike,enemy,position:enemy.strikes[strike.id]})));
     const rangedNow=strikeNow.filter(entry=>entry.strike.rangeIncrement),meleeNow=strikeNow.filter(entry=>!entry.strike.rangeIncrement),bestRangePenalty=Math.min(Infinity,...rangedNow.map(entry=>entry.position.rangePenalty));
@@ -99,6 +106,14 @@ export class CombatLab {
     const rangedAttackValue=Math.max(0,...rangedNow.map(entry=>actorAttackValue(actor,entry.strike,entry.enemy,entry.position)));
     const health=actor.hp/actor.maxHp,friendPower=this.living(actor.team).reduce((sum,ally)=>sum+ally.hp,0),enemyPower=this.enemies(actor).reduce((sum,enemy)=>sum+enemy.hp,0);
     const configuration=defaultBehaviorConfiguration('basic-npc');if(actor.plans)configuration.plans=[...actor.plans];if(actor.components)configuration.components=[...actor.components];
+    const canCloseRange=moves.some(move=>enemies.some(enemy=>(move.targets[enemy.id]?.distance??Infinity)<enemy.distance));
+    const immediateAttack=meleeNow.length>0||rangedNow.some(entry=>entry.position.rangePenalty===0)||rangedNow.length>0&&!canCloseRange;
+    const role=actor.role??(actor.skulk?'ranged':actor.strikes.some(strike=>!strike.rangeIncrement)?'melee':'ranged');
+    const friendlyActors=this.living(actor.team),enemyActors=this.enemies(actor),ownFormation=formation(this.grid,friendlyActors),enemyFormation=formation(this.grid,enemyActors);
+    const initialFriends=this.scenario.actors.filter(entry=>entry.team===actor.team).length,initialEnemies=this.scenario.actors.filter(entry=>entry.team!==actor.team).length;
+    const nearestEnemyDistance=Math.min(Infinity,...enemies.map(enemy=>enemy.distance));
+    const nearbyProtection=this.grid.terrain(actor.position).cover||this.grid.terrain(actor.position).obscuring||moves.some(move=>{
+      const terrain=this.grid.terrain(move);return terrain.cover||terrain.obscuring;});
     const reloads=actor.strikes.filter(strike=>strike.reload&&!strike.loaded&&strike.ammunition>0).map(strike=>{
       const nextAttackValue=Math.max(0,...enemies.filter(enemy=>enemy.strikes[strike.id]?.geometryUsable)
         .map(enemy=>actorAttackValue(actor,strike,enemy,enemy.strikes[strike.id])));
@@ -113,10 +128,16 @@ export class CombatLab {
         averageDamage:actor.strikes.reduce((sum,strike)=>sum+strike.damage,0)/actor.strikes.length,reactionRisk:7},
       behavior:{configuration,previous:actor.memory.previous,context:{health,forceRatio:enemyPower?friendPower/enemyPower:10,knownEnemies:enemies.length,
         visibleEnemies:enemies.filter(enemy=>enemy.lineOfSight).length,melee:actor.strikes.some(strike=>!strike.rangeIncrement),ranged:actor.strikes.some(strike=>strike.rangeIncrement),
-        rangedAttackAvailable:rangedNow.length>0,immediateAttack:strikeNow.length>0,bestRangePenalty:Number.isFinite(bestRangePenalty)?bestRangePenalty:0,
-        canCloseRange:moves.some(move=>enemies.some(enemy=>(move.targets[enemy.id]?.distance??Infinity)<enemy.distance)),meleeAttackValue,rangedAttackValue,
-        caster:false,skulk:Boolean(actor.skulk),pack:Boolean(actor.pack),allies:this.allies(actor).length,closingMelee:enemies.some(enemy=>enemy.tactics.role==='melee'),
-        swarmOpportunity:this.allies(actor).length>0,supportRecipients:0,emergency:health<0.2,hideUseful:this.grid.terrain(actor.position).cover,
+        rangedAttackAvailable:rangedNow.length>0,immediateAttack,bestRangePenalty:Number.isFinite(bestRangePenalty)?bestRangePenalty:0,
+        canCloseRange,meleeAttackValue,rangedAttackValue,
+        caster:false,skulk:Boolean(actor.skulk),pack:Boolean(actor.pack),allies:this.allies(actor).length,closingMelee:enemies.some(enemy=>enemy.tactics.role==='melee'&&enemy.distance<=40),
+        meleePrimary:role==='melee',rangedPrimary:role==='ranged',enemyRangedRatio:enemies.length?enemies.filter(enemy=>enemy.tactics.role==='ranged').length/enemies.length:0,
+        nearestEnemyDistance,nearbyProtection,ownCount:friendlyActors.length,enemyCount:enemyActors.length,
+        ownLossFraction:initialFriends?1-friendlyActors.length/initialFriends:0,enemyLossFraction:initialEnemies?1-enemyActors.length/initialEnemies:0,
+        ownSpread:ownFormation.spread,ownAverageNearestDistance:ownFormation.averageNearest,ownAoeClustered:ownFormation.clustered,ownAoeClusterSize:ownFormation.clusterSize,
+        enemyAoeClustered:enemyFormation.clustered,enemyAoeClusterSize:enemyFormation.clusterSize,
+        enemiesTooClose:role==='ranged'&&nearestEnemyDistance<=Math.max(15,...enemies.map(enemy=>enemy.tactics.reach??5)),
+        swarmOpportunity:enemies.some(enemy=>enemy.alliesInReach>0||enemy.flanked),supportRecipients:0,emergency:health<0.2,hideUseful:this.grid.terrain(actor.position).cover,
         hiddenBelief:false,planAge:0,waitPatienceReached:false}},diagnostics:{},rejectedActionIds:[],seek:{available:false},
       escapes:[],escapeBlocked:false,retreatComplete:false,morale:{broken:false},conditionRules:{},sharedBehaviors:{hideCandidates:[],sneakCandidates:[],protectedMoves:[]}};
     return state;

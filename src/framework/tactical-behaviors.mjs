@@ -30,6 +30,33 @@ tacticalBehaviors.registerComponent({id:'advance',label:'Close to effective reac
   adjust:(candidate,state)=>movement(candidate)&&!state.behavior.context.immediateAttack&&
     candidate.assessment.nearestEnemy<state.nearestEnemy&&!candidate.provokes?
       Math.min(2,Math.max(0.4,(state.nearestEnemy-candidate.assessment.nearestEnemy)/2.5)):0});
+tacticalBehaviors.registerComponent({id:'charge-run',label:'Commit to a rapid approach',kind:'policy',
+  candidates:(state,selection)=>{
+    if(state.self.immobile||state.self.unable||state.self.restrained||state.actionsRemaining<1||!Number.isFinite(state.nearestEnemy))return [];
+    const targetId=selection.goal?.targetId,available=(state.moves??[]).filter(move=>move.kind==='stride'&&move.cost>0&&
+      !state.visited?.includes(`${move.x},${move.y}`)&&Number.isFinite(move.nearestEnemy)&&move.nearestEnemy<state.nearestEnemy);
+    if(!available.length)return [];
+    const maximumProgress=Math.max(...available.map(move=>state.nearestEnemy-move.nearestEnemy));
+    // A charge is a commitment, rather than another name for any approach.
+    // Retain near-maximal advances so a Step or short sidestep cannot beat a
+    // full Stride merely because both lead to an attack on a later turn.
+    return available.filter(move=>state.nearestEnemy-move.nearestEnemy>=Math.max(1,maximumProgress-1)).sort((a,b)=>
+      (b.nearestEnemy-a.nearestEnemy)||(a.terrainRisk??0)-(b.terrainRisk??0)||(a.reactionRisk??0)-(b.reactionRisk??0)).slice(0,12).map(move=>{
+      const progress=state.nearestEnemy-move.nearestEnemy,risk=(move.reactionRisk??0)+(move.terrainRisk??0);
+      const target=targetId?move.targets?.[targetId]:null;
+      const meleeReady=Boolean(target&&state.strikes?.some(strike=>!strike.ranged&&target.strikes?.[strike.id]?.usable));
+      const value=1.25+Math.min(4,progress*0.65)+(meleeReady?1.5:0)-risk;
+      return {id:`charge:${move.x},${move.y}`,kind:'stride',legal:true,actionCost:1,path:move.path,
+        destination:{x:move.x,y:move.y},movementCost:move.cost,targetId,provokes:Boolean(move.provokes),
+        destinationThreatened:Boolean(move.destinationThreatened),intent:'commit to a rapid approach against a distant foe',
+        features:{chargeApproach:true,goodAttacksLeft:meleeReady,engagementTargetId:targetId},
+        assessment:{value,movement:true,fullTurnPlan:true,goodAttacksLeft:meleeReady,nearestEnemy:move.nearestEnemy,
+          currentNearestEnemy:state.nearestEnemy,distanceMoved:move.cost/5,reachSquares:state.self.reachSquares},
+        scoringTerms:[{label:'Close substantial distance toward melee reach',contribution:1.25+Math.min(4,progress*0.65)},
+          ...(meleeReady?[{label:'Reach the chosen foe for the next action',contribution:1.5}]:[]),
+          ...(risk?[{label:'Known reaction and terrain risk',contribution:-risk}]:[])]};
+    }).filter(candidate=>candidate.assessment.value>0);
+  }});
 tacticalBehaviors.registerComponent({id:'effective-range',label:'Fight inside an effective range increment',kind:'policy',
   adjust:candidate=>candidate.features?.rangeApproach?1.25:
     candidate.assessment?.movement&&candidate.features?.rangedFollowUp?0.65:
@@ -90,8 +117,14 @@ const plan=(id,label,components,score)=>tacticalBehaviors.registerPlan({id,label
   ...(id==='hiding'?{requires:['stealth']}:{}),objective:(context,state,previous)=>objective(id,context,state,previous)});
 plan('aggressive','Aggressive',['pressure'],c=>({value:3+(c.immediateAttack?2:0),reason:c.immediateAttack?'A useful attack is available':'Engage known opponents'}));
 plan('desperate','Desperate engagement',['advance','pressure'],()=>({value:0.25,reason:'Last-resort engagement when preferred and backup tactics produce no useful legal action'}));
-plan('charge','Charge',['advance','pressure'],c=>c.melee&&!c.immediateAttack&&c.knownEnemies>0&&c.health>0.4&&c.forceRatio>=0.5?
-  {value:5,reason:c.visibleEnemies?'Melee attacks need a safe approach':'Close on remembered opponents and regain contact'}:null);
+plan('charge','Charge',['charge-run','pressure'],(c,state)=>{
+  const reach=state.self.reachSquares??1,speed=Math.max(1,(state.self.speed??25)/5),gap=Number.isFinite(state.nearestEnemy)?state.nearestEnemy-reach:Infinity;
+  const distant=gap>speed,poorRanged=!c.rangedAttackAvailable||c.bestRangePenalty>=4||c.meleeAttackValue>c.rangedAttackValue*1.15;
+  const meleePrimary=c.meleePrimary??(c.melee&&!c.ranged);
+  if(!meleePrimary||!c.melee||c.immediateAttack||c.knownEnemies<1||c.health<=0.4||c.forceRatio<0.5||!poorRanged)return null;
+  return {value:distant?7.75:5.75,reason:distant?'A distant foe can keep its position unless melee closes at full speed':
+    c.visibleEnemies?'Melee attacks need a committed approach':'Close rapidly on a remembered opponent and regain contact'};
+});
 plan('ranged','Ranged engagement',['effective-range','advance','pressure'],c=>!c.rangedAttackAvailable?null:
   c.bestRangePenalty>0&&c.canCloseRange?{value:6.75+Math.min(1,c.bestRangePenalty/10),
     reason:`A ranged attack is available at -${c.bestRangePenalty}; close to an effective increment before firing`}:
@@ -130,7 +163,7 @@ export const defaultBehaviorConfiguration = profileId => ({
     ...(profileId==='manticore-quill'?['volleys']:[]),
     ...(['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spellcasting']:[]),...(['ogre-boss','generic'].includes(profileId)?['leadership']:[]),
     ...['wolf','kobold-scout'].includes(profileId)?['pack']:[],
-    'pressure','advance','effective-range','protection','distance','surround','assist','withdraw',
+    'pressure','advance','charge-run','effective-range','protection','distance','surround','assist','withdraw',
     ...['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain','spell-support']:[]],
   plans:['aggressive','ranged','defensive','avoiding','hiding','lay-low','charge','kiting','swarming','supporting','desperate',
     ...['goblin-pyro','dero-magister','spellcaster','generic'].includes(profileId)?['spell-control','spell-damage','spell-drain','spell-support']:[]],

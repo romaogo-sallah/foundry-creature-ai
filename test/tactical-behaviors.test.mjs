@@ -5,7 +5,7 @@ import { BehaviorSystem } from '../src/framework/behavior-system.mjs';
 import { decisionExplanation } from '../src/wolf/decision-explanation.mjs';
 
 function state(context={}){
-  return {actionsRemaining:3,attacksMade:0,nearestEnemy:4,self:{cell:{x:1,y:1},reachSquares:1},moves:[],
+  return {actionsRemaining:3,attacksMade:0,nearestEnemy:4,self:{cell:{x:1,y:1},reachSquares:1,speed:25},moves:[],
     enemies:[{id:'fighter',name:'Fighter',distance:20}],diagnostics:{},behavior:{
       configuration:system.configuration({},defaultBehaviorConfiguration('wolf')),
       context:{health:1,forceRatio:1,visibleEnemies:1,knownEnemies:1,melee:true,ranged:false,immediateAttack:true,
@@ -29,6 +29,20 @@ test('a penalized ranged option selects explicit range-closing tactics and recor
   assert.equal(selection.planId,'ranged');assert.equal(selection.hierarchy.preferred.planId,'ranged');
   assert.ok(selection.hierarchy.backup);assert.equal(selection.hierarchy.desperate.planId,'desperate');
   assert.match(selection.reason,/-2/);
+});
+
+test('charge commits a melee-primary actor to a full approach instead of a Step or futile long-range attack',()=>{
+  const s=state({meleePrimary:true,ranged:true,melee:true,immediateAttack:false,rangedAttackAvailable:true,bestRangePenalty:8,
+    canCloseRange:true,rangedAttackValue:0.1,meleeAttackValue:0});
+  s.nearestEnemy=14;s.moves=[
+    {x:2,y:1,kind:'step',cost:5,path:[{x:2,y:1}],nearestEnemy:13,targets:{fighter:{distance:65,strikes:{}}}},
+    {x:6,y:1,kind:'stride',cost:25,path:[{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:5,y:1},{x:6,y:1}],nearestEnemy:9,targets:{fighter:{distance:45,strikes:{}}}},
+  ];
+  const selection=system.select(s);assert.equal(selection.planId,'charge');assert.match(selection.reason,/full speed/);
+  const result=system.decide(s,[action('step','step',0),action('bad-shot','strike',0.1),action('end','endTurn',0,0)]);
+  assert.equal(result.chosen.id,'charge:6,1');assert.equal(result.chosen.kind,'stride');
+  assert.ok(result.diagnostics.tactic.planningTrace.nodes.some(node=>node.data?.id==='battlefield-assessment')||
+    result.diagnostics.tactic.planningTrace.nodes.some(node=>node.id==='battlefield-assessment'));
 });
 
 test('configured backup and desperate plans are tried only when an earlier tactic has no useful action',()=>{

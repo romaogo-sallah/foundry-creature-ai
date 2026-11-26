@@ -968,7 +968,8 @@
           "damage": 10,
           "rangeIncrement": 30
         }
-      ]
+      ],
+      "role": "melee"
     },
     {
       "id": "ogre-2",
@@ -1001,7 +1002,8 @@
           "damage": 10,
           "rangeIncrement": 30
         }
-      ]
+      ],
+      "role": "melee"
     },
     {
       "id": "ogre-3",
@@ -1034,7 +1036,8 @@
           "damage": 10,
           "rangeIncrement": 30
         }
-      ]
+      ],
+      "role": "melee"
     },
     {
       "id": "ogre-4",
@@ -1067,7 +1070,8 @@
           "damage": 10,
           "rangeIncrement": 30
         }
-      ]
+      ],
+      "role": "melee"
     },
     {
       "id": "ogre-5",
@@ -1100,7 +1104,8 @@
           "damage": 10,
           "rangeIncrement": 30
         }
-      ]
+      ],
+      "role": "melee"
     },
     {
       "id": "ogre-6",
@@ -1133,7 +1138,8 @@
           "damage": 10,
           "rangeIncrement": 30
         }
-      ]
+      ],
+      "role": "melee"
     },
     {
       "id": "kobold-1",
@@ -1171,7 +1177,8 @@
           "damage": 7,
           "precisionDamage": 4
         }
-      ]
+      ],
+      "role": "ranged"
     },
     {
       "id": "kobold-2",
@@ -1209,7 +1216,8 @@
           "damage": 7,
           "precisionDamage": 4
         }
-      ]
+      ],
+      "role": "ranged"
     },
     {
       "id": "kobold-3",
@@ -1247,7 +1255,8 @@
           "damage": 7,
           "precisionDamage": 4
         }
-      ]
+      ],
+      "role": "ranged"
     },
     {
       "id": "kobold-4",
@@ -1285,7 +1294,8 @@
           "damage": 7,
           "precisionDamage": 4
         }
-      ]
+      ],
+      "role": "ranged"
     },
     {
       "id": "kobold-5",
@@ -1323,7 +1333,8 @@
           "damage": 7,
           "precisionDamage": 4
         }
-      ]
+      ],
+      "role": "ranged"
     },
     {
       "id": "kobold-6",
@@ -1361,7 +1372,8 @@
           "damage": 7,
           "precisionDamage": 4
         }
-      ]
+      ],
+      "role": "ranged"
     }
   ]
 }

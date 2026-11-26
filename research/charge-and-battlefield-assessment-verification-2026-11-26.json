@@ -1,0 +1,76 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.53.0",
+  "date": "2026-11-26",
+  "feature": "charge tactic and explicit battlefield-situation assessment",
+  "scenario": {
+    "id": "six-ogres-vs-six-kobolds-grand-battlefield",
+    "seed": 6606,
+    "before": {
+      "version": "0.52.0",
+      "rounds": 8,
+      "outcome": "ogres victory",
+      "decisions": 212,
+      "actions": 207,
+      "damage": 525,
+      "movementFeet": 1875,
+      "ogreSurvivors": 3,
+      "observedFaults": [
+        "melee ogres used short Steps while opponents were across the battlefield",
+        "ogres repeatedly accepted extreme javelin range penalties",
+        "swarming was activated by the mere existence of an ally"
+      ]
+    },
+    "after": {
+      "version": "0.53.0",
+      "rounds": 5,
+      "outcome": "ogres victory",
+      "decisions": 167,
+      "actions": 167,
+      "damage": 374,
+      "movementFeet": 1890,
+      "ogreSurvivors": 6,
+      "extremeRangeOgreAttacks": 0,
+      "remainingWarnings": 11
+    }
+  },
+  "battlefieldAssessment": [
+    "primary combat role",
+    "enemy ranged composition",
+    "nearest-enemy distance band",
+    "nearby cover or concealment",
+    "own and enemy numerical advantage",
+    "own and enemy loss fraction",
+    "close pressure on ranged actors",
+    "friendly formation spread",
+    "friendly and enemy AOE clustering"
+  ],
+  "commands": [
+    {
+      "command": "node --test test/behavior-runtime.test.mjs test/tactical-behaviors.test.mjs test/hierarchical-planner.test.mjs",
+      "result": "pass",
+      "tests": 40
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "tests": 1295,
+      "workers": 11,
+      "seconds": 30.9
+    },
+    {
+      "command": "npm run simulate -- simulations/six-ogres-vs-six-kobolds.json",
+      "result": "pass"
+    }
+  ],
+  "installation": {
+    "packages": 5,
+    "version": "0.53.0",
+    "foundryData": "C:/Users/Roman/AppData/Local/FoundryVTT/Data"
+  },
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.53.0.zip",
+    "bytes": 921743,
+    "sha256": "1C778D6084839CCD65DC15DDFD55B52B6377BA1D5548923738AFF5D99EC4E05A"
+  }
+}

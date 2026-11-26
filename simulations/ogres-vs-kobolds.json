@@ -34,7 +34,7 @@
   },
   "actors": [
     {
-      "id": "ogre-one", "name": "Ogre One", "marker": "O", "glyph": "O", "team": "ogres", "initiative": 12,
+      "id": "ogre-one", "name": "Ogre One", "marker": "O", "glyph": "O", "team": "ogres", "role": "melee", "initiative": 12,
       "position": {"x": 2, "y": 3}, "hp": 59, "ac": 17, "speed": 25, "reach": 10, "referenceAC": 19,
       "strikes": [
         {"id": "greatclub", "name": "Greatclub", "bonus": 12, "damage": 12, "reach": 10},
@@ -42,7 +42,7 @@
       ]
     },
     {
-      "id": "ogre-two", "name": "Ogre Two", "marker": "P", "glyph": "O", "team": "ogres", "initiative": 10,
+      "id": "ogre-two", "name": "Ogre Two", "marker": "P", "glyph": "O", "team": "ogres", "role": "melee", "initiative": 10,
       "position": {"x": 2, "y": 7}, "hp": 59, "ac": 17, "speed": 25, "reach": 10, "referenceAC": 19,
       "strikes": [
         {"id": "greatclub", "name": "Greatclub", "bonus": 12, "damage": 12, "reach": 10},
@@ -50,7 +50,7 @@
       ]
     },
     {
-      "id": "kobold-one", "name": "Kobold Scout One", "marker": "k", "glyph": "K", "team": "kobolds", "initiative": 18,
+      "id": "kobold-one", "name": "Kobold Scout One", "marker": "k", "glyph": "K", "team": "kobolds", "role": "ranged", "initiative": 18,
       "position": {"x": 26, "y": 3}, "hp": 30, "ac": 19, "speed": 25, "reach": 5, "referenceAC": 19, "skulk": true, "pack": true,
       "strikes": [
         {"id": "crossbow", "name": "Crossbow", "bonus": 11, "damage": 7, "rangeIncrement": 120, "reload": 1, "ammunition": 20, "loaded": true},
@@ -58,7 +58,7 @@
       ]
     },
     {
-      "id": "kobold-two", "name": "Kobold Scout Two", "marker": "l", "glyph": "K", "team": "kobolds", "initiative": 16,
+      "id": "kobold-two", "name": "Kobold Scout Two", "marker": "l", "glyph": "K", "team": "kobolds", "role": "ranged", "initiative": 16,
       "position": {"x": 26, "y": 7}, "hp": 30, "ac": 19, "speed": 25, "reach": 5, "referenceAC": 19, "skulk": true, "pack": true,
       "strikes": [
         {"id": "crossbow", "name": "Crossbow", "bonus": 11, "damage": 7, "rangeIncrement": 120, "reload": 1, "ammunition": 20, "loaded": true},

@@ -1,6 +1,8 @@
-# Foundry Creature AI — version 0.52.0
+# Foundry Creature AI — version 0.53.0
 
-**Version 0.52.0:** adds a 60×60-square, twelve-creature browser combat scenario and exact reusable route fields for responsive large-map planning. The replay uses compact cells, expanded terrain legends and explicit attacker/target team labels.
+**Version 0.53.0:** turns Charge into a committed full-speed approach for melee-primary actors and adds an explicit battlefield-assessment layer to every decision trace. It distinguishes primary weapon role from backup weapons and reports range composition, distance, protection, numbers, losses, close pressure, formation spread and AOE clustering before tactics are selected. The [grand battle review](grand-combat-tactical-review-2026-11-26.md) records the evidence and remaining ranged-skirmisher gaps.
+
+**Version 0.52.0:** added a 60×60-square, twelve-creature browser combat scenario and exact reusable route fields for responsive large-map planning. The replay uses compact cells, expanded terrain legends and explicit attacker/target team labels.
 
 **Patch 0.51.3:** gives the standalone combat simulator persistent loaded and ammunition state. Reload weapons spend ammunition and become unloaded after every shot, while the shared basic planner can choose Reload according to the attack it prepares.
 

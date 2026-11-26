@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {BehaviorSystem} from '../src/framework/behavior-system.mjs';
-import {analyzeDecisionHierarchy,classifyCandidate,doctrineProfile,planningTrace,weightHierarchicalCandidate} from '../src/framework/hierarchical-planner.mjs';
+import {analyzeDecisionHierarchy,battlefieldSituation,classifyCandidate,doctrineProfile,planningTrace,weightHierarchicalCandidate} from '../src/framework/hierarchical-planner.mjs';
 import {decisionExplanation} from '../src/wolf/decision-explanation.mjs';
 import {buildDecisionGraph} from '../src/foundry/decision-graph.mjs';
 
@@ -9,6 +9,18 @@ const action=(id,kind,value,extra={})=>({id,kind,legal:true,actionCost:1,assessm
 function state(context={}){return {actionsRemaining:3,nearestEnemy:8,self:{cell:{x:0,y:0},reachSquares:1,speed:25,threatened:false},moves:[],diagnostics:{},
   enemies:[{id:'fighter',name:'Fighter',distance:40,lineOfSight:true,lineOfEffect:true,tactics:{reach:10,speed:25}}],behavior:{context:{health:0.8,
     forceRatio:1,knownEnemies:1,visibleEnemies:1,melee:true,ranged:true,rangedAttackAvailable:true,immediateAttack:true,...context}}};}
+
+test('battlefield assessment exposes role, range, terrain, attrition, formation, and AOE facts',()=>{
+  const facts=battlefieldSituation(state({meleePrimary:true,rangedPrimary:false,enemyRangedRatio:0.75,nearestEnemyDistance:80,nearbyProtection:true,
+    ownCount:3,enemyCount:6,ownLossFraction:0.5,enemyLossFraction:0.1,ownSpread:true,ownAverageNearestDistance:45,
+    enemyAoeClustered:true,enemyAoeClusterSize:4,ownAoeClustered:true,ownAoeClusterSize:3}));
+  const byId=new Map(facts.map(entry=>[entry.id,entry]));
+  assert.equal(byId.get('fact-own-combat-role').value,'melee');
+  for(const id of ['fact-enemy-range-composition','fact-enemy-distance','fact-nearby-protection','fact-own-outnumbered','fact-own-losses',
+    'fact-own-formation','fact-enemy-aoe-cluster','fact-own-aoe-cluster'])assert.equal(byId.get(id).detail.active,true,id);
+  assert.equal(byId.get('fact-enemy-outnumbered').detail.active,false);
+  assert.equal(byId.get('fact-enemy-losses').detail.active,false);
+});
 
 test('doctrine remains multi-label and engagement analysis is shared by several hypotheses',()=>{
   const s=state({caster:true,skulk:true,supportRecipients:1});s.behavior.configuration={components:['strikes','spellcasting','spell-control','spell-support','stealth','protection','movement'],plans:[]};
@@ -81,8 +93,8 @@ test('bounded intent portfolio lets a lower abstract hypothesis win through a be
   assert.equal(decision.chosen.id,'close');assert.equal(decision.diagnostics.tactic.planId,'setup');
   const trace=decision.diagnostics.tactic.planningTrace;
   assert.equal(trace.schema,'foundry-creature-ai/planning-trace@2');assert.equal(trace.selectedPlanId,'setup');
-  assert.ok(trace.nodes.filter(node=>node.kind==='or'&&node.layer===2).length>=2);
-  assert.deepEqual(trace.nodes.filter(node=>node.kind==='or'&&node.layer===2&&node.status==='selected').map(node=>node.detail.planId),['setup']);
+  assert.ok(trace.nodes.filter(node=>node.kind==='or'&&node.layer===3).length>=2);
+  assert.deepEqual(trace.nodes.filter(node=>node.kind==='or'&&node.layer===3&&node.status==='selected').map(node=>node.detail.planId),['setup']);
   assert.ok(trace.nodes.some(node=>node.kind==='and'&&node.status==='selected'));
   assert.ok(trace.timelines.find(line=>line.selected).steps.length===2);
   assert.equal(trace.nodes.find(node=>node.id==='planning-root').detail.engagements[0].targetId,'fighter');

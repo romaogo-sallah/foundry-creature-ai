@@ -89,8 +89,8 @@ test('saved Ogre versus Kobold encounter runs through the production planner wit
   assert.ok(first.nodes.length<40,'the first decision is a pruned causal graph rather than a candidate dump');
   assert.ok(first.nodes.every(node=>node.id==='planning-root'||incoming.has(node.id)),'the graph has no structural orphans');
   assert.equal(first.nodes.some(node=>node.kind==='fact'||node.kind==='engagement'),false,'uncausal diagnostics are not rendered as branches');
-  assert.deepEqual(first.nodes.filter(node=>node.kind==='or'&&node.layer===2&&node.status!=='pruned').map(node=>node.detail.planId),
-    ['swarming','ranged','aggressive','defensive'],'every surviving tactic remains visible before shared actions converge');
+  assert.deepEqual(first.nodes.filter(node=>node.kind==='or'&&node.layer===3&&node.status!=='pruned').map(node=>node.detail.planId),
+    ['ranged','aggressive','defensive'],'every surviving tactic remains visible before shared actions converge');
   assert.ok(first.nodes.filter(node=>node.kind==='and').every(node=>node.detail.timeline.length>1),'one-step actions do not get fake method nodes');
   const actionIds=first.nodes.filter(node=>node.kind==='primitive'&&node.detail?.timeline).map(node=>node.detail.candidateId);
   assert.equal(new Set(actionIds).size,actionIds.length,'merged candidates appear once');
@@ -113,6 +113,17 @@ test('reload weapons unload after firing and cannot fire again before reloading'
     const weapon=report.finalActors.find(actor=>actor.id===actorId).weapons.find(entry=>entry.id==='crossbow');
     assert.equal(weapon.ammunition,20-shots,'each shot consumes one bolt');assert.equal(weapon.loaded,loaded);
   }
+});
+
+test('melee-primary ogres charge at full speed while ranged-primary kobolds keep ranged tactics',()=>{
+  const report=new CombatLab(grandBattlefield,{maxRounds:1}).run(),turns=report.rounds[0].turns;
+  for(const turn of turns.filter(entry=>entry.actorId.startsWith('ogre-'))){
+    assert.equal(turn.decisions.length,3);assert.ok(turn.decisions.every(decision=>decision.plan?.id==='charge'));
+    assert.ok(turn.decisions.every(decision=>decision.chosen?.kind==='stride'));
+    assert.ok(turn.decisions.every(decision=>decision.effect.destination),'every charge action changes position');
+  }
+  for(const turn of turns.filter(entry=>entry.actorId.startsWith('kobold-')))
+    assert.ok(turn.decisions.every(decision=>decision.plan?.id!=='charge'),'a crossbow skulk does not mistake its backup sword for its primary role');
 });
 
 for(const scenario of combatLabScenarios)test(`combat lab: ${scenario.name}`,async t=>{

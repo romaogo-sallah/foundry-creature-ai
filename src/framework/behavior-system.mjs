@@ -61,7 +61,10 @@ export class BehaviorSystem {
       if (!result || !Number.isFinite(result.value)) return {id,label:plan.label,applicable:false,value:null,
         reason:'Current tactical conditions do not activate this plan'};
       const continuity = previous?.planId === id && !context.emergency ? 0.75 : 0;
-      const preference = configuration.preferredPlan === id && !context.emergency ? 2 : 0;
+      // The controls call this a preferred tactic, so a legal preferred plan
+      // must survive ordinary situational competition. Emergency directives
+      // still override it, and an inapplicable plan receives no bonus.
+      const preference = configuration.preferredPlan === id && !context.emergency ? 10 : 0;
       return {id,label:plan.label,applicable:true,value:result.value+continuity+preference,baseValue:result.value,
         reason:result.reason,continuity,preference};
     });
