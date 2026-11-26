@@ -6,6 +6,8 @@ import {CombatLab,assertCombat,renderCombatReport} from '../src/simulation/comba
 import {combatLabScenarios} from '../src/simulation/scenarios.mjs';
 import {gridFromAscii} from '../src/simulation/virtual-grid.mjs';
 import {combatFrames} from '../src/simulation/replay.mjs';
+import {decisionGraphRecord,simulationDecisions} from '../src/simulation/decision-tree.mjs';
+import {buildDecisionGraph} from '../src/foundry/decision-graph.mjs';
 
 const reportDirectory=new URL('../.scratch/combat-lab/',import.meta.url);
 const reportPath=scenario=>new URL(`${scenario.id}.md`,reportDirectory);
@@ -52,6 +54,10 @@ test('saved Ogre versus Kobold encounter runs through the production planner wit
   assert.equal(frames.length,report.metrics.decisions+1);
   assert.deepEqual(last.actors.map(actor=>({id:actor.id,hp:actor.hp,position:actor.position,alive:actor.alive})),
     report.finalActors.map(actor=>({id:actor.id,hp:actor.hp,position:actor.position,alive:actor.alive})));
+  const entries=simulationDecisions(report,ogresVsKobolds);assert.equal(entries.length,report.metrics.decisions);
+  for(const entry of entries){const graph=buildDecisionGraph(decisionGraphRecord(entry.decision));
+    assert.ok(graph.nodes.some(node=>node.data.id==='planning-root'),`${entry.id} retains its planning root`);
+    assert.ok(graph.nodes.length>1,`${entry.id} exposes a nontrivial decision graph`);assert.ok(graph.edges.length>0,`${entry.id} connects its graph`);}
 });
 
 for(const scenario of combatLabScenarios)test(`combat lab: ${scenario.name}`,async t=>{

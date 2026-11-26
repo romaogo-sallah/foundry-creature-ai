@@ -1,6 +1,8 @@
-# Foundry Creature AI — version 0.50.0
+# Foundry Creature AI — version 0.50.1
 
-**Version 0.50.0:** adds a standalone browser viewer to the repository's [headless combat simulation lab](combat-simulation-lab.md). It replays a saved two-ogre versus two-kobold encounter and exposes the production planner's decisions, alternatives, score terms and automated findings without loading Foundry. This developer harness does not add a new Foundry control.
+**Patch 0.50.1:** adds a standalone decision-tree page to the repository's [headless combat simulation lab](combat-simulation-lab.md). It renders the real planning trace for any recorded decision with branch filters, node inspection, search, pan, zoom and PNG/JSON export. This developer harness does not add a new Foundry control.
+
+**Version 0.50.0:** adds a standalone browser replay for the saved two-ogre versus two-kobold encounter and exposes planner decisions, alternatives, score terms and automated findings without loading Foundry.
 
 **Version 0.49.0:** adds the repository's headless combat simulation engine. Virtual-grid scenarios execute the same hierarchical planner used by Foundry and produce turn-by-turn Markdown traces with grids, alternatives, scoring factors, rejected options and automated structural findings.
 

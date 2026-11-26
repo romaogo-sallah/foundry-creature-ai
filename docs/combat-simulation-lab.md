@@ -28,6 +28,8 @@ npm run view:combat
 
 Then open `http://127.0.0.1:4173/`. The page does not load Foundry. It runs the planner in a dedicated Web Worker and replays the finished simulation one decision at a time.
 
+Use **Decision tree** in the replay header, or open `http://127.0.0.1:4173/web/combat-lab/tree.html`, to inspect the actual planning trace for any recorded decision. Select a decision by round, actor and chosen action. The graph distinguishes facts, constraints, intent and engagement hypotheses, temporal commitments, methods, primitive actions and outcomes. Click a node for its recorded data; drag to pan; use the wheel to zoom. The toolbar can fit the graph, filter inactive or rejected branches and score terms, search nodes, and download PNG or JSON.
+
 Reports are written to `.scratch/combat-lab/`. The normal test command also runs these scenarios and prints each report path as TAP diagnostics.
 
 ## Scenario format

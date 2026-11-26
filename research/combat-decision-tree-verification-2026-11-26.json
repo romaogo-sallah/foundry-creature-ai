@@ -1,0 +1,48 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.50.1",
+  "date": "2026-11-26",
+  "feature": "standalone recorded combat decision-tree viewer",
+  "commands": [
+    {
+      "command": "npm run test:combat",
+      "result": "pass",
+      "tests": 9,
+      "recordedGraphsChecked": 30
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "files": 106,
+      "tests": 1284,
+      "workers": 11
+    }
+  ],
+  "browserSmoke": {
+    "browser": "Chromium",
+    "pageTitle": "Creature AI Decision Tree",
+    "recordedDecisionOptions": 30,
+    "initialSelection": "1. Round 1 - Kobold Scout One: step",
+    "initialIntentHypotheses": 4,
+    "initialGroundedMethods": 224,
+    "cytoscapeCanvases": 3,
+    "nextDecisionReplacedGraph": true,
+    "workerFinished": true
+  },
+  "capabilities": [
+    "recorded decision selection",
+    "previous and next navigation",
+    "node detail inspection",
+    "inactive, rejected and score-term filters",
+    "node search",
+    "pan and relative wheel zoom",
+    "fit",
+    "PNG export",
+    "JSON export"
+  ],
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.50.1.zip",
+    "bytes": 911124,
+    "sha256": "FFDADBB8F813AB274DE3B33703BE4C24FF3BFE72D933627CAB71C28E5722C3A4"
+  }
+}

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Creature AI Decision Tree</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./tree.css">
+</head>
+<body>
+  <main class="tree-app">
+    <header class="topbar tree-topbar">
+      <div><p class="eyebrow">Foundry Creature AI</p><h1>Decision Tree</h1></div>
+      <nav><a class="page-link" href="./">Combat replay</a></nav>
+    </header>
+    <section class="tree-controls">
+      <label>Scenario<select id="scenario"></select></label>
+      <label>Recorded decision<select id="decision"></select></label>
+      <button id="previous" type="button">Previous</button>
+      <button id="next" type="button">Next</button>
+      <button id="rerun" type="button">Rerun simulation</button>
+    </section>
+    <section class="decision-context">
+      <div><span>Actor</span><strong id="actor">Waiting</strong></div>
+      <div><span>Chosen action</span><strong id="action">Waiting</strong></div>
+      <div><span>Resolution</span><strong id="resolution">Waiting</strong></div>
+    </section>
+    <section id="graph" class="graph-host" aria-live="polite"><p class="empty-state">Running the saved simulation in a worker&hellip;</p></section>
+  </main>
+  <script type="module" src="./tree.mjs"></script>
+</body>
+</html>
