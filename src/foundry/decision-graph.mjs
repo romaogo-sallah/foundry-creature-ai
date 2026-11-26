@@ -157,6 +157,12 @@ export function layeredGraphPositions(nodes,{xGap=290,yGap=105}={}){
   }
   return positions;
 }
+
+/** Nodes enabled by the graph filters, regardless of their current viewport position. */
+export function displayedGraphNodes(cy){
+  return cy.nodes().filter(node=>node.style('display')!=='none');
+}
+
 export async function mountDecisionGraph(root,graph,{fileName='creature-decision'}={}){
   const container=root.querySelector('[data-graph-canvas]');if(!container)throw new Error('Decision graph canvas is missing');
   const {default:cytoscape}=await import('../vendor/cytoscape.esm.min.mjs');
@@ -166,7 +172,7 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
     style:[
       {selector:'node',style:{'shape':'round-rectangle','background-color':'#344054','border-color':'#667085','border-width':2,
         'label':'data(label)','color':'#f2f4f7','font-size':11,'text-wrap':'wrap','text-max-width':180,'text-valign':'center','text-halign':'center',
-        'padding':'10px','width':'label','height':'label','min-width':'90px','min-height':'42px'}},
+        'padding':'10px','width':190,'height':72}},
       {selector:'node.gate',style:{'background-color':'#243b53','border-color':'#5fa8d3','font-weight':'bold'}},
       {selector:'node.situation',style:{'background-color':'#3b2f63','border-color':'#a78bfa'}},
       {selector:'node.fact',style:{'shape':'ellipse','background-color':'#344054','border-color':'#98a2b3'}},
@@ -180,7 +186,7 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
       {selector:'node.plan',style:{'background-color':'#3d4a5c'}},{selector:'node.objective',style:{'background-color':'#3f3a24','border-color':'#d6b756'}},
       {selector:'node.tactic-stage',style:{'background-color':'#263b4d','border-color':'#86a8c7','font-weight':'bold'}},
       {selector:'node.component',style:{'background-color':'#174f59','border-color':'#49a6b5'}},
-      {selector:'node.option',style:{'background-color':'#30455c'}},{selector:'node.term',style:{'background-color':'#403a47','font-size':9,'text-max-width':150}},
+      {selector:'node.option',style:{'background-color':'#30455c'}},{selector:'node.term',style:{'background-color':'#403a47','font-size':9,'text-max-width':145,'width':155,'height':52}},
       {selector:'node.positive',style:{'border-color':'#65c466'}},{selector:'node.negative',style:{'border-color':'#dd7777'}},
       {selector:'node.randomized',style:{'border-color':'#d6b756','border-width':4}},
       {selector:'node.tied',style:{'border-color':'#66bfff','border-width':4}},{selector:'node.inactive',style:{'opacity':0.34,'border-style':'dashed'}},
@@ -198,7 +204,7 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
     const heading=document.createElement('strong');heading.textContent=data.label.split('\n')[0];
     const pre=document.createElement('pre');pre.textContent=data.detail;details.append(heading,pre);
   });
-  const fit=()=>cy.animate({fit:{eles:cy.elements(':visible'),padding:30},duration:180});
+  const fit=()=>cy.animate({fit:{eles:displayedGraphNodes(cy),padding:30},duration:180});
   root.querySelector('[data-graph-control="fit"]')?.addEventListener('click',fit);
   root.querySelector('[data-graph-control="png"]')?.addEventListener('click',()=>download(`${fileName}.png`,cy.png({full:true,scale:2,bg:'#111827'})));
   root.querySelector('[data-graph-control="json"]')?.addEventListener('click',()=>{
@@ -206,8 +212,8 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
   });
   const applyFilters=()=>{for(const input of root.querySelectorAll('[data-graph-filter]')){
       const selector=`.${input.dataset.graphFilter}`;cy.elements(selector)[input.checked?'show':'hide']();}
-    if(layered){const visible=[];for(const node of cy.nodes(':visible'))visible.push({data:{id:node.id(),layer:node.data('layer'),category:node.data('category')}});
-      const positions=layeredGraphPositions(visible);cy.batch(()=>{for(const node of cy.nodes(':visible'))node.position(positions.get(node.id()));});}
+    if(layered){const displayed=displayedGraphNodes(cy),visible=[];for(const node of displayed)visible.push({data:{id:node.id(),layer:node.data('layer'),category:node.data('category')}});
+      const positions=layeredGraphPositions(visible);cy.batch(()=>{for(const node of displayed)node.position(positions.get(node.id()));});}
     else cy.layout({name:'breadthfirst',directed:true,roots:cy.$id('planning-root').length?'#planning-root':'#situation',
       padding:35,spacingFactor:1.25,avoidOverlap:true}).run();fit();};
   for(const input of root.querySelectorAll('[data-graph-filter]'))input.addEventListener('change',applyFilters);

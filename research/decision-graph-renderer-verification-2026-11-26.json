@@ -1,0 +1,45 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.51.1",
+  "date": "2026-11-26",
+  "feature": "decision graph browser rendering and viewport-independent fitting",
+  "reproduction": {
+    "url": "http://127.0.0.1:4173/web/combat-lab/tree.html",
+    "scenario": "ogres-vs-kobolds-open-field",
+    "decision": "round 1, Kobold Scout One, first action",
+    "serializedNodes": 20,
+    "displayedBefore": 1,
+    "cause": "Cytoscape label-sized nodes were cached before their dimensions were measured, and the fit collection used viewport-sensitive :visible selection"
+  },
+  "replacement": {
+    "stableNodeDimensions": true,
+    "fitUsesFilterDisplayState": true,
+    "displayedAfter": 16,
+    "defaultHiddenPrunedNodes": 4,
+    "causalPathVisible": true
+  },
+  "commands": [
+    {
+      "command": "node --test test/decision-graph.test.mjs test/combat-lab.test.mjs",
+      "result": "pass",
+      "tests": 18
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "files": 106,
+      "tests": 1287,
+      "workers": 11
+    },
+    {
+      "command": "node --test test/module-packages.test.mjs test/decision-graph.test.mjs",
+      "result": "pass",
+      "tests": 11
+    }
+  ],
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.51.1.zip",
+    "bytes": 915574,
+    "sha256": "E15ECF8ED6A9297FF663BE6C2B80A5AAB688D96BAA6C680159220B32F6D77215"
+  }
+}

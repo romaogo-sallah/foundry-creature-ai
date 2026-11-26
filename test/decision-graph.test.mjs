@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildDecisionGraph,layeredGraphPositions,renderDecisionGraphShell,relativeWheelZoom} from '../src/foundry/decision-graph.mjs';
+import {buildDecisionGraph,displayedGraphNodes,layeredGraphPositions,renderDecisionGraphShell,relativeWheelZoom} from '../src/foundry/decision-graph.mjs';
 import {BehaviorSystem} from '../src/framework/behavior-system.mjs';
 
 test('behavior selection records applicable and inactive plan evaluations',()=>{
@@ -101,6 +101,17 @@ test('vendored Cytoscape loads the decision graph with its directed layout',asyn
   assert.equal(cy.nodes().length,2);
   assert.equal(cy.edges().length,1);
   assert.doesNotThrow(()=>cy.layout({name:'breadthfirst',directed:true,roots:'#situation'}).run());
+  cy.destroy();
+});
+
+test('graph fitting retains enabled nodes that are outside the current viewport',async()=>{
+  const {default:cytoscape}=await import('../src/vendor/cytoscape.esm.min.mjs');
+  const cy=cytoscape({headless:true,elements:[
+    {data:{id:'root'},position:{x:0,y:0}},{data:{id:'offscreen'},position:{x:5000,y:0}},
+    {data:{id:'filtered'},position:{x:2500,y:0},classes:'inactive'},
+  ],styleEnabled:true,style:[{selector:'node',style:{display:'element'}}],layout:{name:'preset'}});
+  cy.$id('filtered').hide();cy.pan({x:-10000,y:-10000});
+  assert.deepEqual(displayedGraphNodes(cy).map(node=>node.id()).sort(),['offscreen','root']);
   cy.destroy();
 });
 

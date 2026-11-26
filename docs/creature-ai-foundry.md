@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.51.0
+# Foundry Creature AI — version 0.51.1
+
+**Patch 0.51.1:** fixes the decision-tree renderer so the complete causal graph remains visible after filtering and fitting. Cytoscape now uses stable node dimensions and fits every enabled node, including nodes outside the current viewport.
 
 **Version 0.51.0:** replaces the decision graph's repeated fact and candidate dump with causal `planning-trace@2`. Intent scores narrow into objectives, timing, unique merged actions, competitive choice, and the executed outcome. Atomic actions no longer get fake one-child method nodes; uninstrumented diagnostics remain inspectable on the situation node. See the [saved-tree audit](decision-graph-audit-2026-11-26.md).
 
