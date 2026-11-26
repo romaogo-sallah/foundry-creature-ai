@@ -589,4 +589,3 @@ This slice directly addresses the current combat failure while establishing reus
 ## Sources
 
 The machine-readable source ledger is [tactical-scenario-sources-2026-11-26.json](../research/tactical-scenario-sources-2026-11-26.json).
-
