@@ -1,0 +1,48 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.49.0",
+  "date": "2026-11-26",
+  "feature": "deterministic headless combat simulation lab",
+  "commands": [
+    {
+      "command": "npm run test:combat",
+      "result": "pass",
+      "files": 1,
+      "tests": 6
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "files": 106,
+      "tests": 1281,
+      "durationSeconds": 30.0,
+      "workers": 11
+    },
+    {
+      "command": "npm run simulate",
+      "result": "pass",
+      "scenarios": 3
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "melee-routes-around-wall",
+      "qualityGates": ["victory", "movement", "strike", "no no-progress round", "no two-cell cycle"]
+    },
+    {
+      "id": "ranged-closes-before-bad-shot",
+      "qualityGates": ["victory", "close before first attack", "zero range penalty on first attack", "no avoidable range-penalty finding"]
+    },
+    {
+      "id": "hazard-detour",
+      "qualityGates": ["victory", "movement", "strike", "no hazard entry", "no no-progress round", "no two-cell cycle"]
+    }
+  ],
+  "reportSchema": "foundry-creature-ai/combat-lab-report@1",
+  "planningTraceSchema": "foundry-creature-ai/planning-trace@1",
+  "archive": {
+    "path": "releases/pf2e-tactical-suite-0.49.0.zip",
+    "bytes": 908972,
+    "sha256": "75F50E877FC9DCA17A1AA16538B915AB9F168252C5FE5341F181AC21B93DFB87"
+  }
+}

@@ -66,13 +66,14 @@ export function decisionCandidates(state,model,{applyBehavior=true}={}){
 }
 // All target/action ranking and remaining-turn forecasts run here. This module
 // imports no Foundry code and has no access to rolls or the real scene.
-export function planCreatureDecision({state,model,operation='decide'}){
+export function planCreatureDecision({state,model,operation='decide',random}){
  if(state.behavior)for(const [key,registry]of [['components',tacticalBehaviors.components],['plans',tacticalBehaviors.plans]])for(const id of state.behavior.configuration[key]??[])
   if(!registry.has(id))throw new Error(`Behavior ${id} is not registered in the decision worker; use a worker-compatible module or explicit native compatibility mode`);
  finalizeDecisionState(state);
  if(operation==='candidates')return decisionCandidates(state,model);
  if(state.fleeing)return chooseFleeingAction(state);if(state.confusion)return chooseConfusedAction(state);
- const options={actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened};
+ const options={actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened,
+  ...(typeof random==='function'?{random}:{})};
  const decision=chooseTacticalAction(decisionCandidates(state,model,{applyBehavior:false}),state.mistEscape?{...state,behavior:null}:state,options);
  const end=decision.chosen?.kind==='endTurn';let diagnostics={...state.diagnostics,...decision.diagnostics};
  if(model.kind==='wolf'){
