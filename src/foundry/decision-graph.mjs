@@ -19,8 +19,21 @@ const optionLabel=(option,rank,nameOf)=>{
   return `${rank}. ${subject}${target}\nLayer ${option.layer} | value ${Number(option.value).toFixed(2)} | ${option.actionCost} action${option.actionCost===1?'':'s'}${chance}${movement}`;
 };
 
+function buildTraceDecisionGraph(record,trace){
+  const nodes=trace.nodes.map(node=>{const status=node.kind==='or'&&node.layer===3?
+    (node.detail?.planId===trace.selectedPlanId?'selected':node.status==='selected'?'survived':node.status):node.status;
+    return {data:{id:safe(node.id),label:node.label,category:node.kind,layer:node.layer,
+      detail:JSON.stringify(node.detail??{},null,2)},classes:[node.kind,status,status==='pruned'?'inactive':''].filter(Boolean).join(' ')};});
+  const edges=trace.edges.map((edge,index)=>({data:{id:safe(edge.id??`trace-edge-${index}`),source:safe(edge.source),target:safe(edge.target),
+    label:edge.relation},classes:[edge.relation,edge.relation==='forbids'?'rejected':''].join(' ')}));
+  return {nodes,edges,summary:{chosenId:record.chosenId,reason:record.reason,planId:trace.selectedPlanId??record.tactic?.planId??null,
+    nodeCount:nodes.length,optionCount:record.options?.length??0,rejectedCount:record.rejected?.length??0,totalOptions:record.totalOptions??0,
+    traceSchema:trace.schema,timelines:trace.timelines??[],budget:trace.budget??{}}};
+}
+
 /** Build a serializable graph of the recorded tactic and action ranking. */
 export function buildDecisionGraph(record,catalog={components:[],plans:[]},{nameOf=id=>id}={}){
+  if(record.tactic?.planningTrace?.schema==='foundry-creature-ai/planning-trace@1')return buildTraceDecisionGraph(record,record.tactic.planningTrace);
   const nodes=[],edges=[],nodeIds=new Set();let edgeIndex=0;
   const addNode=(id,label,category,classes=[],detail={})=>{
     id=safe(id);if(nodeIds.has(id))return id;nodeIds.add(id);
@@ -106,19 +119,20 @@ export function renderDecisionGraphShell(graph,{recorded=false}={}){
   return `<div class="decision-debugger" data-decision-debugger>
     <header class="decision-debugger__intro"><strong>${recorded?'Recorded decision':'Live decision preview'}</strong>
       <span>${htmlEscape(summary.reason||'No ranking reason')}</span>
-      <span>${summary.optionCount} displayed options${summary.totalOptions>summary.optionCount?` of ${summary.totalOptions}`:''}; ${summary.rejectedCount} rejected</span></header>
+      <span>${summary.traceSchema?`${summary.budget?.survivingHypotheses??0} intent hypotheses; ${summary.budget?.groundedCandidates??0} grounded methods`:
+        `${summary.optionCount} displayed options${summary.totalOptions>summary.optionCount?` of ${summary.totalOptions}`:''}; ${summary.rejectedCount} rejected`}</span></header>
     <div class="decision-debugger__toolbar">
       <button type="button" data-graph-control="fit"><i class="fa-solid fa-expand"></i> Fit</button>
       <button type="button" data-graph-control="png"><i class="fa-solid fa-image"></i> PNG</button>
       <button type="button" data-graph-control="json"><i class="fa-solid fa-file-code"></i> JSON</button>
-      <label><input type="checkbox" data-graph-filter="inactive" checked> inactive tactics/components</label>
+      <label><input type="checkbox" data-graph-filter="inactive" checked> pruned/inactive branches</label>
       <label><input type="checkbox" data-graph-filter="rejected" checked> rejected</label>
       <label><input type="checkbox" data-graph-filter="term" checked> score terms</label>
       <input type="search" data-graph-search placeholder="Find a node" aria-label="Find a decision node">
     </div>
     <div class="decision-debugger__body">
       <div class="decision-debugger__canvas" data-graph-canvas role="img" aria-label="Creature decision graph"></div>
-      <aside class="decision-debugger__details" data-graph-details><strong>Select a node</strong><p>Click a tactic, component, option, or score term to inspect its recorded data.</p></aside>
+      <aside class="decision-debugger__details" data-graph-details><strong>Select a node</strong><p>Click a fact, intent, engagement, method, primitive, or score term to inspect its recorded data.</p></aside>
     </div>
     <footer class="decision-debugger__legend"><span class="chosen">Chosen path</span><span class="randomized">Weighted roll candidate</span><span class="tied">Equal best option</span>
       <span class="inactive">Inactive</span><span class="rejected">Rejected</span><span>Drag to pan; wheel to zoom.</span></footer>
@@ -141,6 +155,14 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
         'padding':'10px','width':'label','height':'label','min-width':'90px','min-height':'42px'}},
       {selector:'node.gate',style:{'background-color':'#243b53','border-color':'#5fa8d3','font-weight':'bold'}},
       {selector:'node.situation',style:{'background-color':'#3b2f63','border-color':'#a78bfa'}},
+      {selector:'node.fact',style:{'shape':'ellipse','background-color':'#344054','border-color':'#98a2b3'}},
+      {selector:'node.engagement',style:{'shape':'barrel','background-color':'#33475b','border-color':'#72a7d3'}},
+      {selector:'node.constraint',style:{'shape':'diamond','background-color':'#542f35','border-color':'#e47b86'}},
+      {selector:'node.or',style:{'shape':'hexagon','background-color':'#243b53','border-color':'#66bfff','font-weight':'bold'}},
+      {selector:'node.and',style:{'shape':'round-diamond','background-color':'#174f59','border-color':'#49a6b5'}},
+      {selector:'node.hypothesis',style:{'background-color':'#3d4a5c','border-color':'#a78bfa'}},
+      {selector:'node.primitive',style:{'background-color':'#30455c','border-color':'#d6b756'}},
+      {selector:'node.outcome',style:{'shape':'round-tag','background-color':'#3f3a24','border-color':'#d6b756'}},
       {selector:'node.plan',style:{'background-color':'#3d4a5c'}},{selector:'node.objective',style:{'background-color':'#3f3a24','border-color':'#d6b756'}},
       {selector:'node.tactic-stage',style:{'background-color':'#263b4d','border-color':'#86a8c7','font-weight':'bold'}},
       {selector:'node.component',style:{'background-color':'#174f59','border-color':'#49a6b5'}},
@@ -149,13 +171,14 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
       {selector:'node.randomized',style:{'border-color':'#d6b756','border-width':4}},
       {selector:'node.tied',style:{'border-color':'#66bfff','border-width':4}},{selector:'node.inactive',style:{'opacity':0.34,'border-style':'dashed'}},
       {selector:'.selected, node.chosen',style:{'background-color':'#176b3a','border-color':'#7ee2a8','border-width':5,'font-weight':'bold'}},
+      {selector:'node.survived',style:{'border-width':3}},
       {selector:'node.rejected',style:{'background-color':'#542f35','border-color':'#e47b86','opacity':0.65}},
       {selector:'edge',style:{'width':1.5,'line-color':'#748094','target-arrow-color':'#748094','target-arrow-shape':'triangle','curve-style':'bezier',
         'label':'data(label)','font-size':8,'color':'#aeb7c5','text-rotation':'autorotate','text-background-color':'#111827','text-background-opacity':0.75,'text-background-padding':'2px'}},
       {selector:'edge.rejected',style:{'line-style':'dashed','line-color':'#a84d58','target-arrow-color':'#a84d58'}},
       {selector:'edge.randomized',style:{'line-color':'#d6b756','target-arrow-color':'#d6b756','width':2.5}},
       {selector:'.search-match',style:{'overlay-color':'#ffd166','overlay-opacity':0.28,'overlay-padding':8}},
-    ],layout:{name:'breadthfirst',directed:true,roots:'#situation',padding:35,spacingFactor:1.25,avoidOverlap:true,animate:false}});
+    ],layout:{name:'breadthfirst',directed:true,roots:graph.nodes.some(node=>node.data.id==='planning-root')?'#planning-root':'#situation',padding:35,spacingFactor:1.25,avoidOverlap:true,animate:false}});
   const details=root.querySelector('[data-graph-details]');
   cy.on('tap','node',event=>{const data=event.target.data();details.replaceChildren();
     const heading=document.createElement('strong');heading.textContent=data.label.split('\n')[0];
@@ -168,7 +191,8 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
     const blob=new Blob([JSON.stringify(graph,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob);download(`${fileName}.json`,url);setTimeout(()=>URL.revokeObjectURL(url),1000);
   });
   for(const input of root.querySelectorAll('[data-graph-filter]'))input.addEventListener('change',()=>{
-    const selector=`.${input.dataset.graphFilter}`;cy.elements(selector)[input.checked?'show':'hide']();cy.layout({name:'breadthfirst',directed:true,roots:'#situation',padding:35,spacingFactor:1.25,avoidOverlap:true}).run();fit();
+    const selector=`.${input.dataset.graphFilter}`;cy.elements(selector)[input.checked?'show':'hide']();cy.layout({name:'breadthfirst',directed:true,
+      roots:cy.$id('planning-root').length?'#planning-root':'#situation',padding:35,spacingFactor:1.25,avoidOverlap:true}).run();fit();
   });
   root.querySelector('[data-graph-search]')?.addEventListener('input',event=>{const query=event.target.value.trim().toLowerCase();cy.nodes().removeClass('search-match');
     if(query)cy.nodes().filter(node=>node.data('label').toLowerCase().includes(query)).addClass('search-match');

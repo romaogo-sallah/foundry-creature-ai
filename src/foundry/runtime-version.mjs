@@ -1,1 +1,1 @@
-export const RUNTIME_VERSION = '0.47.0';
+export const RUNTIME_VERSION = '0.48.0';

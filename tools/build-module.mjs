@@ -36,6 +36,7 @@ await cp(new URL('docs/ogre-boss-foundry.md', root), new URL('ogre-boss-foundry.
 await cp(new URL('docs/ogre-foundry.md', root), new URL('ogre-foundry.md', output));
 await cp(new URL('docs/creature-framework.md', root), new URL('creature-framework.md', output));
 await cp(new URL('docs/tactics-and-components.md', root), new URL('tactics-and-components.md', output));
+await cp(new URL('docs/hierarchical-decision-graph-design.md',root),new URL('hierarchical-decision-graph-design.md',output));
 await cp(new URL('docs/flight-worker.md', root), new URL('flight-worker.md', output));
 await cp(new URL('docs/decision-debugger.md',root),new URL('decision-debugger.md',output));
 await cp(new URL('docs/decision-variety.md',root),new URL('decision-variety.md',output));

@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.48.0:** replaces single-tactic leaf ranking with a [bounded hierarchical planner](docs/hierarchical-decision-graph-design.md). Every creature now builds a multi-label doctrine, shared engagement relations, up to four viable intent hypotheses, temporal commitments, component-backed methods, and grounded action/activity timelines in the decision worker. Concrete methods from a lower abstract hypothesis can beat the nominal favorite. Safety directives, severe range penalties, same-turn setup value, hidden-belief holds, PF2e legality, and action budgets have explicit precedence. The [decision graph](docs/decision-debugger.md) renders the real runtime trace as an AND/OR DAG. Reload with **Ctrl+F5**.
+
 **Version 0.47.0:** adds [ranged and fallback tactics](docs/ranged-tactics.md). Any range-increment penalty now strongly favors a safe approach or a better melee option; a maximum-range attack remains available only as a low-value desperation shot when no approach exists. Alt+W exposes preferred, backup and desperate tactics, and the [decision graph](docs/decision-debugger.md) displays those stage cards plus the new Ranged engagement plan. Reload with **Ctrl+F5**.
 
 **Version 0.46.0:** added configurable [decision variety](docs/decision-variety.md). The AI can make a weighted pseudorandom choice among close-scoring actions in the highest eligible priority layer, while excluding mandatory/recovery actions, lower layers, and options outside the score band.

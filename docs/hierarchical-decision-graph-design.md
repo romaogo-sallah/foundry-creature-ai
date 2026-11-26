@@ -1,6 +1,6 @@
 # Hierarchical planner and decision graph implementation blueprint
 
-Status: design following [Hierarchical combat decision architecture research](./hierarchical-decision-architecture-research-2026-11-26.md). No runtime implementation is included in this change.
+Status: Phase 1–3 runtime foundation implemented in version 0.48.0 following [Hierarchical combat decision architecture research](./hierarchical-decision-architecture-research-2026-11-26.md). The decision worker now produces doctrine, shared engagement analysis, a bounded intent portfolio, temporal classifications, component-backed methods and a versioned trace. Region-first tactical queries, abstract opponent responses and complete six-action search remain later phases; the graph does not claim those nodes yet.
 
 ## Design objective
 

@@ -53,7 +53,7 @@ function baseCandidates(state,model){
  if(state.flight||state.mistEscape)items=gateActivityGoal(state,gateFlightHunt(state,[...items,...flightCandidates(state)])).map(c=>state.flight?.airCombat?{...c,features:{...c.features,aerialPlan:state.flight.airCombat}}:c);
  return items;
 }
-export function decisionCandidates(state,model){
+export function decisionCandidates(state,model,{applyBehavior=true}={}){
  if(state.fleeing)return fleeingCandidates(state);if(state.confusion)return confusedCandidates(state);
  let items=baseCandidates(state,model);
  if(state.bonusMovementActions){
@@ -62,7 +62,7 @@ export function decisionCandidates(state,model){
  }
  items.push(...state.pitActions??[]);
  items.push(...pitFlightCandidates(state));
- return state.behavior?tacticalBehaviors.candidates(state,items,state.behavior.selection??tacticalBehaviors.select(state)).candidates:items;
+ return applyBehavior&&state.behavior?tacticalBehaviors.portfolio(state,items,state.behavior.selection??tacticalBehaviors.select(state)).candidates:items;
 }
 // All target/action ranking and remaining-turn forecasts run here. This module
 // imports no Foundry code and has no access to rolls or the real scene.
@@ -73,7 +73,7 @@ export function planCreatureDecision({state,model,operation='decide'}){
  if(operation==='candidates')return decisionCandidates(state,model);
  if(state.fleeing)return chooseFleeingAction(state);if(state.confusion)return chooseConfusedAction(state);
  const options={actionsRemaining:state.actionsRemaining,bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened};
- const decision=chooseTacticalAction(decisionCandidates(state,model),state.mistEscape?{...state,behavior:null}:state,options);
+ const decision=chooseTacticalAction(decisionCandidates(state,model,{applyBehavior:false}),state.mistEscape?{...state,behavior:null}:state,options);
  const end=decision.chosen?.kind==='endTurn';let diagnostics={...state.diagnostics,...decision.diagnostics};
  if(model.kind==='wolf'){
   // Preserve the detailed unavailable-action explanations from the Wolf policy.

@@ -1,6 +1,6 @@
-# Foundry Creature AI — version 0.47.0
+# Foundry Creature AI — version 0.48.0
 
-**Version 0.47.0:** adds [ranged and fallback tactics](ranged-tactics.md). Penalized ranged attacks are compared with closing and melee, preferred/backup/desperate plans are configurable, and the graph shows each stage and the Ranged engagement card. Version 0.46.0 added configurable [decision variety](decision-variety.md). Version 0.44.0 added editable three-dimensional [Water zones](water-zones.md) and verified the suite on Foundry 14.370 / PF2e 8.7.1.
+**Version 0.48.0:** uses the [bounded hierarchical planner](hierarchical-decision-graph-design.md) for every taught creature and the generic NPC fallback. It retains several viable intents, grounds their actual behavior components, compares concrete methods, and records the complete worker-safe trace for the [decision graph](decision-debugger.md). Version 0.47.0 added [ranged and fallback tactics](ranged-tactics.md); version 0.46.0 added configurable [decision variety](decision-variety.md).
 
 **Version 0.37.0:** Confused NPCs use a random-target attack override: allies and neutrals become potential targets, with ordinary Strikes, taught offensive cantrips and simple attack preparation/movement. Normal tactics, stealth, special abilities, complex aerial plans and slot spells are excluded. See [Confused AI](confused-ai.md). Reload every client with **Ctrl+F5**.
 

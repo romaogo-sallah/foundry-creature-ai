@@ -1,19 +1,21 @@
-# Tactical plans and behavior components — 0.28.3
+# Hierarchical tactics and behavior components — 0.48.0
 
-The runtime now separates **what a creature can do** from **what it is trying to achieve**. The design uses actor data, reusable components and shared systems, while retaining native PF2e bindings and specialized forecasts for complicated creatures. This plan layer is a Foundry implementation of the requested architecture, not a claim that these eight tactics were extracted from Dawnsbury Days.
+The runtime separates **what a creature can do** from **what it is trying to achieve**. Version 0.48.0 extends that model from a single selected tactic into a bounded hierarchy. The design uses actor data, reusable components and shared systems, while retaining native PF2e bindings and specialized forecasts for complicated creatures. This plan layer is a Foundry implementation of the requested architecture, not a claim that these tactics were extracted from Dawnsbury Days.
 
 ```mermaid
 flowchart TD
-    A[Actor components and native creature bindings] --> B[Known battlefield snapshot]
-    B --> C[Select tactic and goal]
-    C --> D[Activate policy components]
-    D --> E[Supported legal action candidates]
-    E --> F[Dawnsbury ranking and tactic preferences]
-    F --> G[Reserve action and resources]
-    G --> H[Native execution and awaited reactions]
-    H --> I[Persist goal and re-evaluate]
-    I --> B
+    A[Mandatory directives and PF2e legality] --> B[Multi-label doctrine]
+    B --> C[Shared belief and engagement analysis]
+    C --> D[Top-K intent portfolio]
+    D --> E[Engagement goals and temporal commitments]
+    E --> F[Component-backed AND methods]
+    F --> G[Grounded actions and activity timelines]
+    G --> H[Priority layer and bounded weighted choice]
+    H --> I[Native execution and awaited reactions]
+    I --> C
 ```
+
+The planner no longer commits to one abstract tactic before it knows whether that tactic has a good concrete method. It retains up to four applicable intents within a bounded score band, activates the appropriate policy components for each one, and merges their grounded candidates. The winning action carries its parent intent, temporal classification and activity timeline. Fleeing and Confused rules, critical recovery, PF2e legality, action budgets and preservation withdrawal remain directives rather than ordinary utility terms.
 
 ## Plan selection
 

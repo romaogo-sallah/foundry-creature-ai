@@ -2,6 +2,7 @@ import { chooseOption } from '../dawnsbury/chooser.mjs';
 import {gateFlightHunt} from './flight-candidates.mjs';
 import {gateActivityGoal} from './activity-plan.mjs';
 import {filterConditionActions} from './condition-rules.mjs';
+import {analyzeDecisionHierarchy,mergePortfolioCandidates,planArchetype,planningTrace,weightHierarchicalCandidate} from './hierarchical-planner.mjs';
 const policyBase=Symbol('behavior policy input');
 
 // Components are registered module code. Actor documents store identifiers and
@@ -18,9 +19,12 @@ export class BehaviorSystem {
   registerPlan(plan) {
     if (!plan.id || this.plans.has(plan.id) || typeof plan.score !== 'function' || !Array.isArray(plan.components))
       throw new Error('Invalid or duplicate tactical plan');
+    if(plan.intent!==undefined&&typeof plan.intent!=='string'||plan.delivery!==undefined&&!Array.isArray(plan.delivery)||
+      plan.posture!==undefined&&typeof plan.posture!=='string')throw new Error('Tactical plan metadata needs an intent, delivery array and posture');
     for (const id of [...plan.components,...plan.requires??[]]) if (!this.components.has(id)) throw new Error(`Unknown behavior component: ${id}`);
     if(plan.objective&&typeof plan.objective!=='function')throw new Error('A tactical objective needs a registered function');
-    this.plans.set(plan.id, Object.freeze({ ...plan, components: Object.freeze([...plan.components]) })); return this;
+    this.plans.set(plan.id, Object.freeze({ ...plan, components: Object.freeze([...plan.components]),
+      ...(plan.delivery?{delivery:Object.freeze([...plan.delivery])}:{}) })); return this;
   }
   configuration(raw, defaults) {
     if(raw?.components!==undefined&&!Array.isArray(raw.components)||raw?.plans!==undefined&&!Array.isArray(raw.plans)||
@@ -75,21 +79,23 @@ export class BehaviorSystem {
     const hierarchy={preferred:summary(selected,configuration.preferredPlan===selected.id?'configured':'ranked'),
       backup:summary(backup,configuredBackup?'configured':'next-best'),
       desperate:summary(desperate,configuredDesperate?'configured':'engagement-fallback'),used:'preferred'};
-    return this.selection(state,evaluations,selected,hierarchy,'preferred');
+    const analysis=analyzeDecisionHierarchy(state,evaluations,this.plans);
+    return this.selection(state,evaluations,selected,hierarchy,'preferred',analysis);
   }
-  selection(state,evaluations,selected,hierarchy,stage){
+  selection(state,evaluations,selected,hierarchy,stage,analysis=analyzeDecisionHierarchy(state,evaluations,this.plans)){
     const {configuration,context,previous}=state.behavior;
     const policies = this.plans.get(selected.id)?.components ?? [];
     const active = configuration.components.filter(id => this.components.get(id).kind !== 'policy' || policies.includes(id));
     const goal=this.plans.get(selected.id)?.objective?.(context,state,previous)??{kind:selected.id,label:selected.label};
     return { planId: selected.id, label: selected.label, reason: selected.reason, goal, activeComponents: active,
       scores:evaluations.filter(evaluation=>evaluation.applicable).sort((a,b)=>b.value-a.value||a.id.localeCompare(b.id)),evaluations,
-      hierarchy:{...hierarchy,used:stage},stage,context: { ...context }, configuration };
+      hierarchy:{...hierarchy,used:stage},stage,context: { ...context }, configuration,
+      planning:{analysis,archetype:planArchetype(selected.id,this.plans.get(selected.id))} };
   }
   fallbackSelection(state,primary,stage){
     const target=primary.hierarchy?.[stage];if(!target)return null;
     const selected=primary.evaluations.find(evaluation=>evaluation.id===target.planId&&evaluation.applicable);
-    return selected?this.selection(state,primary.evaluations,selected,primary.hierarchy,stage):null;
+    return selected?this.selection(state,primary.evaluations,selected,primary.hierarchy,stage,primary.planning?.analysis):null;
   }
   candidates(state, offered, selection = this.select(state)) {
     const enabled = new Set(selection.activeComponents);
@@ -151,23 +157,31 @@ export class BehaviorSystem {
     return {candidates:takeoff?flightSafe.filter(c=>c.kind==='fly'||['escape','stand'].includes(c.kind)):
       maintenance?flightSafe.filter(c=>['fly','eagleDive'].includes(c.kind)||c.actionCost<state.actionsRemaining):flightSafe,rejected,selection};
   }
+  portfolio(state,offered,primary=state.behavior.selection??this.select(state)){
+    const analysis=primary.planning?.analysis??analyzeDecisionHierarchy(state,primary.evaluations,this.plans);
+    const stageFor=planId=>primary.hierarchy?.preferred?.planId===planId?'preferred':primary.hierarchy?.backup?.planId===planId?'backup':
+      primary.hierarchy?.desperate?.planId===planId?'desperate':'alternative';
+    const selections=analysis.survivingPlanIds.map(planId=>{
+      if(planId===primary.planId)return primary;
+      const evaluation=primary.evaluations.find(entry=>entry.id===planId&&entry.applicable);
+      return evaluation?this.selection(state,primary.evaluations,evaluation,primary.hierarchy,stageFor(planId),analysis):null;
+    }).filter(Boolean);
+    if(!selections.length)selections.push(primary);
+    const runs=selections.map(selection=>{const built=this.candidates(state,offered,selection);return {...built,
+      candidates:built.candidates.map(candidate=>{const weighted=weightHierarchicalCandidate(candidate,state,selection,analysis);
+        weighted[policyBase]=candidate[policyBase]??candidate;return weighted;})};});
+    return {...mergePortfolioCandidates(runs),analysis,runs,primary};
+  }
   decide(state, offered, options = {}) {
-    const primary=state.behavior.selection??this.select(state),attempted=[],rejected=[];
-    for(const stage of ['preferred','backup','desperate']){
-      const selection=stage==='preferred'?primary:this.fallbackSelection(state,primary,stage);
-      if(!selection||attempted.includes(selection.planId))continue;attempted.push(selection.planId);
-      const built = this.candidates(state,offered,selection);
-      const decision = chooseOption(built.candidates,{actionsRemaining:state.actionsRemaining,
-        bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened,...options});
-      rejected.push(...built.rejected);
-      const deliberateHold=['hiding','lay-low','avoiding'].includes(selection.planId);
-      if(decision.chosen?.kind!=='endTurn'||deliberateHold||state.actionsRemaining<1||stage==='desperate'||
-        !primary.hierarchy?.backup&&!primary.hierarchy?.desperate)
-        return {...decision,rejected:[...decision.rejected,...rejected],diagnostics:{...state.diagnostics,tactic:built.selection}};
-    }
-    const built=this.candidates(state,offered,primary),decision=chooseOption(built.candidates,{actionsRemaining:state.actionsRemaining,
+    const portfolio=this.portfolio(state,offered),{analysis,runs,primary}=portfolio;
+    const decision=chooseOption(portfolio.candidates,{actionsRemaining:state.actionsRemaining,
       bonusMovementActions:state.bonusMovementActions??0,threatened:state.self.threatened,...options});
-    return {...decision,rejected:[...decision.rejected,...rejected,...built.rejected],diagnostics:{...state.diagnostics,tactic:built.selection}};
+    const chosenPlan=decision.chosen?.features?.planning?.planId,used=runs.find(run=>run.selection.planId===chosenPlan)?.selection??primary;
+    const rejected=[...decision.rejected,...portfolio.rejected].filter((entry,index,all)=>
+      all.findIndex(other=>other.id===entry.id&&other.reason===entry.reason)===index);
+    const complete={...decision,rejected},trace=planningTrace(state,analysis,runs,complete,used);
+    const tactic={...used,hierarchy:{...used.hierarchy,used:used.stage},planningTrace:trace};
+    return {...complete,diagnostics:{...state.diagnostics,tactic}};
   }
 }
 

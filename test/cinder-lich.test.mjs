@@ -22,6 +22,7 @@ import {environmentBetween} from '../src/foundry/environment-zones.mjs';
 const ns='foundry-creature-ai',data=Object.fromEntries(await Promise.all(['lich','cinder-dragon-young','cinder-dragon-caster-young'].map(async k=>[k,JSON.parse(await readFile(new URL(`./fixtures/${k}-mechanics.json`,import.meta.url)))])));
 function setup(kind='lich'){
  const f=fixture({npcData:data[kind],Adapter:PF2eSpellcasterAdapter,size:24});
+ globalThis.fromUuid=async()=>({toObject:()=>({name:'Native spell effect',type:'effect',img:'icons/svg/aura.svg',system:{rules:[],duration:{}},flags:{}})});
  f.player.document.x=f.boss.document.x+200;f.player.document.y=f.boss.document.y;f.player.actor.modeOfBeing='living';
  f.boss.document.unsetFlag=async(namespace,key)=>f.boss.document.setFlag(namespace,key,undefined);
  const BaseRoll=globalThis.Roll;globalThis.Roll=class extends BaseRoll{constructor(formula){super(formula);this.testFormula=formula;}async evaluate(){return this.testFormula==='1d4'?{total:2,toMessage:async m=>f.calls.push(['recharge',m])}:super.evaluate();}};

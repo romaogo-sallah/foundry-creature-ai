@@ -1,6 +1,6 @@
 // Compact, serializable record of the actual decision. Never reroll ties to
 // explain an action that has already been selected or executed.
-export function decisionExplanation(decision,{maxMovement=9}={}) {
+export function decisionExplanation(decision,{maxMovement=9,includePlanningTrace=false}={}) {
   let movementRows = 0;
   const probabilities=new Map((decision.selection?.candidates??[]).map(candidate=>[candidate.id,candidate.probability]));
   const options = (decision.ranked ?? []).filter(entry => {
@@ -25,6 +25,8 @@ export function decisionExplanation(decision,{maxMovement=9}={}) {
     groupGoal: candidate.features?.groupGoal ?? null,
     tactical: candidate.features?.tactical ?? null,
   }));
+  const tactic=decision.diagnostics?.tactic?{...decision.diagnostics.tactic}:null;
+  if(tactic&&!includePlanningTrace)delete tactic.planningTrace;
   return { chosenId: decision.chosen?.id ?? null, reason: decision.reason ?? '', tiedIds: decision.tiedIds ?? [],
     randomizedIds:decision.randomizedIds??[],selection:decision.selection??null,
     options, totalOptions: decision.ranked?.length ?? 0,
@@ -35,5 +37,5 @@ export function decisionExplanation(decision,{maxMovement=9}={}) {
     pursuitTargets: decision.diagnostics?.pursuitTargets ?? [],
     environmentTargets: decision.diagnostics?.environmentTargets ?? [],
     frontlineAnalysis: decision.diagnostics?.frontlineAnalysis ?? [],
-    tactic: decision.diagnostics?.tactic ?? null };
+    tactic };
 }

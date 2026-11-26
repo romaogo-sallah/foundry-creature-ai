@@ -96,7 +96,7 @@ test('real caster adapter applies each tactical adjustment once and rescoring pr
  const f=fixture(),{state:s}=await state(f),choice=f.adapter.decide(s).chosen;
  const policy=choice.scoringTerms.filter(t=>t.label.startsWith(s.behavior.selection.label+':'));
  assert.equal(new Set(policy.map(t=>t.label)).size,policy.length);
- const once=tacticalBehaviors.candidates(s,[choice],s.behavior.selection).candidates.find(c=>c.id===choice.id);
+ const once=tacticalBehaviors.portfolio(s,[choice],s.behavior.selection).candidates.find(c=>c.id===choice.id);
  const twice=chooseTacticalAction([once],s).chosen;
  assert.equal(twice.assessment.value,once.assessment.value);assert.deepEqual(twice.scoringTerms,once.scoringTerms);
  const defensive={...s.behavior.selection,planId:'defensive',label:'Defensive',activeComponents:s.behavior.selection.activeComponents.filter(id=>!['pressure','spell-control','spell-damage','spell-drain','spell-support'].includes(id))};

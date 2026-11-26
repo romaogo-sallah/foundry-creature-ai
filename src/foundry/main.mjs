@@ -75,7 +75,7 @@ async function calculateDecision(token,config,{fullExplanation=false}={}){
   const ledger=await adapter.readLedger(adapter.turnKey());
   if(ledger.uncertain)throw new Error('Correct the interrupted action ledger first');
   const state=await adapter.snapshot(ledger),decision=await adapter.planDecision(state);
-  return {adapter,ledger,decision,record:decisionExplanation(decision,{maxMovement:fullExplanation?Infinity:9})};
+  return {adapter,ledger,decision,record:decisionExplanation(decision,{maxMovement:fullExplanation?Infinity:9,includePlanningTrace:fullExplanation})};
 }
 
 export async function preview(token = selected(), config) {

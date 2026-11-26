@@ -683,7 +683,7 @@ export class PF2eCreatureAdapter {
     this.lastDecision = decisionLog;
     // Keep the complete trace in memory for the debugger without inflating the
     // persisted chat message with every evaluated movement square.
-    this.lastDecisionGraph=decisionExplanation(decision,{maxMovement:Infinity});
+    this.lastDecisionGraph=decisionExplanation(decision,{maxMovement:Infinity,includePlanningTrace:true});
     const target = choice?.targetId ? canvas.tokens.get(choice.targetId)?.name : '';
     const explanation = (!choice || choice.kind === 'endTurn') && ledger.actionsRemaining > 0 && !ledger.done
       ? decision.diagnostics?.noActionReason ?? 'No useful supported action is currently available.' : null;

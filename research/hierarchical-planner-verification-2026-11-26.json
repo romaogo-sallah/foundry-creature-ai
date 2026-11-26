@@ -1,0 +1,64 @@
+{
+  "version": "0.48.0",
+  "date": "2026-11-26",
+  "feature": "Bounded hierarchical intent portfolio and runtime decision DAG",
+  "implemented": {
+    "directives": "PF2e legality, recovery, Fleeing, Confused and preservation withdrawal remain outside ordinary utility competition",
+    "doctrine": "Each actor exposes simultaneous contribution, delivery, risk and resource dimensions",
+    "engagements": "Known actor-target relations record current and action-distance reach, counter-threat, visibility, cover, concealment and range penalty",
+    "portfolio": "Up to four applicable intents within four abstract score points are grounded through their own active behavior components",
+    "methods": "Concrete actions and existing multi-action turn plans are classified as immediate payoff, same-turn setup, next-turn setup, hold, recovery or disengagement",
+    "selection": "Grounded methods are merged before the existing priority-layer and bounded-variety chooser; a lower abstract intent can win through a stronger concrete method",
+    "weights": "Severe range penalties, useful range closing, same-turn setup, target alignment and belief-safe defensive holds are explicit recorded terms",
+    "trace": "The worker emits foundry-creature-ai/planning-trace@1 with shared facts, engagement relations, OR intents, engagement hypotheses, temporal choices, AND methods, primitives and outcomes",
+    "privacy": "Doctrine and traces use the prepared belief state; secret check truth is not added to decision input",
+    "diagnosticBound": "Each intent displays at most six grounded methods and at most 24 individual rejection nodes"
+  },
+  "deferred": [
+    "region-first tactical-query objects",
+    "abstract opponent response simulation",
+    "complete current-turn plus next-turn six-action beam search",
+    "cross-creature encounter bidding and reservations"
+  ],
+  "automatedVerification": {
+    "command": "npm test",
+    "testFiles": 105,
+    "workers": 11,
+    "tests": 1275,
+    "passed": 1275,
+    "failed": 0,
+    "durationSeconds": 30.1,
+    "newCoverage": [
+      "multi-label doctrine and shared engagement analysis",
+      "immediate, same-turn setup and next-turn setup classification",
+      "major range-penalty cost and useful approach value",
+      "a lower abstract hypothesis winning through its concrete method",
+      "one selected path through the runtime AND/OR graph",
+      "belief-safe Hide retention",
+      "safety withdrawal dominance over unrelated equipment setup",
+      "idempotent tactical and hierarchical rescoring",
+      "real worker decisions for all taught creature profiles"
+    ]
+  },
+  "build": {
+    "packages": 5,
+    "sourceModules": 218,
+    "archive": "releases/pf2e-tactical-suite-0.48.0.zip",
+    "archiveBytes": 896003,
+    "archiveSha256": "c3f1c75d01a1a1905060f340e9e5d16e005543316881fe356d082d0007fbefa0"
+  },
+  "installation": {
+    "dataPath": "C:/Users/Roman/AppData/Local/FoundryVTT/Data/modules",
+    "installedVersions": {
+      "pf2e-tactical-core": "0.48.0",
+      "pf2e-tactical-environment": "0.48.0",
+      "pf2e-tactical-conditions": "0.48.0",
+      "pf2e-tactical-movement": "0.48.0",
+      "foundry-creature-ai": "0.48.0"
+    },
+    "installedPlanner": true,
+    "installedGuide": true,
+    "reload": "Ctrl+F5 required in every connected Foundry client",
+    "liveVerification": "No live encounter was changed or run during installation"
+  }
+}

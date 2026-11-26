@@ -53,6 +53,7 @@ tacticalBehaviors.registerComponent({id:'withdraw',label:'Avoid immediate danger
 for(const [role,label]of [['control','Control an open threat'],['damage','Exploit a damage opening'],['drain','Damage while building a temporary HP buffer'],['support','Keep injured allies fighting']]){
   tacticalBehaviors.registerComponent({id:`spell-${role}`,label,kind:'policy',adjust:(candidate,state)=>scenarioBonus(role,candidate,state)});
   tacticalBehaviors.registerPlan({id:`spell-${role}`,label:role==='control'?'Spell control':role==='damage'?'Spell assault':role==='support'?'Spell support':'Life drain',
+    intent:role==='support'?'support':role==='control'?'control':'damage',delivery:['spell'],posture:'exploit',
     requires:['spellcasting'],components:[`spell-${role}`,...role==='control'?['protection']:['pressure']],
     score:(_context,state)=>state.casterScenarios?.[role]?{value:6+Math.min(6,state.casterScenarios[role].value*0.25),
       reason:role==='control'?'A supported control spell has the best local opening':role==='damage'?'An affordable damage spell can exploit the current position':'Touch damage and additional temporary HP are worth the approach risk'}:null,
@@ -79,7 +80,13 @@ function objective(id,context,state,previous){
     label:`${id==='kiting'?'Keep range from':id==='swarming'?'Surround':id==='charge'?'Close to':'Engage'} ${target?.name??'known opponents'}`,
     targetId:target?.id??null,...id==='kiting'?{minimumDistance:(target?.tactics?.reach??5)+10}:id==='charge'?{desiredDistance:(state.self.reachSquares??1)*5}:{}};
 }
-const plan=(id,label,components,score)=>tacticalBehaviors.registerPlan({id,label,components,score,
+const PLAN_META={aggressive:{intent:'damage',delivery:['melee','ranged','spell'],posture:'exploit'},
+  desperate:{intent:'damage',delivery:['melee','ranged','spell'],posture:'desperate'},charge:{intent:'damage',delivery:['melee'],posture:'setup'},
+  ranged:{intent:'damage',delivery:['ranged'],posture:'position'},defensive:{intent:'survive',delivery:['melee','ranged','spell'],posture:'hold'},
+  avoiding:{intent:'survive',delivery:['movement'],posture:'disengage'},kiting:{intent:'damage',delivery:['ranged','movement'],posture:'disengage'},
+  hiding:{intent:'survive',delivery:['stealth'],posture:'setup'},swarming:{intent:'control',delivery:['melee'],posture:'setup'},
+  supporting:{intent:'support',delivery:['support'],posture:'setup'}};
+const plan=(id,label,components,score)=>tacticalBehaviors.registerPlan({id,label,components,score,...PLAN_META[id],
   ...(id==='hiding'?{requires:['stealth']}:{}),objective:(context,state,previous)=>objective(id,context,state,previous)});
 plan('aggressive','Aggressive',['pressure'],c=>({value:3+(c.immediateAttack?2:0),reason:c.immediateAttack?'A useful attack is available':'Engage known opponents'}));
 plan('desperate','Desperate engagement',['advance','pressure'],()=>({value:0.25,reason:'Last-resort engagement when preferred and backup tactics produce no useful legal action'}));
@@ -99,6 +106,7 @@ plan('kiting','Kiting',['distance','protection'],c=>c.ranged&&c.closingMelee&&c.
 plan('hiding','Hiding',['protection'],c=>(c.hideUseful||c.hiddenBelief)&&c.visibleEnemies>0&&!c.immediateAttack&&!(c.planAge>=2||c.waitPatienceReached)?
   {value:c.caster||c.skulk||c.health<0.5?6:3.5,reason:c.hiddenBelief?'Retain the estimated hiding advantage while waiting':'Protection permits hiding before engagement'}:null);
 tacticalBehaviors.registerPlan({id:'lay-low',label:'Lay low',requires:['stealth'],components:['protection'],
+  intent:'survive',delivery:['stealth'],posture:'hold',
   score:context=>context.unanswerableAirThreat?
     {value:11,reason:'Known enemies are above available attack reach; use stealth instead of a futile pursuit'}:null,
   objective:(context,state,previous)=>objective('lay-low',context,state,previous)});
@@ -107,10 +115,12 @@ plan('swarming','Swarming',['surround','pressure'],c=>(c.pack||c.melee)&&c.allie
 plan('supporting','Supporting',['assist','protection'],c=>c.supportRecipients>0?
   {value:7,reason:'Allies can benefit from a supported enabling action'}:null);
 tacticalBehaviors.registerPlan({id:'aerial-hunt',label:'Aerial hunt',requires:['flight'],components:['distance','protection'],
+  intent:'damage',delivery:['flight','melee'],posture:'setup',
   score:(_context,state)=>state.flight?.hunt?{value:12,reason:state.flight.hunt.reason}:null,
   objective:(context,state,previous)=>objective('aerial-hunt',context,state,previous)});
 for(const [id,mode,label]of [['aerial-engage',null,'Aerial engagement'],['aerial-disengage','disengage','Aerial disengagement']])
   tacticalBehaviors.registerPlan({id,label,requires:['flight'],components:mode?['distance','protection']:['pressure','distance'],
+    intent:mode?'survive':'damage',delivery:['flight',...(mode?[]:['melee','ranged'])],posture:mode?'disengage':'exploit',
     score:(_context,state)=>state.flight?.airCombat&&(mode?state.flight.airCombat.mode===mode:state.flight.airCombat.mode!=='disengage')?
       {value:12,reason:state.flight.airCombat.reason}:null,
     objective:(context,state,previous)=>objective(id,context,state,previous)});

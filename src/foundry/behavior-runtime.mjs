@@ -155,7 +155,10 @@ async function enrichState(adapter,state,options={}) {
           {label:'Path and visibility risks',contribution:-risk-(layingLow?0:sight.penalty)-sight.returnPenalty}]});
     }
   }
-  state.sharedBehaviors={hideCandidates,protectedMoves,sneakCandidates,hiddenBelief:Object.values(at).some(entry=>entry.stealthChance>0)};
+  // The actor reasons from its secret-check belief, not the GM-known result.
+  // Actual observer state remains authoritative for rendering and execution.
+  state.sharedBehaviors={hideCandidates,protectedMoves,sneakCandidates,
+    hiddenBelief:knowledge.priors.some(prior=>prior.unseenChance>0)||Object.values(at).some(entry=>entry.stealthChance>0)};
   if(!configuration.components.includes('spellcasting')){
     state.spells=[];for(const move of state.moves??[])move.spells=[];
   }
@@ -185,7 +188,7 @@ export function attachBehaviorSystem(adapter) {
   attached.add(adapter);
   const snapshot=adapter.snapshot.bind(adapter),execute=adapter.execute.bind(adapter),record=adapter.recordOutcome.bind(adapter);
   const candidates=adapter.candidates.bind(adapter);
-  adapter.candidates=state=>state.behavior?tacticalBehaviors.candidates(state,candidates(state),state.behavior.selection??tacticalBehaviors.select(state)).candidates:candidates(state);
+  adapter.candidates=state=>state.behavior?tacticalBehaviors.portfolio(state,candidates(state),state.behavior.selection??tacticalBehaviors.select(state)).candidates:candidates(state);
   const speed=adapter.groundSpeedFor.bind(adapter),movementOptions=adapter.movementOptions.bind(adapter),revalidate=adapter.revalidate.bind(adapter);
   adapter.groundSpeedFor=choice=>choice.sharedSneak?sneakSpeed(adapter):speed(choice);
   adapter.movementOptions=choice=>adapter.sharedSneaking?{...movementOptions(choice),[STEALTH_MOVEMENT]:true,showRuler:false}:movementOptions(choice);
@@ -279,6 +282,7 @@ export async function configureBehaviors(document,configuration={}) {
 }
 export function behaviorCatalog(){return {components:[...tacticalBehaviors.components.values()].map(({id,label,kind,core,actionKinds})=>
   ({id,label,kind,core:Boolean(core),actionKinds:[...actionKinds??[]]})),
-  plans:[...tacticalBehaviors.plans.values()].map(({id,label,components,requires})=>({id,label,components:[...components],requires:[...requires??[]]}))};}
+  plans:[...tacticalBehaviors.plans.values()].map(({id,label,components,requires,intent,delivery,posture})=>
+    ({id,label,components:[...components],requires:[...requires??[]],intent:intent??null,delivery:[...delivery??[]],posture:posture??null}))};}
 export const behaviorAPI={configure:configureBehaviors,catalog:behaviorCatalog,
   registerComponent:component=>tacticalBehaviors.registerComponent(component),registerPlan:plan=>tacticalBehaviors.registerPlan(plan)};
