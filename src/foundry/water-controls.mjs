@@ -1,4 +1,4 @@
-import {WATER_BEHAVIOR_TYPE,validateWaterElevations,waterConfig} from './water-geometry.mjs';
+import {WATER_BEHAVIOR_TYPE,WATER_BEHAVIOR_TYPES,validateWaterElevations,waterConfig} from './water-geometry.mjs';
 import {escapeHTML} from './rules-context.mjs';
 
 export async function configureWater(region,settings){
@@ -6,7 +6,7 @@ export async function configureWater(region,settings){
   if(!region||region.parent?.id!==canvas.scene?.id)throw new Error('Choose a Region in the viewed scene.');
   const elevation=validateWaterElevations(settings);
   await region.update({elevation});
-  const existing=(region.behaviors?.contents??[]).find(behavior=>behavior.type===WATER_BEHAVIOR_TYPE);
+  const existing=(region.behaviors?.contents??[]).find(behavior=>WATER_BEHAVIOR_TYPES.has(behavior.type));
   if(existing){await existing.update({disabled:settings.enabled===false});return existing;}
   const [created]=await region.createEmbeddedDocuments('RegionBehavior',[{name:'Water',type:WATER_BEHAVIOR_TYPE,
     disabled:settings.enabled===false,system:{}}]);
@@ -18,7 +18,7 @@ export async function openWaterZones(regionId){
   const regions=canvas.scene.regions.contents;
   if(!regions.length){ui.notifications.info('Draw a Scene Region over the water first, then open Water zones.');return;}
   const region=regions.find(entry=>entry.id===regionId)??canvas.regions?.controlled?.[0]?.document??regions[0];
-  const existing=(region.behaviors?.contents??[]).find(entry=>entry.type===WATER_BEHAVIOR_TYPE),saved=waterConfig(region,{includeDisabled:true});
+  const existing=(region.behaviors?.contents??[]).find(entry=>WATER_BEHAVIOR_TYPES.has(entry.type)),saved=waterConfig(region,{includeDisabled:true});
   const value={bottom:saved?.bottom??Math.min(-10,region.elevation?.bottom??-10),top:saved?.top??region.elevation?.top??0};
   const options=Object.fromEntries(regions.map(entry=>[entry.id,entry.name]));
   const answer=await foundry.applications.api.DialogV2.wait({window:{title:'Tactical Rules — Water zones'},

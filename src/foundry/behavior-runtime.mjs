@@ -17,6 +17,9 @@ import {buildTeamBoard} from '../framework/team-coordinator.mjs';
 
 const ns='foundry-creature-ai';
 const attached=new WeakSet();
+const MELEE_DOCTRINES=new Set(['wolf','ogre','ogre-boss','eagle','manticore-scorpion','cinder-dragon','vampire-guardian','vampire-count']);
+const RANGED_DOCTRINES=new Set(['kobold-scout','manticore-quill']);
+const CASTER_DOCTRINES=new Set(['goblin-pyro','dero-magister','lich','spellcaster','cinder-dragon-caster','vampire-mastermind']);
 const scoped=value=>value?.combatId===game.combat?.id&&value?.sceneId===canvas.scene?.id;
 const tokenDistance=(a,b)=>{try{return a.distanceTo(b);}catch{return Math.hypot((a.center?.x??0)-(b.center?.x??0),(a.center?.y??0)-(b.center?.y??0))/(canvas.dimensions?.distancePixels??1)*5;}};
 function formation(tokens){
@@ -40,7 +43,8 @@ function foundryTeamBoard(adapter,state,context){
     const located=friendly||enemy?.awareness?.state!=='undetected',actions=actor.system?.actions??[],hasRanged=actions.some(action=>
       action?.item?.isRanged||action?.item?.system?.range?.increment||action?.options?.includes?.('ranged'));
     const hasMelee=actions.some(action=>!action?.item?.isRanged&&!action?.item?.system?.range?.increment),caster=Boolean(actor.spellcasting?.collections?.size||actor.itemTypes?.spellcastingEntry?.length);
-    const role=enemy?.tactics?.role??(caster?'caster':hasRanged&&!hasMelee?'ranged':'melee'),hp=actor.hitPoints;
+    const subjectRole=context.meleePrimary?'melee':context.rangedPrimary?'ranged':context.caster?'caster':null;
+    const role=enemy?.tactics?.role??(actor===adapter.actor&&subjectRole?subjectRole:caster?'caster':hasRanged&&!hasMelee?'ranged':'melee'),hp=actor.hitPoints;
     const actorItems=Array.isArray(actor.items)?actor.items:actor.items?.contents??Object.values(actor.itemTypes??{}).flat();
     const skulk=actor===adapter.actor?Boolean(context.skulk):actorItems.some(item=>['sneak-attack','sneak-attack-dedication'].includes(item.slug));
     actors.push({id:token.id,team:friendly?'friendly':'hostile',hp:hp.value,maxHp:hp.max,position:located?{x:token.document.x/canvas.grid.size,y:token.document.y/canvas.grid.size}:null,
@@ -100,9 +104,14 @@ export function battleContext(adapter,state,{deferDecision=false}={}) {
     state.strikes?.some(strike=>strike.ranged&&((state.bolts??1)>0||strike.available!==false)));
   // A vampire with only a short-range gaze is a melee hybrid, not a protected
   // artillery caster. Long-range spellcasters such as liches retain distance.
-  const melee=Boolean(state.strikes?.some(strike=>!strike.ranged))&&
-    !hostileSpells.some(spell=>spell.range>30)&&(!state.bowReady||state.bolts<1);
-  const meleePrimary=melee,rangedPrimary=ranged&&!meleePrimary;
+  const melee=Boolean(state.strikes?.some(strike=>!strike.ranged))&&!hostileSpells.some(spell=>spell.range>30);
+  // A sidearm changes the available actions, not the creature's battlefield
+  // job. In particular, drawing a javelin must not turn an ogre bruiser into a
+  // protected ranged unit and cancel its charge plan on the next decision.
+  const profileId=adapter.profileId;
+  const fixedMelee=MELEE_DOCTRINES.has(profileId),fixedRanged=RANGED_DOCTRINES.has(profileId),fixedCaster=CASTER_DOCTRINES.has(profileId);
+  const meleePrimary=fixedMelee?melee:fixedRanged||fixedCaster?false:melee&&(!state.bowReady||state.bolts<1);
+  const rangedPrimary=fixedRanged?ranged:fixedMelee||fixedCaster?false:ranged&&!meleePrimary;
   const configuration=behaviorConfiguration(adapter);
   const supportRecipients=!configuration.components.includes('leadership')||state.commandedThisTurn?0:
     state.supportRecipients??(state.commandRecipients??[]).filter(ally=>ally.needsMovement!==false).length;

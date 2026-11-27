@@ -2,6 +2,8 @@
 
 Version 0.55.0 implements the battlefield-state architecture described in [the tactical scenario research](tactical-scenarios-and-battlefield-state-research-2026-11-26.md). The planner no longer treats a flat collection of tactic scores as its interpretation of combat. Actor-visible evidence now produces simultaneous scenario hypotheses; a team board selects objectives, assigns roles, reserves lanes and effect budgets; actor plans then ground those assignments into legal PF2e actions.
 
+Version 0.55.1 fixes the live Foundry integration discovered on the Valley scene. Foundry 14 namespaced Water Region documents as `pf2e-tactical-movement.water`, and native darkness, active-effect and presentation behaviors no longer disable every AI movement candidate. Level changes, teleports, macros and unknown scripts remain guarded. Creature doctrine is also stable across equipment changes: drawing a ranged sidearm does not reclassify an ogre or another melee-primary profile as a ranged-line combatant.
+
 ## Runtime pipeline
 
 ```mermaid

@@ -55,6 +55,22 @@ test('all known profile bindings get the same runtime plan selection and explici
   }
 });
 
+test('drawing an ogre javelin keeps its melee doctrine and charge role',async()=>{
+  const f=fixture({size:32});f.player.document.x=2400;
+  const parts=f.adapter.parts();
+  await parts.javelin.update({'system.equipped.carryType':'held','system.equipped.handsHeld':1});
+  f.adapter=createCreatureAdapter(f.boss,null,{reactions:f.reactions});
+  const state=await snapshot(f),context=state.behavior.context;
+  assert.equal(context.melee,true);assert.equal(context.ranged,true);
+  assert.equal(context.meleePrimary,true);assert.equal(context.rangedPrimary,false);
+  assert.equal(state.teamBoard.subjectAssignment.role,'charge-lane');
+  assert.equal(state.teamBoard.subjectAssignment.preferredPlans[0],'charge');
+  const decision=f.adapter.decide(state);
+  assert.equal(decision.diagnostics.tactic.hierarchy.preferred.planId,'charge');
+  assert.equal(decision.chosen.kind,'stride','a poor sidearm shot must not replace closing movement');
+  assert.ok(decision.chosen.features.planning.alternativePlans.includes('charge'));
+});
+
 test('a shared Hide component works on a generic melee actor and respects secret results',async()=>{
   const f=basicFixture();f.player.document.x=1200;fog(f);stealthRoll(f,7,1);
   await configureBehaviors(f.actor,{preferredPlan:'hiding'});

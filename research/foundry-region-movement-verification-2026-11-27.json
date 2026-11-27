@@ -1,0 +1,55 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.55.1",
+  "date": "2026-11-27",
+  "feature": "Foundry 14 Region movement compatibility and stable creature doctrine",
+  "observedFailure": {
+    "world": "arena",
+    "scene": "Valley",
+    "message": "Region behaviors require manual movement: Rocks, Water",
+    "effect": "All movement candidates were removed, so distant ogres and kobolds could Seek, draw equipment, or end turns without engaging."
+  },
+  "rootCauses": [
+    "Foundry 14 stored the custom Water behavior as pf2e-tactical-movement.water while the runtime recognized only the legacy water type.",
+    "The unsupported movement guard treated native adjustDarknessLevel and other non-route presentation behaviors as arbitrary movement scripts.",
+    "A ready ranged sidearm could suppress melee-primary classification and assign an ogre to a ranged firing line."
+  ],
+  "implemented": {
+    "water": "Recognize the Foundry 14 namespaced Water document type and retain read compatibility for legacy water documents.",
+    "regions": "Allow native darkness, active-effect, scrolling-text, pause, weather and toggle behaviors while retaining guards for level changes, teleports, macros and unknown scripts.",
+    "doctrine": "Keep explicit melee, ranged and caster profile doctrine stable across equipment state changes and expose that doctrine to the team coordinator.",
+    "regressions": "Cover namespaced and legacy Water, harmless and unknown Region behaviors, and an ogre holding a javelin at long range."
+  },
+  "commands": [
+    {
+      "command": "node --test test/water-zones.test.mjs test/terrain-scene-setup.test.mjs test/behavior-runtime.test.mjs",
+      "result": "pass",
+      "tests": 40
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "tests": 1304,
+      "workers": 11,
+      "seconds": 30.0
+    }
+  ],
+  "build": {
+    "packages": 5,
+    "sourceModules": 226,
+    "archive": "releases/pf2e-tactical-suite-0.55.1.zip",
+    "archiveBytes": 939219,
+    "archiveSha256": "3C84085A16DC6D29422F6F48D54D2D33046D8002504839159133690CED5DFE84"
+  },
+  "installation": {
+    "dataPath": "C:/Users/Roman/AppData/Local/FoundryVTT/Data/modules",
+    "packages": 5,
+    "installedVersion": "0.55.1",
+    "installedSourceHashesMatchBuild": true,
+    "liveWorld": "Arena",
+    "foundryVersion": "14.370",
+    "systemVersion": "8.7.1",
+    "mcpConnected": true,
+    "encounterAdvancedForVerification": false
+  }
+}

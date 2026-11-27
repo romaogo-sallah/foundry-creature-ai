@@ -1,4 +1,9 @@
-export const WATER_BEHAVIOR_TYPE='water';
+// Foundry namespaces custom Region behavior document types with their owning
+// module ID in stored documents. Keep the legacy value readable so worlds
+// created before the v14 registration change do not lose their water zones.
+export const WATER_BEHAVIOR_TYPE='pf2e-tactical-movement.water';
+export const LEGACY_WATER_BEHAVIOR_TYPE='water';
+export const WATER_BEHAVIOR_TYPES=new Set([WATER_BEHAVIOR_TYPE,LEGACY_WATER_BEHAVIOR_TYPE]);
 
 const epsilon=0.01;
 const source=document=>document?._source??document;
@@ -13,7 +18,7 @@ export function validateWaterElevations({bottom,top}){
 
 export function waterConfig(region,{includeDisabled=false}={}){
   if(!region)return null;
-  const behavior=(region.behaviors?.contents??[]).find(entry=>entry.type===WATER_BEHAVIOR_TYPE&&(includeDisabled||!entry.disabled));
+  const behavior=(region.behaviors?.contents??[]).find(entry=>WATER_BEHAVIOR_TYPES.has(entry.type)&&(includeDisabled||!entry.disabled));
   if(!behavior)return null;
   try{return {...validateWaterElevations(region.elevation??{}),region,behavior};}catch{return null;}
 }

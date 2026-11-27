@@ -4,7 +4,7 @@ import {fixture} from './helpers/ogre-fixture.mjs';
 import {ManualMovement} from '../src/foundry/manual-movement.mjs';
 import {combatStamp} from '../src/foundry/reaction-prompts.mjs';
 import {landSpeed,swimSpeed} from '../src/foundry/flight-costs.mjs';
-import {WATER_BEHAVIOR_TYPE,validateWaterElevations,waterAt,waterConfig,waterMovementPath} from '../src/foundry/water-geometry.mjs';
+import {WATER_BEHAVIOR_TYPE,LEGACY_WATER_BEHAVIOR_TYPE,validateWaterElevations,waterAt,waterConfig,waterMovementPath} from '../src/foundry/water-geometry.mjs';
 import {registerWaterBehavior} from '../src/foundry/water-behavior.mjs';
 import {configureWater,openWaterZones} from '../src/foundry/water-controls.mjs';
 
@@ -29,6 +29,8 @@ test('Water Region elevation bounds form a negative-elevation swimmable volume',
   assert.deepEqual(validateWaterElevations({bottom:'-20',top:'0'}),{bottom:-20,top:0});
   assert.throws(()=>validateWaterElevations({bottom:0,top:0}),/higher/);
   assert.equal(waterConfig(f.region).bottom,-20);
+  f.behavior.type=LEGACY_WATER_BEHAVIOR_TYPE;assert.equal(waterConfig(f.region).bottom,-20,'legacy worlds retain water behavior');
+  f.behavior.type=WATER_BEHAVIOR_TYPE;
   assert.equal(waterAt(f.boss.document,{x:200,y:200,elevation:0,level:'ground'}).region,f.region,'surface is included');
   assert.equal(waterAt(f.boss.document,{x:200,y:200,elevation:-15,level:'ground'}).region,f.region);
   assert.equal(waterAt(f.boss.document,{x:200,y:200,elevation:-25,level:'ground'}),null);
@@ -67,7 +69,7 @@ test('Water behavior registration and GM helper create one editable native behav
   const f=setup();f.region.behaviors.contents=[];
   class Base{};globalThis.foundry={data:{regionBehaviors:{RegionBehaviorType:Base}}};globalThis.CONFIG={RegionBehavior:{dataModels:{}}};
   assert.equal(registerWaterBehavior(),true);const Model=CONFIG.RegionBehavior.dataModels[WATER_BEHAVIOR_TYPE];
-  assert.ok(Model.prototype instanceof Base);assert.deepEqual(Model.defineSchema(),{});assert.equal(CONFIG.RegionBehavior.typeLabels.water,'Water');
+  assert.ok(Model.prototype instanceof Base);assert.deepEqual(Model.defineSchema(),{});assert.equal(CONFIG.RegionBehavior.typeLabels[WATER_BEHAVIOR_TYPE],'Water');
   const created=await configureWater(f.region,{bottom:-30,top:-5,enabled:true});
   assert.equal(f.region.elevation.bottom,-30);assert.equal(f.region.elevation.top,-5);assert.equal(created.type,WATER_BEHAVIOR_TYPE);
   await configureWater(f.region,{bottom:-25,top:0,enabled:false});assert.equal(created.disabled,true);assert.equal(f.region.behaviors.contents.length,1);

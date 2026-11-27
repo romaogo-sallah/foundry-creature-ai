@@ -36,6 +36,17 @@ test('attached environment behavior owns enable/disable and coexists with native
   region.hidden=false;b.system.source='unknown code';assert.equal(unsupportedMovementRegions({regions:{contents:[region]}}).length,1,'unknown scripts still need manual movement');
 });
 
+test('presentation behaviors and namespaced Water do not disable AI movement',()=>{
+  const region={hidden:false,behaviors:{contents:[
+    {type:'adjustDarknessLevel',disabled:false,system:{}},
+    {type:'displayScrollingText',disabled:false,system:{}},
+    {type:'pf2e-tactical-movement.water',disabled:false,system:{}},
+  ]}};
+  assert.deepEqual(unsupportedMovementRegions({regions:{contents:[region]}}),[]);
+  region.behaviors.contents.push({type:'executeScript',disabled:false,system:{source:'unknown movement code'}});
+  assert.deepEqual(unsupportedMovementRegions({regions:{contents:[region]}}),[region],'unknown movement scripts remain guarded');
+});
+
 function setupFixture(){
   const calls=[],flags=new Map(),note={_id:'note',x:50,y:50,text:'Concealment',levels:[]};
   const scene={id:'scene',active:true,notes:new Map([['note',note]]),regions:{contents:[]},getFlag:(_,key)=>flags.get(key),setFlag:async(_,key,value)=>flags.set(key,value),

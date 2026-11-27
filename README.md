@@ -1,6 +1,6 @@
 # Foundry creature AI
 
-**Version 0.55.0:** replaces the flat situation-to-tactic bridge with a shared [tactical scenario runtime](docs/tactical-scenario-runtime.md). Confidence-rated evidence produces simultaneous scenarios; a team board computes frontlines, role bids, actor assignments, lane reservations, and target effect budgets; existing tactics become methods under those assignments. `planning-trace@3` shows the actual reduction from belief state through scenario and team purpose to the bounded legal action shortlist. The six-ogre versus six-kobold fixture verifies per-scout ambush completion, staggered kiting/rear guards, charge lanes, hostile-only targeting, and bounded focus.
+**Version 0.55.1:** fixes Foundry 14 Region compatibility that could remove every movement candidate on scenes with namespaced Water or harmless native presentation behaviors. It also keeps melee-primary doctrine stable when a bruiser draws a ranged sidearm. Version 0.55.0 introduced the shared [tactical scenario runtime](docs/tactical-scenario-runtime.md), including battlefield evidence, scenarios, team assignments, lane reservations, target budgets, and `planning-trace@3`.
 
 **Version 0.52.0:** adds a 300×300-foot browser combat scenario for six ogres against six kobold scouts, with ruin walls, cover, fog, rubble and hazardous pits. A reusable multi-goal route field makes the 60×60 simulation practical while preserving walls, occupancy and alternating PF2e diagonals. The replay scales large maps and labels attacker and target teams explicitly.
 
