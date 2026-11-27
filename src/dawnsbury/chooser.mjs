@@ -32,7 +32,7 @@ export function priorityLayer(option) {
   let layer = 1;
   // Foundry scout/caster plans compare the remaining turn, including survival;
   // their retreats must be comparable with attacks over the same action budget.
-  if (value > 0) layer = !movement || goodAttacksLeft || option.fullTurnPlan ? 6 : 5;
+  if (value > 0) layer = option.rangeCompromised ? 5 : !movement || goodAttacksLeft || option.fullTurnPlan ? 6 : 5;
   else if ((value === 0 && movement && currentNearestEnemy != null && nearestEnemy < currentNearestEnemy) ||
     Math.abs(value + 1337) < 1) layer = 4;
   else if (value === 0) layer = movement ? 3 : 2;

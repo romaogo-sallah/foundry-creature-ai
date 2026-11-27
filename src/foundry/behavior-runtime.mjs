@@ -13,6 +13,7 @@ import { flySpeed } from './flight-costs.mjs';
 import {groundThreats} from './ground-threats.mjs';
 import {movingMist,vampireForm} from './vampire-state.mjs';
 import {preparedStrikeCandidates} from '../framework/strike-capability.mjs';
+import {buildTeamBoard} from '../framework/team-coordinator.mjs';
 
 const ns='foundry-creature-ai';
 const attached=new WeakSet();
@@ -24,6 +25,35 @@ function formation(tokens){
   const clusterSize=Math.max(...tokens.map(token=>tokens.filter(other=>tokenDistance(token,other)<=20).length));
   return {averageNearest:nearest.reduce((sum,value)=>sum+value,0)/nearest.length,spread:nearest.reduce((sum,value)=>sum+value,0)/nearest.length>30,
     clusterSize,clustered:clusterSize>=3};
+}
+
+function foundryTeamBoard(adapter,state,context){
+  const combatants=Array.from(game.combat?.combatants??[]),tokenById=new Map(canvas.tokens.placeables.map(token=>[token.id,token]));
+  const live=combatants.filter(combatant=>!combatant.defeated&&(combatant.actor?.hitPoints?.value??0)>0&&(combatant.sceneId??combatant.token?.parent?.id??canvas.scene.id)===canvas.scene.id);
+  const knownEnemies=new Map((state.enemies??[]).map(enemy=>[enemy.id,enemy]));
+  const actors=[];
+  for(const combatant of live){const token=tokenById.get(combatant.tokenId),actor=combatant.actor;if(!token||!actor)continue;
+    const friendly=actor===adapter.actor||adapter.actor.isAllyOf(actor),enemy=knownEnemies.get(token.id);
+    if(!friendly&&!enemy)continue;
+    // Hidden creatures have a known square. Undetected creatures do not grant
+    // the coordinator their live canvas position; actor memory remains local.
+    const located=friendly||enemy?.awareness?.state!=='undetected',actions=actor.system?.actions??[],hasRanged=actions.some(action=>
+      action?.item?.isRanged||action?.item?.system?.range?.increment||action?.options?.includes?.('ranged'));
+    const hasMelee=actions.some(action=>!action?.item?.isRanged&&!action?.item?.system?.range?.increment),caster=Boolean(actor.spellcasting?.collections?.size||actor.itemTypes?.spellcastingEntry?.length);
+    const role=enemy?.tactics?.role??(caster?'caster':hasRanged&&!hasMelee?'ranged':'melee'),hp=actor.hitPoints;
+    const actorItems=Array.isArray(actor.items)?actor.items:actor.items?.contents??Object.values(actor.itemTypes??{}).flat();
+    const skulk=actor===adapter.actor?Boolean(context.skulk):actorItems.some(item=>['sneak-attack','sneak-attack-dedication'].includes(item.slug));
+    actors.push({id:token.id,team:friendly?'friendly':'hostile',hp:hp.value,maxHp:hp.max,position:located?{x:token.document.x/canvas.grid.size,y:token.document.y/canvas.grid.size}:null,
+      speed:enemy?.tactics?.speed??25,reach:enemy?.tactics?.reach??5,role,melee:hasMelee,ranged:hasRanged,caster,skulk,
+      protected:token===adapter.token&&state.enemies.some(entry=>(entry.incoming?.coverBonus??entry.coverBonus??0)>0||entry.incoming?.concealed),
+      expectedDamage:Math.max(4,Number(actor.level??actor.system?.details?.level?.value??1)+6),alive:true});
+  }
+  if(!actors.some(actor=>actor.id===adapter.token.id))return null;
+  const tokens=(left,right)=>{const a=tokenById.get(left.id),b=tokenById.get(right.id);return a&&b?tokenDistance(a,b):Infinity;};
+  const round=game.combat?.round??1,coordinationQuality=adapter.actor.system?.traits?.value?.includes('mindless')?'minimal':
+    context.pack?'pack':'disciplined';
+  return buildTeamBoard({actors,round,revision:`${game.combat?.id??'none'}:${round}:${game.combat?.turn??0}:${state.actionsRemaining}`,
+    distance:tokens,coordinationQuality},{teamId:'friendly',subjectId:adapter.token.id,prior:state.behavior?.previous?.teamBoard??null});
 }
 
 export function behaviorConfiguration(adapter) {
@@ -205,6 +235,7 @@ async function enrichState(adapter,state,options={}) {
   for(const id of configuration.components) if(tacticalBehaviors.components.get(id).enrich)
     state=await tacticalBehaviors.components.get(id).enrich(state,adapter,configuration.parameters[id]??{})??state;
   state.behavior.context=battleContext(adapter,state,options);
+  state.self.id=adapter.token.id;state.self.teamId='friendly';state.teamBoard=foundryTeamBoard(adapter,state,state.behavior.context);delete state.battlefield;
   if(options.deferDecision)return state;
   state.casterScenarios=casterScenarios(state);
   state.behavior.selection=tacticalBehaviors.select(state);
@@ -280,7 +311,10 @@ export function attachBehaviorSystem(adapter) {
     if(selection)await adapter.token.document.setFlag(ns,'behaviorState',{combatId:game.combat.id,sceneId:canvas.scene.id,
       turn:ledger.turn,round:game.combat.round,planId:selection.planId,label:selection.label,reason:selection.reason,
       startedRound:scoped(previous)&&previous.planId===selection.planId?previous.startedRound??game.combat.round:game.combat.round,
-      activeComponents:selection.activeComponents,configuration:selection.configuration,goal:selection.goal});
+      activeComponents:selection.activeComponents,configuration:selection.configuration,goal:selection.goal,
+      battlefield:{activeScenarios:(selection.planning?.analysis?.battlefield?.activeScenarios??[]).map(({id,status,priority,confidence})=>({id,status,priority,confidence}))},
+      teamBoard:{activeScenarios:(selection.planning?.analysis?.battlefield?.activeScenarios??[]).map(({id,status,priority,confidence})=>({id,status,priority,confidence})),
+        confidence:selection.planning?.analysis?.battlefield?.teamBoard?.confidence??null}});
   };
   const decide=adapter.decide.bind(adapter);
   adapter.decide=state=>{

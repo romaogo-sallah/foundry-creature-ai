@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.55.0:** replaces the flat situation-to-tactic bridge with a shared [tactical scenario runtime](docs/tactical-scenario-runtime.md). Confidence-rated evidence produces simultaneous scenarios; a team board computes frontlines, role bids, actor assignments, lane reservations, and target effect budgets; existing tactics become methods under those assignments. `planning-trace@3` shows the actual reduction from belief state through scenario and team purpose to the bounded legal action shortlist. The six-ogre versus six-kobold fixture verifies per-scout ambush completion, staggered kiting/rear guards, charge lanes, hostile-only targeting, and bounded focus.
+
 **Version 0.52.0:** adds a 300×300-foot browser combat scenario for six ogres against six kobold scouts, with ruin walls, cover, fog, rubble and hazardous pits. A reusable multi-goal route field makes the 60×60 simulation practical while preserving walls, occupancy and alternating PF2e diagonals. The replay scales large maps and labels attacker and target teams explicitly.
 
 **Patch 0.51.3:** makes reload weapons persistent in the browser combat simulator. Crossbows now unload and consume ammunition when fired, cannot fire while unloaded, and expose Reload as an ordinary equipment decision valued by the attack it prepares.

@@ -122,7 +122,8 @@ function objective(id,context,state,previous){
   if(['aerial-engage','aerial-disengage'].includes(id))return {kind:id,...state.flight.airCombat};
   if(id==='aerial-hunt')return {kind:'aerial-hunt',phase:state.flight.hunt.phase,label:state.flight.hunt.reason,preferredElevation:state.flight.hunt.preferredElevation};
   const choices=[...state.enemies].sort((a,b)=>(a.distance-(a.alliesInReach??0)*2)-(b.distance-(b.alliesInReach??0)*2)||a.id.localeCompare(b.id));
-  const prior=state.enemies.find(enemy=>enemy.id===previous?.goal?.targetId);
+  const assigned=state.enemies.find(enemy=>enemy.id===state.battlefield?.assignment?.targetId);
+  const prior=assigned??state.enemies.find(enemy=>enemy.id===previous?.goal?.targetId);
   const target=prior&&prior.distance<=(choices[0]?.distance??0)+10?prior:choices[0];
   if(id==='avoiding')return {kind:'withdraw',label:'Break firing lines and create distance from known threats',fromIds:state.enemies.map(enemy=>enemy.id),
     desiredDistance:Math.max(30,...state.enemies.map(enemy=>enemy.tactics?.role==='ranged'?(enemy.tactics.rangeIncrement??60)*2+5:

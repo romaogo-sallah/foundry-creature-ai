@@ -3,6 +3,8 @@ import {gateFlightHunt} from './flight-candidates.mjs';
 import {gateActivityGoal} from './activity-plan.mjs';
 import {filterConditionActions} from './condition-rules.mjs';
 import {analyzeDecisionHierarchy,mergePortfolioCandidates,planArchetype,planningTrace,weightHierarchicalCandidate} from './hierarchical-planner.mjs';
+import {ensureBattlefieldModel} from './battlefield-state.mjs';
+import {scenarioPlanInfluence} from './tactical-scenarios.mjs';
 const policyBase=Symbol('behavior policy input');
 
 // Components are registered module code. Actor documents store identifiers and
@@ -52,6 +54,7 @@ export class BehaviorSystem {
   }
   select(state) {
     const { configuration, context, previous } = state.behavior;
+    delete state.battlefield;const battlefield=ensureBattlefieldModel(state),assignment=battlefield.assignment;
     const evaluations = configuration.plans.map(id => {
       const plan = this.plans.get(id);
       const missing=plan.requires?.filter(component=>!configuration.components.includes(component))??[];
@@ -65,8 +68,10 @@ export class BehaviorSystem {
       // must survive ordinary situational competition. Emergency directives
       // still override it, and an inapplicable plan receives no bonus.
       const preference = configuration.preferredPlan === id && !context.emergency ? 10 : 0;
-      return {id,label:plan.label,applicable:true,value:result.value+continuity+preference,baseValue:result.value,
-        reason:result.reason,continuity,preference};
+      const scenarioInfluence=scenarioPlanInfluence(battlefield.scenarioBoard,id,assignment);
+      const reason=[result.reason,...scenarioInfluence.reasons].filter(Boolean).join('; ');
+      return {id,label:plan.label,applicable:true,value:result.value+continuity+preference+scenarioInfluence.value,baseValue:result.value,
+        reason,continuity,preference,scenarioInfluence:scenarioInfluence.value,scenarioReasons:scenarioInfluence.reasons};
     });
     const scores = evaluations.filter(evaluation=>evaluation.applicable)
       .sort((a,b) => b.value-a.value || a.id.localeCompare(b.id));

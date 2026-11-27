@@ -1,0 +1,66 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.55.0",
+  "date": "2026-11-27",
+  "feature": "confidence-rated battlefield scenarios, team objectives, role bids, assignments, reservations and planning-trace@3",
+  "implemented": {
+    "beliefState": "Actor-visible evidence records scope, confidence, provenance, revision, age, expiry, scenario relationships and numeric hysteresis thresholds.",
+    "scenarios": "Compatible actor and team scenarios remain active together with entry/exit thresholds and continuity.",
+    "coordination": "The team board records frontline geometry, formation components, role bids, winning assignments, lane reservations and target effect budgets.",
+    "grounding": "Existing behavior plans are methods under assignments; legality and emergency directives remain authoritative.",
+    "rangePolicy": "A penalized ranged attack with a reachable better range is marked compromised, compared with setup movement, and capped below that closing option.",
+    "trace": "planning-trace@3 records doctrine, evidence, scenarios, team objective, actor assignment and bids, legality, methods, timing, bounded primitives, choice and outcome.",
+    "privacy": "Foundry coordination receives known Hidden squares but never live Undetected coordinates."
+  },
+  "scenario": {
+    "id": "six-ogres-vs-six-kobolds-grand-battlefield",
+    "seed": 6606,
+    "rounds": 7,
+    "outcome": "ogres victory",
+    "decisions": 195,
+    "actions": 185,
+    "damage": 331,
+    "movementFeet": 2880,
+    "automatedFindings": 0,
+    "koboldsMakingHiddenOpeningAttack": 6,
+    "koboldsExecutingKitingRetreat": 5,
+    "koboldsDefeatedBeforeKitingOpportunity": 1,
+    "ogresReceivingChargePlan": 6,
+    "planningTraceV3Decisions": 195,
+    "scenarioNodes": 1062,
+    "assignmentNodes": 195
+  },
+  "commands": [
+    {
+      "command": "node --test test/withdrawal.test.mjs test/decision-worker.test.mjs test/behavior-runtime.test.mjs",
+      "result": "pass",
+      "tests": 53
+    },
+    {
+      "command": "npm run simulate -- simulations/six-ogres-vs-six-kobolds.json",
+      "result": "pass",
+      "findings": 0
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "tests": 1302,
+      "workers": 11,
+      "seconds": 30.0
+    }
+  ],
+  "build": {
+    "packages": 5,
+    "sourceModules": 226,
+    "archive": "releases/pf2e-tactical-suite-0.55.0.zip",
+    "archiveBytes": 938456,
+    "archiveSha256": "E1E2D2B361DC71B2A5BAF3A58BE26FCC11A37832C37A6B57175C8D44719135CE"
+  },
+  "installation": {
+    "dataPath": "C:/Users/Roman/AppData/Local/FoundryVTT/Data/modules",
+    "packages": 5,
+    "installedVersion": "0.55.0",
+    "liveEncounterChanged": false,
+    "clientAction": "Reload every connected Foundry client with Ctrl+F5."
+  }
+}

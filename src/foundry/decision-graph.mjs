@@ -28,13 +28,14 @@ function buildTraceDecisionGraph(record,trace){
   const edges=trace.edges.map((edge,index)=>({data:{id:safe(edge.id??`trace-edge-${index}`),source:safe(edge.source),target:safe(edge.target),
     label:edge.relation},classes:[edge.relation,edge.relation==='forbids'?'rejected':''].join(' ')}));
   return {nodes,edges,summary:{chosenId:record.chosenId,reason:record.reason,planId:trace.selectedPlanId??record.tactic?.planId??null,
+    scenarioId:trace.selectedScenarioId??null,assignmentId:trace.selectedAssignmentId??null,
     nodeCount:nodes.length,optionCount:record.options?.length??0,rejectedCount:record.rejected?.length??0,totalOptions:record.totalOptions??0,
     traceSchema:trace.schema,timelines:trace.timelines??[],budget:trace.budget??{}}};
 }
 
 /** Build a serializable graph of the recorded tactic and action ranking. */
 export function buildDecisionGraph(record,catalog={components:[],plans:[]},{nameOf=id=>id}={}){
-  if(/^foundry-creature-ai\/planning-trace@[12]$/.test(record.tactic?.planningTrace?.schema??''))return buildTraceDecisionGraph(record,record.tactic.planningTrace);
+  if(/^foundry-creature-ai\/planning-trace@[123]$/.test(record.tactic?.planningTrace?.schema??''))return buildTraceDecisionGraph(record,record.tactic.planningTrace);
   const nodes=[],edges=[],nodeIds=new Set();let edgeIndex=0;
   const addNode=(id,label,category,classes=[],detail={})=>{
     id=safe(id);if(nodeIds.has(id))return id;nodeIds.add(id);
@@ -175,6 +176,9 @@ export async function mountDecisionGraph(root,graph,{fileName='creature-decision
         'padding':'10px','width':190,'height':72}},
       {selector:'node.gate',style:{'background-color':'#243b53','border-color':'#5fa8d3','font-weight':'bold'}},
       {selector:'node.situation',style:{'background-color':'#3b2f63','border-color':'#a78bfa'}},
+      {selector:'node.scenario',style:{'shape':'hexagon','background-color':'#3b2f63','border-color':'#d8b4fe','font-weight':'bold'}},
+      {selector:'node.team-objective',style:{'background-color':'#3f3a24','border-color':'#facc15','font-weight':'bold'}},
+      {selector:'node.assignment',style:{'shape':'round-diamond','background-color':'#164e63','border-color':'#67e8f9','font-weight':'bold'}},
       {selector:'node.fact',style:{'shape':'ellipse','background-color':'#344054','border-color':'#98a2b3'}},
       {selector:'node.engagement',style:{'shape':'barrel','background-color':'#33475b','border-color':'#72a7d3'}},
       {selector:'node.constraint',style:{'shape':'diamond','background-color':'#542f35','border-color':'#e47b86'}},

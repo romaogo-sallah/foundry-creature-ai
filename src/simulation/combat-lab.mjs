@@ -2,6 +2,7 @@ import {attackValue,priorityLayer} from '../dawnsbury/chooser.mjs';
 import {planCreatureDecision} from '../framework/decision-engine.mjs';
 import {defaultBehaviorConfiguration} from '../framework/tactical-behaviors.mjs';
 import {cellKey,gridFromAscii} from './virtual-grid.mjs';
+import {buildTeamBoard} from '../framework/team-coordinator.mjs';
 
 const clone=value=>structuredClone(value);
 const round=value=>Math.round(value*100)/100;
@@ -102,6 +103,16 @@ export class CombatLab {
     return {moves,nearestEnemy:Number.isFinite(currentRoute)?currentRoute:Infinity};
   }
 
+  #teamBoard(actor,turn){
+    const actors=this.living().map(entry=>{const role=entry.role??(entry.skulk?'ranged':entry.strikes.some(strike=>!strike.rangeIncrement)?'melee':'ranged'),terrain=this.grid.terrain(entry.position);
+      return {id:entry.id,team:entry.team,hp:entry.hp,maxHp:entry.maxHp,position:clone(entry.position),speed:entry.speed,reach:entry.reach,role,
+        melee:entry.strikes.some(strike=>!strike.rangeIncrement),ranged:entry.strikes.some(strike=>strike.rangeIncrement),skulk:Boolean(entry.skulk),
+        ambushComplete:Boolean(entry.memory.ambushComplete),protected:Boolean(terrain.cover||terrain.obscuring),expectedDamage:Math.max(...entry.strikes.map(strike=>strike.damage)),alive:entry.hp>0};});
+    return buildTeamBoard({actors,round:turn.round,revision:this.report.metrics.decisions,
+      distance:(left,right)=>this.grid.distanceFeet(left.position,right.position),coordinationQuality:'disciplined'},
+    {teamId:actor.team,subjectId:actor.id,prior:actor.memory.teamBoard??null});
+  }
+
   #state(actor,turn){
     const enemies=this.enemies(actor).map(enemy=>{const position=this.#positionFacts(actor,enemy),enemyMelee=enemy.strikes.filter(strike=>!strike.rangeIncrement);
       return {id:enemy.id,name:enemy.name??enemy.id,distance:position.distance,lineOfSight:position.lineOfSight,lineOfEffect:position.lineOfEffect,
@@ -114,7 +125,7 @@ export class CombatLab {
     const rangedNow=strikeNow.filter(entry=>entry.strike.rangeIncrement),meleeNow=strikeNow.filter(entry=>!entry.strike.rangeIncrement),bestRangePenalty=Math.min(Infinity,...rangedNow.map(entry=>entry.position.rangePenalty));
     const meleeAttackValue=Math.max(0,...meleeNow.map(entry=>actorAttackValue(actor,entry.strike,entry.enemy,entry.position)));
     const rangedAttackValue=Math.max(0,...rangedNow.map(entry=>actorAttackValue(actor,entry.strike,entry.enemy,entry.position)));
-    const health=actor.hp/actor.maxHp,friendPower=this.living(actor.team).reduce((sum,ally)=>sum+ally.hp,0),enemyPower=this.enemies(actor).reduce((sum,enemy)=>sum+enemy.hp,0);
+    const health=actor.hp/actor.maxHp,friendPower=this.living(actor.team).reduce((sum,ally)=>sum+ally.hp,0),enemyPower=this.enemies(actor).reduce((sum,enemy)=>sum+enemy.hp,0),teamBoard=this.#teamBoard(actor,turn);
     const configuration=defaultBehaviorConfiguration('basic-npc');if(actor.plans)configuration.plans=[...actor.plans];if(actor.components)configuration.components=[...actor.components];
     const canCloseRange=moves.some(move=>enemies.some(enemy=>(move.targets[enemy.id]?.distance??Infinity)<enemy.distance));
     const immediateAttack=meleeNow.length>0||rangedNow.some(entry=>entry.position.rangePenalty===0)||rangedNow.length>0&&!canCloseRange;
@@ -147,11 +158,12 @@ export class CombatLab {
         .map(enemy=>actorAttackValue(actor,strike,enemy,enemy.strikes[strike.id])));
       return {strikeId:strike.id,actionCost:strike.reload,ammunition:strike.ammunition,available:true,provokes:true,nextAttackValue};
     });
-    const state={actionsRemaining:turn.actionsRemaining,bonusMovementActions:0,attacksMade:turn.attacksMade,decisionVariation:actor.decisionVariation,
+    const retreatMoves=moves.filter(move=>move.nearestEnemy>movement.nearestEnemy),escapeDirections=new Set(retreatMoves.map(move=>`${Math.sign(move.x-actor.position.x)},${Math.sign(move.y-actor.position.y)}`));
+    const state={actionsRemaining:turn.actionsRemaining,bonusMovementActions:0,attacksMade:turn.attacksMade,decisionVariation:actor.decisionVariation,teamBoard,
       nearestEnemy:movement.nearestEnemy,visited:[...turn.visited],moves,strikes:actor.strikes.map(strike=>({id:strike.id,name:strike.name??strike.id,
         bonus:strike.bonus,damage:strike.damage,mapPenalties:strike.mapPenalties,precisionDamage:strike.precisionDamage,ranged:Boolean(strike.rangeIncrement),
         rangeAversion:strike.rangeAversion??0,available:!strike.reload||strike.loaded&&strike.ammunition>0})),reloads,enemies,allies:this.allies(actor).map(ally=>({id:ally.id})),
-      self:{cell:clone(actor.position),speed:actor.speed,reachSquares:actor.reach/5,referenceAC:actor.referenceAC,threatened:enemies.some(enemy=>enemy.inReach),
+      self:{id:actor.id,teamId:actor.team,cell:clone(actor.position),speed:actor.speed,reachSquares:actor.reach/5,referenceAC:actor.referenceAC,threatened:enemies.some(enemy=>enemy.inReach),
         restrained:false,immobile:false,unable:false,prone:Boolean(actor.conditions.prone),canStand:true,mapPenalties:[0,-5,-10],attackBonus:actor.strikes[0].bonus,
         averageDamage:actor.strikes.reduce((sum,strike)=>sum+strike.damage,0)/actor.strikes.length,reactionRisk:7},
       behavior:{configuration,previous:actor.memory.previous,context:{health,forceRatio:enemyPower?friendPower/enemyPower:10,knownEnemies:enemies.length,
@@ -162,7 +174,9 @@ export class CombatLab {
         meleePrimary:role==='melee',rangedPrimary:role==='ranged',enemyRangedRatio:enemies.length?enemies.filter(enemy=>enemy.tactics.role==='ranged').length/enemies.length:0,
         nearestEnemyDistance,nearbyProtection,ownCount:friendlyActors.length,enemyCount:enemyActors.length,
         ownLossFraction:initialFriends?1-friendlyActors.length/initialFriends:0,enemyLossFraction:initialEnemies?1-enemyActors.length/initialEnemies:0,
-        ownSpread:ownFormation.spread,ownAverageNearestDistance:ownFormation.averageNearest,ownAoeClustered:ownFormation.clustered,ownAoeClusterSize:ownFormation.clusterSize,
+        ownSpread:ownFormation.spread,ownAverageNearestDistance:ownFormation.averageNearest,formationComponents:teamBoard.metrics.formationComponents,
+        effectiveForceRatio:teamBoard.metrics.forceRatio,escapeCapacity:Math.min(1,escapeDirections.size/4),deadEndRisk:1-Math.min(1,escapeDirections.size/3),
+        ownAoeClustered:ownFormation.clustered,ownAoeClusterSize:ownFormation.clusterSize,
         enemyAoeClustered:enemyFormation.clustered,enemyAoeClusterSize:enemyFormation.clusterSize,
         enemiesTooClose:role==='ranged'&&nearestEnemyDistance<=Math.max(15,...enemies.map(enemy=>enemy.tactics.reach??5)),
         swarmOpportunity:enemies.some(enemy=>enemy.alliesInReach>0||enemy.flanked),supportRecipients:0,emergency:health<0.2,hideUseful:hideCandidates.length>0,
@@ -229,13 +243,14 @@ export class CombatLab {
       const roundRecord={round,turns:[],startGrid:this.grid.render(this.actors),endGrid:null};let roundProgress=0;
       for(const actor of [...this.actors].sort((a,b)=>b.initiative-a.initiative||a.id.localeCompare(b.id))){
         if(actor.hp<=0||!this.enemies(actor).length)continue;
-        const turn={actorId:actor.id,start:clone(actor.position),startHp:actor.hp,actionsRemaining:3,attacksMade:0,visited:new Set([cellKey(actor.position)]),decisions:[]};
+        const turn={actorId:actor.id,round,start:clone(actor.position),startHp:actor.hp,actionsRemaining:3,attacksMade:0,visited:new Set([cellKey(actor.position)]),decisions:[]};
         for(let guard=0;guard<8&&turn.actionsRemaining>0&&actor.hp>0&&this.enemies(actor).length;guard++){
           const state=this.#state(actor,turn),decision=planCreatureDecision({state,model,random:this.random}),choice=decision.chosen;this.report.metrics.decisions++;
           if(!choice){turn.decisions.push(this.#decisionRecord(actor,state,decision,{summary:'no legal decision'},turn.actionsRemaining,turn.actionsRemaining));break;}
           const before=turn.actionsRemaining,effect=this.#execute(actor,choice,turn);if(!effect.invalid){turn.actionsRemaining-=choice.actionCost??0;this.report.metrics.actions+=choice.actionCost??0;}
           const record=this.#decisionRecord(actor,state,decision,effect,before,turn.actionsRemaining);turn.decisions.push(record);
-          actor.memory.previous=record.plan?{planId:record.plan.id,goal:clone(record.plan.goal)}:actor.memory.previous;
+          actor.memory.previous=record.plan?{planId:record.plan.id,goal:clone(record.plan.goal),battlefield:{activeScenarios:clone(state.tactical?.activeScenarios??[])}}:actor.memory.previous;
+          actor.memory.teamBoard=clone(state.teamBoard);
           if(effect.damage||effect.destination)roundProgress++;if(effect.endTurn||effect.invalid||effect.unsupported)break;
         }
         turn.end=clone(actor.position);turn.endHp=actor.hp;turn.actionsLeft=turn.actionsRemaining;roundRecord.turns.push(turn);

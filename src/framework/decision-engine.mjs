@@ -31,7 +31,7 @@ export function finalizeDecisionState(state){
  }
  if(!state.behavior)return state;
  state.behavior.context.immediateAttack ||= Boolean(state.spells&&castingCandidates(state).some(c=>c.assessment.value>0));
- state.casterScenarios=casterScenarios(state);state.behavior.selection=tacticalBehaviors.select(state);
+ state.casterScenarios=casterScenarios(state);delete state.battlefield;state.behavior.selection=tacticalBehaviors.select(state);
  if(state.behavior.selection.planId==='lay-low')state.diagnostics.noActionReason='Known enemies are above available attack reach. Hold protection and estimated stealth until an attack becomes possible; Hide still requires cover or concealment.';
  if(state.casterDefense)state.casterDefense={...state.casterDefense,enabled:['defensive','hiding','avoiding','kiting','spell-control','spell-support'].includes(state.behavior.selection.planId)};
  return state;

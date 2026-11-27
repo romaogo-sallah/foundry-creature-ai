@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {BehaviorSystem} from '../src/framework/behavior-system.mjs';
 import {analyzeDecisionHierarchy,battlefieldSituation,classifyCandidate,doctrineProfile,planningTrace,weightHierarchicalCandidate} from '../src/framework/hierarchical-planner.mjs';
+import {buildBattlefieldModel} from '../src/framework/battlefield-state.mjs';
 import {decisionExplanation} from '../src/wolf/decision-explanation.mjs';
 import {buildDecisionGraph} from '../src/foundry/decision-graph.mjs';
 
@@ -10,16 +11,17 @@ function state(context={}){return {actionsRemaining:3,nearestEnemy:8,self:{cell:
   enemies:[{id:'fighter',name:'Fighter',distance:40,lineOfSight:true,lineOfEffect:true,tactics:{reach:10,speed:25}}],behavior:{context:{health:0.8,
     forceRatio:1,knownEnemies:1,visibleEnemies:1,melee:true,ranged:true,rangedAttackAvailable:true,immediateAttack:true,...context}}};}
 
-test('battlefield assessment exposes role, range, terrain, attrition, formation, and AOE facts',()=>{
-  const facts=battlefieldSituation(state({meleePrimary:true,rangedPrimary:false,enemyRangedRatio:0.75,nearestEnemyDistance:80,nearbyProtection:true,
+test('battlefield model exposes confidence-rated evidence and simultaneous tactical scenarios',()=>{
+  const model=buildBattlefieldModel(state({meleePrimary:true,rangedPrimary:false,immediateAttack:false,forceRatio:0.5,enemyRangedRatio:0.75,nearestEnemyDistance:80,nearbyProtection:true,
     ownCount:3,enemyCount:6,ownLossFraction:0.5,enemyLossFraction:0.1,ownSpread:true,ownAverageNearestDistance:45,
     enemyAoeClustered:true,enemyAoeClusterSize:4,ownAoeClustered:true,ownAoeClusterSize:3,openingAmbush:true,kiteRetreatAvailable:true}));
-  const byId=new Map(facts.map(entry=>[entry.id,entry]));
-  assert.equal(byId.get('fact-own-combat-role').value,'melee');
-  for(const id of ['fact-enemy-range-composition','fact-enemy-distance','fact-nearby-protection','fact-own-outnumbered','fact-own-losses',
-    'fact-opening-ambush','fact-kite-lane','fact-own-formation','fact-enemy-aoe-cluster','fact-own-aoe-cluster'])assert.equal(byId.get(id).detail.active,true,id);
-  assert.equal(byId.get('fact-enemy-outnumbered').detail.active,false);
-  assert.equal(byId.get('fact-enemy-losses').detail.active,false);
+  const byId=new Map(model.evidence.map(entry=>[entry.id,entry])),scenarios=new Set(model.activeScenarios.map(entry=>entry.id));
+  assert.equal(byId.get('evidence-combat-role').value,'melee');
+  for(const id of ['evidence-enemy-distance','evidence-protection','evidence-opening-ambush','evidence-formation-components',
+    'evidence-enemy-area-opportunity','evidence-friendly-area-risk'])assert.equal(byId.get(id).active,true,id);
+  for(const id of ['opening-ambush','distant-melee-approach','form-up','enemy-area-opportunity','friendly-area-vulnerability','fighting-withdrawal'])
+    assert.ok(scenarios.has(id),id);
+  assert.ok(model.evidence.every(entry=>entry.confidence>=0&&entry.confidence<=1));
 });
 
 test('doctrine remains multi-label and engagement analysis is shared by several hypotheses',()=>{
@@ -49,6 +51,7 @@ test('range penalties are major while a documented range-closing action gains va
     turnPlan:[{kind:'stride',actionCost:1},{kind:'strike',actionCost:1}]},assessment:{value:4,movement:true,goodAttacksLeft:true}}),s,selection,analysis);
   assert.ok(shot.assessment.value<3);assert.ok(close.assessment.value>7);
   assert.ok(shot.scoringTerms.some(term=>term.label.includes('-6 range penalty')));
+  assert.equal(shot.assessment.rangeCompromised,true);assert.ok(shot.assessment.value<=0.25);
 });
 
 test('a weighted winner promotes its shared timing branch even when a higher-ranked alternative created it first',()=>{
@@ -92,9 +95,12 @@ test('bounded intent portfolio lets a lower abstract hypothesis win through a be
   const decision=system.decide(s,[action('shot','strike',10,{targetId:'fighter',features:{ranged:true,rangePenalty:6,rangeClosingAvailable:true}})]);
   assert.equal(decision.chosen.id,'close');assert.equal(decision.diagnostics.tactic.planId,'setup');
   const trace=decision.diagnostics.tactic.planningTrace;
-  assert.equal(trace.schema,'foundry-creature-ai/planning-trace@2');assert.equal(trace.selectedPlanId,'setup');
-  assert.ok(trace.nodes.filter(node=>node.kind==='or'&&node.layer===3).length>=2);
-  assert.deepEqual(trace.nodes.filter(node=>node.kind==='or'&&node.layer===3&&node.status==='selected').map(node=>node.detail.planId),['setup']);
+  assert.equal(trace.schema,'foundry-creature-ai/planning-trace@3');assert.equal(trace.selectedPlanId,'setup');
+  assert.ok(trace.nodes.some(node=>node.kind==='scenario'));
+  assert.ok(trace.nodes.some(node=>node.kind==='team-objective'));
+  assert.ok(trace.nodes.some(node=>node.kind==='assignment'));
+  assert.ok(trace.nodes.filter(node=>node.kind==='or'&&node.layer===6).length>=2);
+  assert.deepEqual(trace.nodes.filter(node=>node.kind==='or'&&node.layer===6&&node.status==='selected').map(node=>node.detail.planId),['setup']);
   assert.ok(trace.nodes.some(node=>node.kind==='and'&&node.status==='selected'));
   assert.ok(trace.timelines.find(line=>line.selected).steps.length===2);
   assert.equal(trace.nodes.find(node=>node.id==='planning-root').detail.engagements[0].targetId,'fighter');

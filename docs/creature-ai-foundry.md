@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.54.0
+# Foundry Creature AI — version 0.55.0
+
+**Version 0.55.0:** implements the [tactical scenario runtime](tactical-scenario-runtime.md). The AI derives confidence-rated battlefield evidence, keeps compatible scenarios active together, coordinates through team objectives and role bids, assigns lanes and target budgets, and then grounds existing behavior components into legal actions. The decision graph uses `planning-trace@3` to display scenario recognition, team objective, assignment, competing bids, reservations, method selection and execution. Foundry and the headless lab share the same implementation.
 
 **Version 0.54.0:** gives ranged skulks a real two-phase doctrine. They seek a protected firing position, Hide, take the opening shot while Hidden, and then switch to generated kiting retreats when melee can close. Kiting destinations must increase separation while retaining line of sight, line of effect, and a usable ranged lane. Ordinary Stride now breaks the combat lab's Hidden state, so the simulation cannot claim a false ambush.
 
