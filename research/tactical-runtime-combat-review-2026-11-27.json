@@ -1,0 +1,68 @@
+{
+  "schema": "foundry-creature-ai/tactical-review@1",
+  "date": "2026-11-27",
+  "runtimeVersion": "0.55.0",
+  "scenario": "six-ogres-vs-six-kobolds-grand-battlefield",
+  "seed": 6606,
+  "outcome": {
+    "status": "victory",
+    "winner": "ogres",
+    "rounds": 7,
+    "survivors": {
+      "ogres": 6,
+      "kobolds": 0
+    }
+  },
+  "metrics": {
+    "decisions": 195,
+    "actions": 185,
+    "damage": 331,
+    "movementFeet": 2880,
+    "automatedFindings": 0,
+    "koboldAttacks": 20,
+    "koboldDamagingAttacks": 11,
+    "koboldDamage": 91,
+    "koboldHiddenOpeningAttacks": 6,
+    "koboldReloads": 17,
+    "koboldRetreatStrides": 10,
+    "koboldRangePenaltyAttacks": 0,
+    "ogreAttacks": 18,
+    "ogreDamagingAttacks": 14,
+    "ogreDamage": 240,
+    "ogreRangePenaltyAttacks": 0
+  },
+  "assessment": {
+    "ogres": "good within simulator limits",
+    "kobolds": "recognizable phases but tactically weak",
+    "overall": "architecture works; target coordination and future-position utility remain limiting"
+  },
+  "strengths": [
+    "all kobolds established protected ambush positions",
+    "all kobolds spent one Hidden opening attack",
+    "reload sequencing remained valid",
+    "all ogres used full-speed charge plans",
+    "pressure changed the ranged side into fighting withdrawal",
+    "no actor entered a hazard or attacked with a range penalty"
+  ],
+  "failures": [
+    "five kobolds discarded most or all of round 2 to avoid a minus-two shot",
+    "ambush target assignment oscillated from Ogre 2 or 4 to Ogre 6, Ogre 1 and Ogre 5",
+    "all six kobolds received the same Ogre 6 target in round 2 regardless of lane",
+    "kobold damage spread over four ogres and removed none",
+    "withdrawal routes approached map edges and did not forecast the enemy next turn",
+    "opening ambush remained strategically dominant after melee pressure became urgent",
+    "ogres sometimes reserved more expected damage than a target could survive"
+  ],
+  "priorities": [
+    "sticky lane-aware target assignment with expected-damage reservations",
+    "turn-horizon comparison of penalized ambush fire against waiting",
+    "multi-turn escape-route scoring with edge and dead-end repulsion",
+    "pressure override for unfinished opening assignments",
+    "simulation parity for javelin draw and ammunition"
+  ],
+  "evidence": {
+    "scenario": "../simulations/six-ogres-vs-six-kobolds.json",
+    "humanReview": "../docs/grand-combat-tactical-review-2026-11-27.md",
+    "generatedReport": ".scratch/combat-lab/six-ogres-vs-six-kobolds-grand-battlefield.md"
+  }
+}
