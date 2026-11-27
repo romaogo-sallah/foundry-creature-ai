@@ -9,7 +9,7 @@ import {waitingCaster} from '../src/framework/caster-defense.mjs';
 import {observePublicAttack,witnessedThreat} from '../src/foundry/spell-observations.mjs';
 import {chooseTacticalAction} from '../src/framework/tactical-behaviors.mjs';
 import {TurnRunner} from '../src/framework/turn-runner.mjs';
-import {recoverMistTurn} from '../src/foundry/mist-turn-recovery.mjs';
+import {recoverAutomaticTurn} from '../src/foundry/automatic-turn-recovery.mjs';
 const ns='foundry-creature-ai';
 const count=JSON.parse(await readFile(new URL('./fixtures/vampire-count-mechanics.json',import.meta.url)));
 
@@ -73,14 +73,18 @@ test('a real 0-HP mist is defeated for encounter purposes and does not prolong t
  assert.equal(ledger.completionReason,'battle-over');assert.equal(f.calls.filter(c=>c[0]==='next-turn').length,0);assert.equal(ledger.uncertain,false);
 });
 
-test('post-effect turn change recovers a missing mist start once, and respects Stop and existing ledgers',async()=>{
+test('post-effect turn change recovers any missing full-auto start once, and respects Stop and existing ledgers',async()=>{
  const f=fixture({npcData:count}),config=f.flags.get(`token-boss:${ns}:config`);config.autoRun=true;
- f.actor.hitPoints.value=0;await f.actor.setFlag(ns,'vampire',{form:'mist',escape:true,expiresAt:7200});
  let runs=0;const run=async(_token,options)=>{runs++;await f.boss.document.setFlag(ns,'ledger',{turn:options.expectedTurn});};
- assert.equal(await recoverMistTurn(game.combat,{paused:true,run}),false);
- assert.equal(await recoverMistTurn(game.combat,{activeRuns:new Map([[f.boss.id,Promise.resolve()]]),run}),false);
- assert.equal(await recoverMistTurn(game.combat,{run}),true);assert.equal(runs,1);
- assert.equal(await recoverMistTurn(game.combat,{run}),false);assert.equal(runs,1);
+ assert.equal(await recoverAutomaticTurn(game.combat,{paused:true,run}),false);
+ assert.equal(await recoverAutomaticTurn(game.combat,{activeRuns:new Map([[f.boss.id,Promise.resolve()]]),run}),false);
+ assert.equal(await recoverAutomaticTurn(game.combat,{run}),true);assert.equal(runs,1);
+ assert.equal(await recoverAutomaticTurn(game.combat,{run}),false);assert.equal(runs,1);
+});
+
+test('automatic turn recovery ignores disabled start automation',async()=>{
+ const f=fixture({npcData:count}),config=f.flags.get(`token-boss:${ns}:config`);config.autoRun=false;
+ let runs=0;assert.equal(await recoverAutomaticTurn(game.combat,{run:async()=>{runs++;}}),false);assert.equal(runs,0);
 });
 
 test('a Vampire Count makes a meaningful Stride instead of treating a short gaze as artillery',async()=>{

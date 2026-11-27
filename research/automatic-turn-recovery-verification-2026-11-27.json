@@ -1,0 +1,72 @@
+{
+  "schema": "foundry-creature-ai/verification@1",
+  "version": "0.55.2",
+  "date": "2026-11-27",
+  "feature": "Reliable full-auto turn start and advancement chain recovery",
+  "observedFailure": {
+    "world": "arena",
+    "scene": "Valley",
+    "combatId": "5havZmc3qddc3z8W",
+    "round": 2,
+    "turn": 10,
+    "activeTokenId": "dylLhhbx2NlHDvSp",
+    "effect": "The previous ogre had completed its three actions and advanced combat. The next ogre had Creature AI enabled with autoRun and autoAdvance, but had no ledger for its active turn and never began acting."
+  },
+  "rootCause": "The primary pf2e.startTurn event can occasionally be missed during a chain of automatic nextTurn calls. The existing post-effects combatTurnChange recovery was restricted to moving vampire mist, so an ordinary full-auto creature remained idle.",
+  "implemented": {
+    "postEffectsRecovery": "Every enabled full-auto combatant can recover from combatTurnChange when its active turn has no ledger and no run in progress.",
+    "reloadRecovery": "The ready hook applies the same guarded check, allowing an in-place client reload to resume an already active ledger-less turn.",
+    "duplicateGuards": "Recovery is disabled by Stop, reset activity, a secondary GM, a different canvas/combat, disabled autoRun, an active run, or any ledger for the current turn.",
+    "regressions": "Unit coverage verifies an ordinary non-mist creature recovers once while Stop, an active run, an existing ledger, and disabled autoRun suppress recovery."
+  },
+  "commands": [
+    {
+      "command": "node --test test/lich-vampire-regressions.test.mjs test/turn-runner.test.mjs test/pf2e-adapter.test.mjs",
+      "result": "pass",
+      "tests": 190
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "tests": 1305,
+      "workers": 11,
+      "seconds": 30.4
+    }
+  ],
+  "build": {
+    "packages": 5,
+    "sourceModules": 226,
+    "archive": "releases/pf2e-tactical-suite-0.55.2.zip",
+    "archiveBytes": 939458,
+    "archiveSha256": "264BBCADAE0F3FF156AC3B5D0EB1478BE22F7AC19DEEF2E84D3F72ED043AFA54"
+  },
+  "installation": {
+    "dataPath": "C:/Users/Roman/AppData/Local/FoundryVTT/Data/modules",
+    "packages": 5,
+    "installedVersion": "0.55.2",
+    "installedSourceHashesMatchBuild": true,
+    "liveWorld": "Arena",
+    "foundryVersion": "14.370",
+    "systemVersion": "8.7.1",
+    "clientReloadedInPlace": true,
+    "serverProcessRetained": true,
+    "mcpConnected": true
+  },
+  "liveVerification": {
+    "recoveredTokenId": "dylLhhbx2NlHDvSp",
+    "recoveredActions": [
+      "stride",
+      "stride",
+      "stride"
+    ],
+    "recoveredReportVersion": "0.55.2",
+    "subsequentAutomaticTurns": [
+      "Goblin Pyro",
+      "Kobold Scout"
+    ],
+    "combatAfterRecovery": {
+      "round": 3,
+      "turn": 0
+    }
+  }
+}

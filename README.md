@@ -1,5 +1,7 @@
 # Foundry creature AI
 
+**Version 0.55.2:** recovers a missed full-auto turn start from Foundry's post-effects combat-turn signal and after a client reload. Recovery requires an enabled current combatant with no ledger and no active run, so it cannot replay a normal start or an intentional pause.
+
 **Version 0.55.1:** fixes Foundry 14 Region compatibility that could remove every movement candidate on scenes with namespaced Water or harmless native presentation behaviors. It also keeps melee-primary doctrine stable when a bruiser draws a ranged sidearm. Version 0.55.0 introduced the shared [tactical scenario runtime](docs/tactical-scenario-runtime.md), including battlefield evidence, scenarios, team assignments, lane reservations, target budgets, and `planning-trace@3`.
 
 **Version 0.52.0:** adds a 300×300-foot browser combat scenario for six ogres against six kobold scouts, with ruin walls, cover, fog, rubble and hazardous pits. A reusable multi-goal route field makes the 60×60 simulation practical while preserving walls, occupancy and alternating PF2e diagonals. The replay scales large maps and labels attacker and target teams explicitly.

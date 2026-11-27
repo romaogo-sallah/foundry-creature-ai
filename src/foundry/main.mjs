@@ -25,7 +25,7 @@ import {openSpellProfiles} from './spell-profile-controls.mjs';
 import {casterCatalog} from './spell-catalog.mjs';
 import {enableSelectedFullAuto} from './bulk-controls.mjs';
 import {getRulesRuntime} from '../modules/runtime.mjs';
-import {recoverMistTurn} from './mist-turn-recovery.mjs';
+import {recoverAutomaticTurn} from './automatic-turn-recovery.mjs';
 let profile;
 const aiPresentation=new AIPresentation();
 const rulesRuntime=getRulesRuntime();
@@ -430,6 +430,10 @@ Hooks.once('ready', async () => {
     await expireCommands();
     await cleanupOrphanCommands();
     await refreshTerrain();
+    // A client reload can occur after combat has already entered a creature's
+    // turn, so no new start-turn event will follow. Use the same guarded
+    // recovery as combatTurnChange to resume only a ledger-less full-auto turn.
+    if(game.combat?.started)await recoverAutomaticTurn(game.combat,{paused:automaticStartsPaused,blocked:resettingActors,activeRuns,run:runTurn});
   } catch (error) { await showError(error); }
 });
 
@@ -469,7 +473,7 @@ Hooks.on('pauseGame', paused => {
 });
 Hooks.on('combatTurnChange',combat=>{
   if(!profile)return;
-  void recoverMistTurn(combat,{paused:automaticStartsPaused,blocked:resettingActors,activeRuns,run:runTurn}).catch(showError);
+  void recoverAutomaticTurn(combat,{paused:automaticStartsPaused,blocked:resettingActors,activeRuns,run:runTurn}).catch(showError);
 });
 Hooks.on('canvasTearDown', () => { stop(); planningWorker.close('Scene changed');decisionWorker.close('Scene changed'); runners.clear(); });
 Hooks.on('deleteCombat', combat => { stop(); expireCommands({ combat, removeAll: true }).catch(showError); });

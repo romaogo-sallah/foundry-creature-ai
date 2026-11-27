@@ -1,4 +1,6 @@
-# Foundry Creature AI — version 0.55.1
+# Foundry Creature AI — version 0.55.2
+
+**Version 0.55.2:** recovers a full-auto creature when PF2e advances combat but its start-turn hook is missed, including when a client reloads during an already active turn. The post-effects combat-turn signal and ready-time check start the creature only when the active turn has no ledger and no run in progress, so normal starts, intentional pauses and completed turns are not replayed.
 
 **Version 0.55.1:** restores movement on Foundry 14 scenes containing namespaced Water Regions or harmless native Region presentation behaviors, while retaining safety stops for unpredictable movement scripts. Melee bruisers also retain their charge doctrine after drawing a ranged sidearm. Version 0.55.0 implemented the [tactical scenario runtime](tactical-scenario-runtime.md); Foundry and the headless lab share that implementation.
 
